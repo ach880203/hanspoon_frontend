@@ -1,0 +1,109 @@
+.my-points-page {
+    width: 100%;
+}
+
+.point-summary-card {
+    background: linear-gradient(135deg, #FF7E36 0%, #fc9d68 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 126, 54, 0.2);
+}
+
+.point-label {
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 8px;
+}
+
+.point-value {
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.point-history-list h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.point-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.point-table th {
+    text-align: left;
+    padding: 12px 8px;
+    font-size: 14px;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.point-table td {
+    padding: 16px 8px;
+    font-size: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.date-col {
+    width: 120px;
+    color: #94a3b8 !important;
+    font-size: 14px !important;
+}
+
+.type-col {
+    width: 120px;
+    font-weight: 600;
+}
+
+.amount-col {
+    text-align: right;
+    font-weight: 700;
+    font-family: 'Roboto', sans-serif;
+}
+
+.amount-col.plus {
+    color: #FF7E36;
+}
+
+.amount-col.minus {
+    color: #dc2626;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.pagination button {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination span {
+    font-size: 14px;
+    color: #475569;
+}

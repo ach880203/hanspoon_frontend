@@ -1,0 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.faq-page {
+    padding: 60px 0;
+    background-color: #fcfcfc;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.faq-container {
+    max-width: 900px;
+    margin: 0 auto 60px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.page-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.page-description {
+    font-size: 18px;
+    color: #666;
+}
+
+.faq-category-section {
+    margin-bottom: 40px;
+}
+
+.category-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+    display: inline-block;
+}
+
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.faq-item {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #eee;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.faq-item:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.faq-item.active {
+    border-color: #3b82f6;
+}
+
+.faq-question {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 28px;
+    background: white;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.faq-icon-q {
+    font-size: 24px;
+    font-weight: 800;
+    color: #3b82f6;
+    /* Blue Q */
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+}
+
+.faq-question-text {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.faq-toggle-icon {
+    width: 24px;
+    height: 24px;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+
+.active .faq-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.faq-answer-wrapper {
+    background-color: #f9fafb;
+    border-top: 1px solid #f3f4f6;
+}
+
+.faq-answer {
+    display: flex;
+    gap: 18px;
+    padding: 24px 28px;
+    animation: fadeIn 0.3s ease;
+}
+
+.faq-icon-a {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fbbf24;
+    /* Yellow Circle A */
+    color: white;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 15px;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.faq-answer-content {
+    flex: 1;
+}
+
+.faq-answer-content p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #4b5563;
+    white-space: pre-line;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.faq-contact {
+    max-width: 100%;
+    margin-top: 40px;
+}
+
+.faq-contact .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.contact-item {
+    background: #f8fafc;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+}
+
+@media (max-width: 768px) {
+    .faq-question {
+        padding: 20px;
+    }
+
+    .faq-question-text {
+        font-size: 16px;
+    }
+
+    .faq-answer {
+        padding: 20px;
+    }
+
+    .contact-info {
+        flex-direction: column;
+    }
+}
+
+/* Loading State */
+.faq-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 16px;
+    color: #64748b;
+}
+
+.faq-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    animation: faq-spin 1s linear infinite;
+}
+
+@keyframes faq-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.faq-empty {
+    text-align: center;
+    padding: 60px;
+    color: #94a3b8;
+    background: white;
+    border-radius: 16px;
+    border: 1px dashed #e2e8f0;
+    margin: 20px 0;
+}

@@ -1,0 +1,208 @@
+.my-class-page {
+    /* Inherit layout */
+}
+
+.class-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    position: relative;
+}
+
+.tab-btn.active {
+    color: var(--primary, #ea580c);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -13px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary, #ea580c);
+}
+
+.reservation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reservation-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    background: white;
+}
+
+.res-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.res-date {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.res-status {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.res-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.res-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #334155;
+}
+
+.res-meta {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0 0 4px 0;
+}
+
+.res-price {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 8px 0 0 0;
+}
+
+.btn-action {
+    padding: 8px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    color: #475569;
+}
+
+.btn-action:hover {
+    background: #f8fafc;
+}
+
+/* Modal Styles for MyClassPage */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-box h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: #1e293b;
+}
+
+.modal-desc {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.modal-input {
+    width: 100%;
+    height: 100px;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    resize: none;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: #f97316;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-close {
+    padding: 8px 16px;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-confirm {
+    padding: 8px 16px;
+    background: #ef4444;
+    /* Red for cancel action */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-confirm:disabled {
+    background: #fca5a5;
+    cursor: not-allowed;
+}
+
+.modal-select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.modal-select:focus {
+    outline: none;
+    border-color: #f97316;
+}

@@ -1,0 +1,122 @@
+/* src/pages/MyPage/MyPaymentPage.css */
+.my-payment-page {
+    width: 100%;
+}
+
+.payment-history-list h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 24px;
+}
+
+.payment-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.payment-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payment-table th {
+    text-align: left;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.payment-table td {
+    padding: 16px 20px;
+    font-size: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.date-col {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.order-name-col {
+    font-weight: 500;
+}
+
+.amount-col {
+    font-weight: 700;
+    text-align: right;
+    font-family: 'Inter', sans-serif;
+}
+
+.status-col {
+    text-align: center;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-paid {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.status-cancelled {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.pagination button {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+    border-color: #FF7E36;
+    color: #FF7E36;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination span {
+    font-size: 14px;
+    color: #475569;
+}
+
+.loading-msg,
+.error-msg,
+.empty-msg {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+}
+
+.error-msg {
+    color: #dc2626;
+}
