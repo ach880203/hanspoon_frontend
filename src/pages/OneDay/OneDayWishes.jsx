@@ -154,12 +154,20 @@ export const OneDayWishes = () => {
     setMessage("");
 
     try {
+
+
+
+
+
+
       const result = await toggleOneDayWish(classId);
       const wished = result?.wished;
       setMessage(wished ? `클래스 #${classId} 찜 추가` : `클래스 #${classId} 찜 해제`);
       await loadWishes();
     } catch (e) {
       setError(e?.message ?? "찜 추가/해제 실패");
+
+
     }
   };
 
@@ -297,4 +305,3 @@ const okBox = {
   borderRadius: 10,
   padding: 10,
 };
-

@@ -8,6 +8,7 @@ import { OneDayReservations } from "./OneDayReservations";
 import { OneDayWishes } from "./OneDayWishes";
 import { OneDayCoupons } from "./OneDayCoupons";
 import { OneDayInquiryWrite } from "./OneDayInquiryWrite";
+import { ClassOneDayCreatePage } from "./ClassOneDayCreatePage";
 
 export default function OneDayRoutes() {
   return (
@@ -20,6 +21,7 @@ export default function OneDayRoutes() {
       <Route path="wishes" element={<OneDayWishes />} />
       <Route path="coupons" element={<OneDayCoupons />} />
       <Route path="inquiry" element={<OneDayInquiryWrite />} />
+      <Route path="create" element={<ClassOneDayCreatePage />} />
 
       <Route path="*" element={<Navigate to="." replace />} />
     </Routes>

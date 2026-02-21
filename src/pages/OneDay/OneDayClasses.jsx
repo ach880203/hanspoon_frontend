@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   getMyOneDayReservations,
@@ -333,6 +333,7 @@ export const OneDayClasses = () => {
                   {c.category && <span style={styles.badge}>{c.category}</span>}
                   {c.level && <span style={styles.badge}>{c.level}</span>}
                   {c.instructor && <span style={styles.badge}>{c.instructor}</span>}
+
                   {completedClassIds.has(c.id) && <span style={styles.doneBadge}>완료</span>}
                 </div>
 
@@ -502,4 +503,3 @@ const styles = {
     flexWrap: "wrap",
   },
 };
-

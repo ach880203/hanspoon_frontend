@@ -8,14 +8,24 @@ function Payment() {
     const navigate = useNavigate();
     const location = useLocation();
     const [paymentMethod, setPaymentMethod] = useState('card');
-    const { itemName, amount, reservationId, classId, orderId } = location.state || {};
+    const {
+        itemName,
+        amount,
+        reservationId,
+        classId,
+        orderId,
+        buyerName: initialBuyerName,
+        buyerEmail: initialBuyerEmail,
+        buyerTel: initialBuyerTel
+    } = location.state || {};
 
     const [formData, setFormData] = useState({
         itemName: itemName || '원데이 클래스',
         amount: amount || 50000,
-        buyerName: '',
-        buyerEmail: '',
-        buyerTel: ''
+        // 상세/예약 화면에서 전달한 로그인 사용자 정보를 기본값으로 사용합니다.
+        buyerName: initialBuyerName || '',
+        buyerEmail: initialBuyerEmail || '',
+        buyerTel: initialBuyerTel ? formatPhoneNumber(initialBuyerTel) : ''
     });
     const [loading, setLoading] = useState(false);
     const [coupons, setCoupons] = useState([]);
