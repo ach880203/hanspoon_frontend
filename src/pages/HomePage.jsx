@@ -74,11 +74,13 @@ export default function HomePage() {
             description="전문가와 함께하는 요리 클래스에 참여해보세요."
             links={[
               { to: "/classes/oneday", label: "원데이 클래스" },
-              { to: "/classes/regular", label: "정기 클래스" },
+              { to: "/classes/oneday/classes?runType=ALWAYS", label: "정기 클래스" },
+              { to: "/classes/oneday/classes?runType=EVENT", label: "이벤트 클래스" },
             ]}
             sublinks={[
-              { to: "/mypage/reservations", label: "예약 내역" },
-              { to: "/inquiries", label: "클래스 문의" },
+              { to: "/classes/oneday/wishes", label: "찜 목록" },
+              { to: "/classes/oneday/inquiry", label: "클래스 문의" },
+              { to: "/classes/oneday/reservations", label: "예약 내역" },
             ]}
           />
 

@@ -1,4 +1,4 @@
-﻿import axiosInstance from "./axios";
+﻿﻿import axiosInstance from "./axios";
 import { loadAuth } from "../utils/authStorage";
 
 const api = axiosInstance;
@@ -29,20 +29,52 @@ export function resolveOneDayUserId() {
 // 서버에서도 다시 권한 검증을 하므로, 이 값은 UI 제어용 보조 정보입니다.
 export function isOneDayAdmin() {
   const auth = loadAuth();
-  const role = String(auth?.role || "").toUpperCase();
-  if (role === "ROLE_ADMIN" || role === "ADMIN") return true;
+  // 초보자 참고:
+  // 로그인 응답의 role 포맷이 환경마다 다를 수 있습니다.
+  // 예) "ROLE_ADMIN", "ADMIN", "[ROLE_ADMIN]", "ROLE_USER,ROLE_ADMIN"
+  // 그래서 문자열을 정규화한 뒤 ADMIN 권한 포함 여부를 판별합니다.
+  const role = normalizeRoleText(auth?.role);
+  if (hasAdminRole(role)) return true;
 
   // 일부 로그인 응답은 roles/authorities 배열로 내려올 수 있어서 함께 확인합니다.
   const roles = Array.isArray(auth?.roles) ? auth.roles : [];
   const authorities = Array.isArray(auth?.authorities) ? auth.authorities : [];
-  const merged = [...roles, ...authorities].map((x) => String(x || "").toUpperCase());
-  return merged.includes("ROLE_ADMIN") || merged.includes("ADMIN");
+  const merged = [...roles, ...authorities].map((x) => normalizeRoleText(x));
+  return merged.some((x) => hasAdminRole(x));
+}
+
+/**
+ * role 텍스트를 권한 판별에 유리한 형태로 정리합니다.
+ * - 대괄호 제거: "[ROLE_ADMIN]" -> "ROLE_ADMIN"
+ * - 공백 제거
+ * - 대문자 통일
+ */
+function normalizeRoleText(value) {
+  return String(value || "")
+    .replace(/\[|\]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+/**
+ * 문자열 안에 관리자 권한 토큰이 포함되는지 확인합니다.
+ * - 단일 값: ROLE_ADMIN / ADMIN
+ * - CSV/공백 혼합 문자열도 지원
+ */
+function hasAdminRole(roleText) {
+  if (!roleText) return false;
+  const tokens = roleText.split(/[,\s]+/).filter(Boolean);
+  return tokens.includes("ROLE_ADMIN") || tokens.includes("ADMIN");
 }
 
 export const getOneDayHome = (config = {}) => unwrap(api.get("/api/oneday/home", config));
 
 export const getOneDayClasses = (params, config = {}) =>
   unwrap(api.get("/api/oneday/classes", { ...config, params }));
+
+// 원데이 클래스 + 세션 등록 API입니다. (관리자 전용)
+export const createOneDayClass = (payload, config = {}) =>
+  unwrap(api.post("/api/oneday/classes", payload, config));
 
 export const getOneDayClassDetail = (classId, config = {}) =>
   unwrap(api.get(`/api/oneday/classes/${classId}`, config));

@@ -8,6 +8,8 @@ import {
 } from "../../api/onedayApi";
 import { toReservationStatusLabel, toSlotLabel } from "./onedayLabels";
 import { OneDayTopTabs } from "./OneDayTopTabs";
+import { paymentApi } from "../../api/paymentApi";
+import { loadAuth } from "../../utils/authStorage";
 
 const PAGE_SIZE = 10;
 
@@ -39,6 +41,22 @@ export const OneDayReservations = () => {
   const [message, setMessage] = useState("");
   const [actioningId, setActioningId] = useState(null);
   const [pageInfo, setPageInfo] = useState({ totalPages: 0, totalElements: 0, number: 0, size: PAGE_SIZE });
+  const [portOneConfig, setPortOneConfig] = useState(null);
+
+  const buildBuyerState = () => {
+    // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
+    // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
+    const auth = loadAuth() || {};
+    return {
+      buyerName: String(auth.userName || ""),
+      buyerEmail: String(auth.email || ""),
+      buyerTel: String(auth.phone || auth.userPhone || auth.tel || ""),
+    };
+  };
+
+  useEffect(() => {
+    paymentApi.getPortOneConfig().then(setPortOneConfig).catch(console.error);
+  }, []);
 
   const updateQuery = useCallback(
     (updates, options = { replace: true }) => {
@@ -141,9 +159,25 @@ export const OneDayReservations = () => {
     setActioningId(reservationId);
 
     try {
-      const data =
-        kind === "pay" ? await payOneDayReservation(reservationId) : await cancelOneDayReservation(reservationId);
-      setMessage(kind === "pay" ? `예약 #${data.id} 결제 완료` : `예약 #${data.id} 취소 완료`);
+      if (kind === "pay") {
+        if (!detail) return;
+
+        // 결제 전용 화면으로 이동
+        navigate("/payment", {
+          state: {
+            reservationId: Number(reservationId),
+            classId: Number(detail.sessionId), // 백엔드 검증을 위해 세션 ID 전달
+            itemName: detail.classTitle || "원데이 클래스",
+            amount: detail.price,
+            ...buildBuyerState(),
+          },
+        });
+        return; // 이동 후 종료
+      } else {
+        const data = await cancelOneDayReservation(reservationId);
+        setMessage(`예약 #${data.id} 취소 완료`);
+      }
+
       await loadList();
       await loadDetail(reservationId);
     } catch (e) {

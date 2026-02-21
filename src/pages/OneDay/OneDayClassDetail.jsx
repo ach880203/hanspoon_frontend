@@ -1,5 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { paymentApi } from "../../api/paymentApi";
+import { loadAuth } from "../../utils/authStorage";
 import {
   answerOneDayReview,
   createOneDayHold,
@@ -15,6 +17,7 @@ import {
   resolveOneDayUserId,
   toggleOneDayWish,
 } from "../../api/onedayApi";
+
 import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./onedayLabels";
 
 export const OneDayClassDetail = () => {
@@ -33,6 +36,9 @@ export const OneDayClassDetail = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [reservingSessionId, setReservingSessionId] = useState(null);
+  // 같은 세션에서 어떤 동작(홀딩/바로결제)을 실행 중인지 UI에 표시하기 위한 상태입니다.
+  // 예: 홀딩 버튼 클릭 시 "홀딩중...", 바로결제 클릭 시 "결제 이동중..."으로 문구를 분리합니다.
+  const [reservingAction, setReservingAction] = useState(null); // "hold" | "pay" | null
   const [submittingReview, setSubmittingReview] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState(null);
   const [answeringReviewId, setAnsweringReviewId] = useState(null);
@@ -41,6 +47,18 @@ export const OneDayClassDetail = () => {
   const [selectedReservationId, setSelectedReservationId] = useState("");
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [isWished, setIsWished] = useState(false);
+  const [portOneConfig, setPortOneConfig] = useState(null);
+
+  const buildBuyerState = () => {
+    // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
+    // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
+    const auth = loadAuth() || {};
+    return {
+      buyerName: String(auth.userName || ""),
+      buyerEmail: String(auth.email || ""),
+      buyerTel: String(auth.phone || auth.userPhone || auth.tel || ""),
+    };
+  };
 
   const loadPage = useCallback(async () => {
     setLoading(true);
@@ -85,6 +103,10 @@ export const OneDayClassDetail = () => {
     loadPage();
   }, [loadPage]);
 
+  useEffect(() => {
+    paymentApi.getPortOneConfig().then(setPortOneConfig).catch(console.error);
+  }, []);
+
   const reviewedReservationIds = useMemo(
     () => new Set(reviews.map((review) => Number(review.reservationId)).filter(Boolean)),
     [reviews]
@@ -104,19 +126,62 @@ export const OneDayClassDetail = () => {
     }
   }, [reviewableReservations, selectedReservationId]);
 
-  const handleHold = async (sessionId) => {
+  const handleHoldOnly = async (sessionId) => {
     setError("");
     setMessage("");
     setReservingSessionId(sessionId);
-
+    setReservingAction("hold");
     try {
-      const data = await createOneDayHold(sessionId);
-      setMessage(`홀드 생성 완료: 예약 #${data.id}`);
-      navigate("/classes/oneday/reservations");
+      const hold = await createOneDayHold(sessionId);
+      const reservationId = Number(hold?.id);
+      if (!reservationId) {
+        throw new Error("예약 ID를 받지 못했습니다.");
+      }
+
+      // 핵심 요구사항:
+      // "예약 홀딩" 버튼은 결제 화면으로 가지 않고, HOLD 상태 예약만 만든 뒤
+      // 사용자가 바로 확인할 수 있도록 내 예약 페이지(선택된 예약 강조)로 이동합니다.
+      navigate(`/classes/oneday/reservations?status=HOLD&selectedId=${reservationId}`);
     } catch (e) {
-      setError(e?.message ?? "홀드 생성에 실패했습니다.");
+      setError(e?.message ?? "예약 홀딩 실패");
     } finally {
       setReservingSessionId(null);
+      setReservingAction(null);
+    }
+  };
+
+  const handleDirectPayment = async (sessionId, sessionPrice) => {
+    setError("");
+    setMessage("");
+    setReservingSessionId(sessionId);
+    setReservingAction("pay");
+    try {
+
+      // 핵심 요구사항:
+      // "바로 결제" 버튼은 기존과 동일하게 HOLD를 먼저 생성한 다음 결제 페이지로 이동합니다.
+      // HOLD 선점 없이 결제부터 진행하면 동시성 상황에서 좌석 보장이 어렵기 때문입니다.
+      // 1. 홀드 생성 (예약 선점)
+      const hold = await createOneDayHold(sessionId);
+      const reservationId = Number(hold?.id);
+      if (!reservationId) {
+        throw new Error("예약 ID를 받지 못했습니다.");
+      }
+
+      // 2. 결제 화면으로 이동
+      navigate("/payment", {
+        state: {
+          reservationId,
+          classId: Number(sessionId), // 백엔드 검증을 위해 세션 ID 전달
+          itemName: detail.title || "원데이 클래스",
+          amount: sessionPrice,
+          ...buildBuyerState(),
+        },
+      });
+    } catch (e) {
+      setError(e?.message ?? "예약 처리 실패");
+    } finally {
+      setReservingSessionId(null);
+      setReservingAction(null);
     }
   };
 
@@ -289,17 +354,30 @@ export const OneDayClassDetail = () => {
                     {completed ? <span style={doneBadge}>종료</span> : null}
                     {!completed && full ? <span style={closedBadge}>정원 마감</span> : null}
                     <button
-                      style={btnPrimary}
-                      onClick={() => handleHold(sessionId)}
+                      style={btnGhostButton}
+                      onClick={() => handleHoldOnly(sessionId)}
                       disabled={reservingSessionId === sessionId || completed || full}
                     >
-                      {reservingSessionId === sessionId
-                        ? "처리중..."
+                      {reservingSessionId === sessionId && reservingAction === "hold"
+                        ? "홀딩중..."
                         : completed
                         ? "종료"
                         : full
                         ? "정원 마감"
-                        : "홀드"}
+                        : "예약 홀딩"}
+                    </button>
+                    <button
+                      style={btnPrimary}
+                      onClick={() => handleDirectPayment(sessionId, session.price)}
+                      disabled={reservingSessionId === sessionId || completed || full}
+                    >
+                      {reservingSessionId === sessionId && reservingAction === "pay"
+                        ? "결제 이동중..."
+                        : completed
+                        ? "종료"
+                        : full
+                        ? "정원 마감"
+                        : "바로 결제"}
                     </button>
                   </div>
                 </div>
