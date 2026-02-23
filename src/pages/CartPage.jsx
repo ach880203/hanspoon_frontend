@@ -1,7 +1,7 @@
 // src/pages/CartPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyCart, addMyCartItem, deleteMyCartItem, updateMyCartItem } from "../api/carts";
+import { fetchMyCart, deleteMyCartItem, updateMyCartItem } from "../api/carts";
 import { createOrder } from "../api/orders";
 import { toErrorMessage } from "../api/http";
 import AddressSearch from "../components/AddressSearch";

@@ -5,7 +5,7 @@ import { formatPhoneNumber } from '../../utils/format';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-    const { user, login } = useAuth(); // login to update context user
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
         userName: '',
         phone: '',

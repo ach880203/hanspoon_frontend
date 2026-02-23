@@ -1,6 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { paymentApi } from "../../api/paymentApi";
 import { loadAuth } from "../../utils/authStorage";
 import {
   answerOneDayReview,
@@ -47,8 +46,6 @@ export const OneDayClassDetail = () => {
   const [selectedReservationId, setSelectedReservationId] = useState("");
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [isWished, setIsWished] = useState(false);
-  const [portOneConfig, setPortOneConfig] = useState(null);
-
   const buildBuyerState = () => {
     // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
     // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
@@ -102,11 +99,6 @@ export const OneDayClassDetail = () => {
   useEffect(() => {
     loadPage();
   }, [loadPage]);
-
-  useEffect(() => {
-    paymentApi.getPortOneConfig().then(setPortOneConfig).catch(console.error);
-  }, []);
-
   const reviewedReservationIds = useMemo(
     () => new Set(reviews.map((review) => Number(review.reservationId)).filter(Boolean)),
     [reviews]
@@ -705,3 +697,5 @@ const okBox = {
   borderRadius: 10,
   padding: 10,
 };
+
+

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { deleteRecipe, getRecipeDetail } from '../../api/recipeApi'; // API 함수 임포트
+import { toBackendUrl } from '../../utils/backendUrl';
 
 const Recipesid = () => {
   const { id } = useParams();
@@ -80,8 +81,6 @@ const Recipesid = () => {
     }
     amount = amount * adjustedRatio;
 
-    const type = ing.tasteType?.toUpperCase();
-
     if (ing.tasteType === 'SPICY') amount *= getFlavorWeight('spiciness', flavor.spiciness);
     if (ing.tasteType === 'SWEET') amount *= getFlavorWeight('sweetness', flavor.sweetness);
     if (ing.tasteType === 'SALTY') amount *= getFlavorWeight('saltiness', flavor.saltiness);
@@ -155,7 +154,7 @@ const Recipesid = () => {
             {/* 왼쪽: 메인 이미지 */}
             <div style={imgWrapper}>
               <img 
-                src={recipe.recipeImg ? `http://localhost:8080/images/recipe/${recipe.recipeImg}` : 'https://via.placeholder.com/600x400?text=No+Image'} 
+                src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : 'https://via.placeholder.com/600x400?text=No+Image'} 
                 alt={recipe.title} 
                 style={mainImgStyle}
               />
@@ -307,7 +306,7 @@ const Recipesid = () => {
                     {step.stepImg && (
                       <div style={stepImgWrapper}>
                         <img 
-                          src={`http://localhost:8080/images/recipe/${step.stepImg}`} 
+                          src={toBackendUrl(`/images/recipe/${step.stepImg}`)} 
                           alt={`Step ${sIdx+1}`} 
                           style={stepImg} 
                         />

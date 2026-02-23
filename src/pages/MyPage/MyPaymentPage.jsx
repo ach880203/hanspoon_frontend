@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { paymentApi } from '../../api/paymentApi';
 import { toErrorMessage } from '../../api/http';
 import './MyPaymentPage.css';
@@ -18,7 +18,6 @@ const MyPaymentPage = () => {
         setLoading(true);
         try {
             const response = await paymentApi.getPaymentHistory({ page: pageIdx, size: 10 });
-            // Response format: { status, message, data: { content, totalPages, ... } }
             if (response && response.data) {
                 setPayments(response.data.content || []);
                 setTotalPages(response.data.totalPages || 0);
@@ -72,18 +71,10 @@ const MyPaymentPage = () => {
                             <tbody>
                                 {payments.map((payment) => (
                                     <tr key={payment.payId}>
-                                        <td className="date-col">
-                                            {new Date(payment.payDate).toLocaleString()}
-                                        </td>
-                                        <td className="order-name-col">
-                                            {payment.orderName}
-                                        </td>
-                                        <td className="amount-col">
-                                            {payment.totalPrice.toLocaleString()}원
-                                        </td>
-                                        <td className="status-col">
-                                            {getStatusLabel(payment.status)}
-                                        </td>
+                                        <td className="date-col">{new Date(payment.payDate).toLocaleString()}</td>
+                                        <td className="order-name-col">{payment.orderName}</td>
+                                        <td className="amount-col">{payment.totalPrice.toLocaleString()}원</td>
+                                        <td className="status-col">{getStatusLabel(payment.status)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -93,17 +84,11 @@ const MyPaymentPage = () => {
 
                 {totalPages > 1 && (
                     <div className="pagination">
-                        <button
-                            disabled={page === 0}
-                            onClick={() => handlePageChange(page - 1)}
-                        >
+                        <button disabled={page === 0} onClick={() => handlePageChange(page - 1)}>
                             &lt; 이전
                         </button>
                         <span>{page + 1} / {totalPages}</span>
-                        <button
-                            disabled={page >= totalPages - 1}
-                            onClick={() => handlePageChange(page + 1)}
-                        >
+                        <button disabled={page >= totalPages - 1} onClick={() => handlePageChange(page + 1)}>
                             다음 &gt;
                         </button>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { http } from '../../api/http';
 import { toErrorMessage } from '../../api/http';
 import './MyClassPage.css';
@@ -86,9 +86,7 @@ const MyClassPage = () => {
 
     useEffect(() => {
         setPage(0);
-        loadReservations(0);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [status]);
+        loadReservations(0);    }, [status]);
 
     const handlePageChange = (newPage) => {
         setPage(newPage);
@@ -131,7 +129,7 @@ const MyClassPage = () => {
                                     <div className="res-body">
                                         <div className="res-info">
                                             <h3 className="res-title">{r.classTitle}</h3>
-                                            <p className="res-meta">인원: {r.count}명 (슬롯: {r.slot})</p>
+                                            <p className="res-meta">인원: {r.count}명(타임: {r.slot})</p>
                                             <p className="res-price">{r.price.toLocaleString()}원</p>
                                         </div>
                                         <div className="res-actions">
@@ -167,22 +165,21 @@ const MyClassPage = () => {
                 <div className="modal-overlay">
                     <div className="modal-box">
                         <h3>취소 요청</h3>
-                        <p className="modal-desc">관리자 승인 후 취소가 완료됩니다.<br />취소 사유를 선택해 주세요.</p>
+                        <p className="modal-desc">관리자 확인 후 취소가 완료됩니다.<br />취소 사유를 선택해 주세요.</p>
 
-                        <select
+                                                <select
                             className="modal-select"
                             value={cancelReason === "기타" || ![
                                 "단순 변심",
                                 "일정 변경/개인 사정",
                                 "결제 실수",
                                 "클래스 정보와 다름",
-                                "재예약 예정"
+                                "사정이 생김"
                             ].includes(cancelReason) && cancelReason !== "" ? "기타" : cancelReason}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val === "기타") {
-                                    setCancelReason("기타"); // Just a marker, will use secondary state if needed or just empty
-                                    // Actually better to have separate state for selection and manual input
+                                    setCancelReason("기타");
                                 } else {
                                     setCancelReason(val);
                                 }
@@ -193,17 +190,11 @@ const MyClassPage = () => {
                             <option value="일정 변경/개인 사정">일정 변경/개인 사정</option>
                             <option value="결제 실수">결제 실수</option>
                             <option value="클래스 정보와 다름">클래스 정보와 다름</option>
-                            <option value="재예약 예정">재예약 예정</option>
+                            <option value="사정이 생김">사정이 생김</option>
                             <option value="기타">기타 (직접 입력)</option>
                         </select>
 
-                        {(cancelReason === "기타" || (cancelReason && ![
-                            "단순 변심",
-                            "일정 변경/개인 사정",
-                            "결제 실수",
-                            "클래스 정보와 다름",
-                            "재예약 예정"
-                        ].includes(cancelReason))) && (
+                        {(cancelReason === "기타" || (cancelReason && !["단순 변심", "일정 변경/개인 사정", "결제 실수", "클래스 정보와 다름", "사정이 생김"].includes(cancelReason))) && (
                                 <textarea
                                     className="modal-input"
                                     placeholder="구체적인 사유를 입력해 주세요."
@@ -231,3 +222,5 @@ const MyClassPage = () => {
 };
 
 export default MyClassPage;
+
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchProductDetail } from "../api/products";
 import { addMyCartItem } from "../api/carts";
@@ -45,7 +45,7 @@ export default function ProductDetailPage() {
 
   return (
     <div>
-      <button className="linkBtn" onClick={() => nav(-1)}>← Back</button>
+      <button className="linkBtn" onClick={() => nav(-1)}>뒤로가기</button>
 
       <div className="detail">
         <div className="detailLeft">
@@ -81,7 +81,7 @@ export default function ProductDetailPage() {
               style={{ width: 120 }}
             />
             <button disabled={busy} onClick={addToCart}>
-              {busy ? "처리중..." : "장바구니 담기"}
+              {busy ? "처리 중.." : "장바구니 담기"}
             </button>
 
             <WishButton productId={id} />

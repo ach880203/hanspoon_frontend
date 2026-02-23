@@ -3,12 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   cancelOneDayReservation,
   getMyOneDayReservations,
-  getMyReservationDetail,
-  payOneDayReservation,
-} from "../../api/onedayApi";
+  getMyReservationDetail,} from "../../api/onedayApi";
 import { toReservationStatusLabel, toSlotLabel } from "./onedayLabels";
 import { OneDayTopTabs } from "./OneDayTopTabs";
-import { paymentApi } from "../../api/paymentApi";
 import { loadAuth } from "../../utils/authStorage";
 
 const PAGE_SIZE = 10;
@@ -41,8 +38,6 @@ export const OneDayReservations = () => {
   const [message, setMessage] = useState("");
   const [actioningId, setActioningId] = useState(null);
   const [pageInfo, setPageInfo] = useState({ totalPages: 0, totalElements: 0, number: 0, size: PAGE_SIZE });
-  const [portOneConfig, setPortOneConfig] = useState(null);
-
   const buildBuyerState = () => {
     // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
     // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
@@ -53,11 +48,6 @@ export const OneDayReservations = () => {
       buyerTel: String(auth.phone || auth.userPhone || auth.tel || ""),
     };
   };
-
-  useEffect(() => {
-    paymentApi.getPortOneConfig().then(setPortOneConfig).catch(console.error);
-  }, []);
-
   const updateQuery = useCallback(
     (updates, options = { replace: true }) => {
       const next = new URLSearchParams(searchParams);
@@ -327,3 +317,5 @@ const btnGhostButton = { height: 38, padding: "0 12px", borderRadius: 10, border
 const listBtn = { textAlign: "left", display: "grid", gap: 4, border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, background: "white", cursor: "pointer" };
 const errorBox = { border: "1px solid #fecaca", background: "#fff1f2", color: "#991b1b", borderRadius: 10, padding: 10 };
 const okBox = { border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", borderRadius: 10, padding: 10 };
+
+

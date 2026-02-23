@@ -11,10 +11,6 @@ function AdminUserList() {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('createdAt,desc');
 
-    useEffect(() => {
-        fetchUsers();
-    }, [page, sort]);
-
     const fetchUsers = async () => {
         try {
             const [sortField, sortDir] = sort.split(',');
@@ -30,6 +26,10 @@ function AdminUserList() {
             console.error('회원 목록 불러오기 실패:', error);
         }
     };
+
+    useEffect(() => {
+        fetchUsers();
+    }, [page, sort]);
 
     const handleSearch = (e) => {
         e.preventDefault();

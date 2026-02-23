@@ -11,28 +11,24 @@ export const authApi = {
      * @returns {Promise<Object>} { success, data: { token, user }, message }
      */
     login: async (credentials) => {
-        try {
-            const response = await axiosInstance.post('/api/auth/login', credentials);
+        const response = await axiosInstance.post('/api/auth/login', credentials);
 
-            console.log('[AuthApi] Login response:', response.data);
-            if (response.data.data?.accessToken) {
-                console.log('[AuthApi] Token found, saving to storage');
-                saveAuth({
-                    accessToken: response.data.data.accessToken,
-                    tokenType: response.data.data.tokenType || 'Bearer',
-                    userId: response.data.data.userId,
-                    email: response.data.data.email,
-                    userName: response.data.data.userName,
-                    role: response.data.data.role
-                });
-            } else {
-                console.error('[AuthApi] Token NOT found in response data');
-            }
-
-            return response.data;
-        } catch (error) {
-            throw error;
+        console.log('[AuthApi] Login response:', response.data);
+        if (response.data.data?.accessToken) {
+            console.log('[AuthApi] Token found, saving to storage');
+            saveAuth({
+                accessToken: response.data.data.accessToken,
+                tokenType: response.data.data.tokenType || 'Bearer',
+                userId: response.data.data.userId,
+                email: response.data.data.email,
+                userName: response.data.data.userName,
+                role: response.data.data.role
+            });
+        } else {
+            console.error('[AuthApi] Token NOT found in response data');
         }
+
+        return response.data;
     },
 
     /**
@@ -41,12 +37,8 @@ export const authApi = {
      * @returns {Promise<Object>}
      */
     register: async (userData) => {
-        try {
-            const response = await axiosInstance.post('/api/auth/register', userData);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.post('/api/auth/register', userData);
+        return response.data;
     },
 
     /**
@@ -63,12 +55,8 @@ export const authApi = {
      * @returns {Promise<Object>}
      */
     getCurrentUser: async () => {
-        try {
-            const response = await axiosInstance.get('/api/auth/me');
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.get('/api/auth/me');
+        return response.data;
     },
 
     /**
@@ -94,12 +82,8 @@ export const authApi = {
      * @returns {Promise<Object>}
      */
     findId: async (data) => {
-        try {
-            const response = await axiosInstance.post('/api/auth/find-email', data);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.post('/api/auth/find-email', data);
+        return response.data;
     },
 
     /**
@@ -108,11 +92,7 @@ export const authApi = {
      * @returns {Promise<Object>}
      */
     resetPassword: async (data) => {
-        try {
-            const response = await axiosInstance.post('/api/auth/reset-password', data);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.post('/api/auth/reset-password', data);
+        return response.data;
     }
 };

@@ -1,15 +1,14 @@
-// src/components/ReviewSection.jsx
+﻿// src/components/ReviewSection.jsx
 import { useEffect, useState } from "react";
 import { createProductReview, fetchProductReviews } from "../api/productReviews";
 import { toErrorMessage } from "../api/http";
 
 function Stars({ value = 0 }) {
   const v = Math.max(0, Math.min(5, Number(value) || 0));
-  return <span style={{ letterSpacing: 1 }}>{Array.from({ length: 5 }, (_, i) => (i < v ? "★" : "☆")).join("")}</span>;
+  return <span style={{ letterSpacing: 1 }}>{Array.from({ length: 5 }, (_, i) => (i < v ? "*" : ".")).join("")}</span>;
 }
 
 export default function ReviewSection({ productId }) {
-  const [page, setPage] = useState(0);
   const [data, setData] = useState(null); // Page<ReviewResponseDto>
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,18 +20,17 @@ export default function ReviewSection({ productId }) {
     try {
       const d = await fetchProductReviews(productId, p, 10);
       setData(d);
-      setPage(d?.number ?? p);
     } catch (e) {
       setErr(toErrorMessage(e));
       setData(null);
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, [productId]);
+  useEffect(() => { load(0); }, [productId]);
 
   const submit = async () => {
     if (!form.content.trim()) {
-      setErr("후기 내용을 입력해줘.");
+      setErr("리뷰 내용을 입력해 주세요.");
       return;
     }
     setBusy(true);
@@ -52,7 +50,7 @@ export default function ReviewSection({ productId }) {
 
   return (
     <div className="panel" style={{ marginTop: 16 }}>
-      <h3>상품 후기</h3>
+      <h3>상품 리뷰</h3>
       {err && <div className="error">{err}</div>}
 
       <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -60,17 +58,17 @@ export default function ReviewSection({ productId }) {
           {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n}점</option>)}
         </select>
         <input
-          placeholder="후기 내용을 입력"
+          placeholder="리뷰 내용을 입력"
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           style={{ minWidth: 260, flex: 1 }}
         />
-        <button disabled={busy} onClick={submit}>{busy ? "..." : "후기 등록"}</button>
+        <button disabled={busy} onClick={submit}>{busy ? "..." : "리뷰 등록"}</button>
       </div>
 
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
         {list.length === 0 ? (
-          <div className="muted">아직 후기가 없어요.</div>
+          <div className="muted">아직 리뷰가 없어요.</div>
         ) : (
           list.map((r) => (
             <div key={r.revId} className="panelMini">
@@ -98,3 +96,4 @@ export default function ReviewSection({ productId }) {
     </div>
   );
 }
+

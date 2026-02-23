@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
@@ -13,12 +13,6 @@ function AdminNoticeWrite() {
         content: ''
     });
 
-    useEffect(() => {
-        if (isEdit) {
-            fetchNotice();
-        }
-    }, [id]);
-
     const fetchNotice = async () => {
         try {
             const response = await adminApi.getNotice(id);
@@ -29,10 +23,16 @@ function AdminNoticeWrite() {
             });
         } catch (error) {
             console.error('공지사항 불러오기 실패:', error);
-            alert('공지사항을 불러오는데 실패했습니다.');
+            alert('공지사항을 불러오지 못했습니다.');
             navigate('/admin/notice');
         }
     };
+
+    useEffect(() => {
+        if (isEdit) {
+            fetchNotice();
+        }
+    }, [id, isEdit]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -47,10 +47,10 @@ function AdminNoticeWrite() {
         try {
             if (isEdit) {
                 await adminApi.updateNotice(id, formData);
-                alert('수정되었습니다.');
+                alert('수정했습니다.');
             } else {
                 await adminApi.createNotice(formData);
-                alert('등록되었습니다.');
+                alert('등록했습니다.');
             }
             navigate('/admin/notice');
         } catch (error) {
@@ -101,3 +101,4 @@ function AdminNoticeWrite() {
 }
 
 export default AdminNoticeWrite;
+

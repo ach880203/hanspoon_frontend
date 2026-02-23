@@ -29,9 +29,13 @@ export default function ProductsPage() {
 
   useEffect(() => {
     let ignore = false;
-    setErr("");
     fetchProducts(params)
-      .then((d) => { if (!ignore) setData(d); })
+      .then((d) => {
+        if (!ignore) {
+          setData(d);
+          setErr("");
+        }
+      })
       .catch((e) => { if (!ignore) setErr(toErrorMessage(e)); });
     return () => { ignore = true; };
   }, [params]);

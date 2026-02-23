@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyWishes, toggleWish } from "../api/productWishes";
 import { toErrorMessage } from "../api/http";
@@ -22,13 +22,13 @@ export default function MyWishesPage() {
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(0); }, []);
 
   const unWish = async (productId) => {
     setBusy(true);
     setErr("");
     try {
-      await toggleWish(productId); // 토글로 해제
+      await toggleWish(productId);
       await load(page);
     } catch (e) {
       setErr(toErrorMessage(e));
@@ -85,3 +85,4 @@ export default function MyWishesPage() {
     </div>
   );
 }
+
