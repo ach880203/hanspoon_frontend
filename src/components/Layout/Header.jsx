@@ -1,18 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import MyPageDropdown from './MyPageDropdown';
 import './Header.css';
 
 function Header() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { user } = useAuth();
     const isAuthenticated = !!user;
     const isAdmin = user?.role?.includes('ROLE_ADMIN');
-
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
 
     return (
         <header className="header">

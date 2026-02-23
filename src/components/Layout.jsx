@@ -6,6 +6,8 @@ import "./Layout.css";
 export default function Layout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  // Read auth state once at layout level so header/drawer share the same source.
+  const { user, logout } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,6 +21,7 @@ export default function Layout() {
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
 
+  // Accept both "ADMIN" and "ROLE_ADMIN" style role values.
   const isAdmin = !!user?.role?.includes("ADMIN");
 
   const primaryNav = useMemo(
