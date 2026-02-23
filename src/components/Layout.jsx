@@ -4,7 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import "./Layout.css";
 
 export default function Layout() {
-  const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
 

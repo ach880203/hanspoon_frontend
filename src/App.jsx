@@ -54,6 +54,7 @@ import PaymentFail from "./pages/Payment/PaymentFail";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import RecipeDeleteList from "./pages/Recipe/RecipeDeleteList";
+import AddressTestPage from "./pages/AddressTestPage";
 
 
 export default function App() {
@@ -62,6 +63,9 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         {/* 메인 */}
         <Route index element={<HomePage />} />
+
+        {/* 주소 검색 테스트 (인증 불필요) */}
+        <Route path="address-test" element={<AddressTestPage />} />
 
         {/* 마켓(상품) - 기존 */}
         <Route path="products" element={<ProductsPage />} />
