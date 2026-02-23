@@ -4,9 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-작업 후 올리기.sh
-작업 시작전 실행.sh
-작업 후 올리기 전.sh
+
 
 ### STS ###
 .apt_generated
