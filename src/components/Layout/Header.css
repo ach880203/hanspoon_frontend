@@ -60,9 +60,45 @@
     width: 100%;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.utility-icons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--dark-color);
+    transition: color 0.2s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+}
+
+.icon-btn:hover {
+    color: var(--primary-color);
+}
+
 .auth-buttons {
     display: flex;
+    align-items: center;
     gap: 12px;
+}
+
+.admin-badge {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    height: auto !important;
 }
 
 .auth-buttons .btn {
