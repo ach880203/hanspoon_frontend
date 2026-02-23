@@ -8,6 +8,7 @@ function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
   const [paymentMethod, setPaymentMethod] = useState("card");
+
   const {
     itemName,
     amount,
@@ -43,18 +44,17 @@ function Payment() {
         ]);
 
         const cfg = configData?.data || configData;
-        if (cfg) {
-          setPortOneConfig(cfg);
-        } else {
+        if (!cfg) {
           alert("결제 설정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        } else {
+          setPortOneConfig(cfg);
         }
 
         setCoupons(Array.isArray(couponData) ? couponData.filter((c) => c.usable) : []);
         setPointBalance(typeof balance === "number" ? balance : 0);
       } catch (error) {
-        console.error("결제 정보 로딩 실패:", error);
         if (error.response?.status === 401) {
-          alert("로그인이 필요한 서비스입니다.");
+          alert("로그인이 필요합니다.");
           navigate("/login");
           return;
         }
@@ -70,11 +70,10 @@ function Payment() {
     let couponDiscount = 0;
 
     if (selectedCoupon) {
-      if (selectedCoupon.discountType === "FIXED") {
-        couponDiscount = selectedCoupon.discountValue;
-      } else {
-        couponDiscount = Math.floor(baseAmount * (selectedCoupon.discountValue / 100));
-      }
+      couponDiscount =
+        selectedCoupon.discountType === "FIXED"
+          ? Number(selectedCoupon.discountValue || 0)
+          : Math.floor(baseAmount * (Number(selectedCoupon.discountValue || 0) / 100));
     }
 
     setDiscountAmount(couponDiscount);
@@ -94,19 +93,28 @@ function Payment() {
   };
 
   const handlePointInput = (e) => {
-    const val = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
-    if (Number.isNaN(val)) return;
+    const value = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+    if (Number.isNaN(value)) return;
 
-    let targetPoint = Math.max(0, Math.min(val, pointBalance));
-    const remainingAmountAfterCoupon = formData.amount - discountAmount;
+    let targetPoint = Math.max(0, Math.min(value, pointBalance));
+    const remainingAmountAfterCoupon = Number(formData.amount) - discountAmount;
     targetPoint = Math.min(targetPoint, remainingAmountAfterCoupon);
-
     setUsedPoints(targetPoint);
   };
 
   const applyAllPoints = () => {
-    const remainingAmountAfterCoupon = formData.amount - discountAmount;
+    const remainingAmountAfterCoupon = Number(formData.amount) - discountAmount;
     setUsedPoints(Math.min(pointBalance, remainingAmountAfterCoupon));
+  };
+
+  const resolvePaymentConfig = (config) => {
+    if (paymentMethod === "kakaopay") {
+      return { channelKey: config.channelKeyKakao, payMethodType: "EASY_PAY" };
+    }
+    if (paymentMethod === "tosspay") {
+      return { channelKey: config.channelKeyToss, payMethodType: "EASY_PAY" };
+    }
+    return { channelKey: config.channelKeyTossPayments, payMethodType: "CARD" };
   };
 
   const handlePayment = async (e) => {
@@ -124,26 +132,14 @@ function Payment() {
     }
 
     setLoading(true);
-
     try {
       const config = portOneConfig?.data || portOneConfig;
-
-      let channelKey;
-      let payMethodType = "CARD";
-
-      if (paymentMethod === "kakaopay") {
-        channelKey = config.channelKeyKakao;
-        payMethodType = "EASY_PAY";
-      } else if (paymentMethod === "tosspay") {
-        channelKey = config.channelKeyToss;
-        payMethodType = "EASY_PAY";
-      } else {
-        channelKey = config.channelKeyTossPayments;
-        payMethodType = "CARD";
-      }
+      const { channelKey, payMethodType } = resolvePaymentConfig(config);
 
       if (!channelKey || channelKey.startsWith("${")) {
-        throw new Error("결제 채널 설정이 올바르지 않습니다. 관리자에게 문의해 주세요.");
+        alert("결제 채널 설정이 올바르지 않습니다. 관리자에게 문의해 주세요.");
+        setLoading(false);
+        return;
       }
 
       const merchantUid = `PAY-${Date.now()}`;
@@ -165,7 +161,8 @@ function Payment() {
       });
 
       if (response.code != null) {
-        throw new Error(response.message || "결제가 취소되었거나 실패했습니다.");
+        navigate("/payment/fail", { state: { message: response.message || "결제에 실패했습니다." } });
+        return;
       }
 
       const verifyResult = await paymentApi.verifyPayment({
@@ -180,23 +177,20 @@ function Payment() {
         quantity: 1,
       });
 
-      if (verifyResult.success) {
-        navigate("/payment/success", {
-          state: { paymentData: verifyResult.data || verifyResult },
-        });
-      } else {
-        throw new Error(verifyResult.message || "결제 검증에 실패했습니다.");
+      if (!verifyResult.success) {
+        navigate("/payment/fail", { state: { message: verifyResult.message || "결제 검증에 실패했습니다." } });
+        return;
       }
+
+      navigate("/payment/success", { state: { paymentData: verifyResult.data || verifyResult } });
     } catch (error) {
-      console.error(error);
-      alert(error.message || "결제 처리 중 오류가 발생했습니다.");
-      navigate("/payment/fail", { state: { message: error.message } });
+      navigate("/payment/fail", { state: { message: error.message || "결제 처리 중 오류가 발생했습니다." } });
     } finally {
       setLoading(false);
     }
   };
 
-  const finalAmount = formData.amount - discountAmount - usedPoints;
+  const finalAmount = Number(formData.amount) - discountAmount - usedPoints;
 
   return (
     <div className="payment-page">
@@ -283,13 +277,7 @@ function Payment() {
                 <div className="form-group">
                   <label className="form-label">포인트 사용 (보유: {pointBalance.toLocaleString()}P)</label>
                   <div className="point-input-group">
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={usedPoints}
-                      onChange={handlePointInput}
-                      placeholder="0"
-                    />
+                    <input type="number" className="form-input" value={usedPoints} onChange={handlePointInput} placeholder="0" />
                     <button type="button" className="btn-point-all" onClick={applyAllPoints}>
                       전액 사용
                     </button>
@@ -339,7 +327,7 @@ function Payment() {
               <div className="payment-summary">
                 <div className="summary-row">
                   <span>상품 금액</span>
-                  <span>{formData.amount.toLocaleString()}원</span>
+                  <span>{Number(formData.amount).toLocaleString()}원</span>
                 </div>
                 <div className="summary-row">
                   <span>쿠폰 할인</span>

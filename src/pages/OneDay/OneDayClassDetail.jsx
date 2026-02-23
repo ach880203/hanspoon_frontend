@@ -127,7 +127,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) {
-        throw new Error("예약 ID를 받지 못했습니다.");
+        setError("예약 ID를 받지 못했습니다.");
+        return;
       }
 
       // 핵심 요구사항:
@@ -156,7 +157,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) {
-        throw new Error("예약 ID를 받지 못했습니다.");
+        setError("예약 ID를 받지 못했습니다.");
+        return;
       }
 
       // 2. 결제 화면으로 이동
@@ -201,9 +203,18 @@ export const OneDayClassDetail = () => {
       const rating = Number(reviewForm.rating);
       const content = reviewForm.content.trim();
 
-      if (!reservationId) throw new Error("완료된 예약을 선택해 주세요.");
-      if (!rating || rating < 1 || rating > 5) throw new Error("별점은 1점~5점 사이여야 합니다.");
-      if (!content) throw new Error("리뷰 내용을 입력해 주세요.");
+      if (!reservationId) {
+        setError("완료된 예약을 선택해 주세요.");
+        return;
+      }
+      if (!rating || rating < 1 || rating > 5) {
+        setError("별점은 1점~5점 사이여야 합니다.");
+        return;
+      }
+      if (!content) {
+        setError("리뷰 내용을 입력해 주세요.");
+        return;
+      }
 
       await createOneDayReview({ reservationId, rating, content });
       setReviewForm({ rating: 5, content: "" });

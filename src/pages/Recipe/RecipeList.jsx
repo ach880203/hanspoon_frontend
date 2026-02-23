@@ -41,14 +41,11 @@ const RecipeList = () => {
 
     return (
         <div className="container mt-5 d-flex flex-column align-items-center">
-            {/* 아이콘 사용을 위한 bootstrap-icons */}
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
             <div className="text-center mb-6 w-100">
                 <h2 className="main-title mb-3" style={{ fontWeight: 800, color: '#1a1a1a' }}>맛있는 레시피 찾아보기</h2>
                 <div className="d-flex justify-content-center mb-4">
                     <Link to="/recipes" className="btn btn-register shadow-sm" style={btnRegisterStyle}>
-                        <i className="bi bi-plus-circle-fill me-2"></i>나만의 레시피 등록
+                        + 나만의 레시피 등록
                     </Link>
                 </div>
 
@@ -65,7 +62,7 @@ const RecipeList = () => {
                                 style={searchInputStyle}
                             />
                             <button className="btn btn-dark search-btn" type="submit" style={searchBtnStyle}>
-                                <i className="bi bi-search"></i>
+                                검색
                             </button>
                         </form>
                     </div>
@@ -112,7 +109,7 @@ const RecipeList = () => {
                                     <h5 className="card-title text-truncate" style={{ fontWeight: 700 }}>{recipe.title}</h5>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <span className="review-info" style={{ color: '#ff9f43', fontWeight: 700 }}>
-                                            <i className="bi bi-star-fill me-1"></i>리뷰 <span>{recipe.reviewCount || 0}</span>
+                                            리뷰 <span>{recipe.reviewCount || 0}</span>
                                         </span>
                                     </div>
                                 </div>

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { paymentApi } from '../../api/paymentApi';
 import { toErrorMessage } from '../../api/http';
 import './MyPaymentPage.css';

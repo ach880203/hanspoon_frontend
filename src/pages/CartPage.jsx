@@ -86,7 +86,10 @@ export default function CartPage() {
       // ✅ 지금 백엔드 OrderCreateRequestDto가 cartId를 받는 구조면 cartId 포함해서 보내야 함
       // (다음 단계에서 order를 "유저 기반"으로 바꾸면 cartId 제거할 거야)
       const cartId = cart?.cartId;
-      if (!cartId) throw new Error("장바구니 정보를 불러오지 못했습니다. 다시 시도해주세요.");
+      if (!cartId) {
+        setErr('장바구니 정보를 불러오지 못했습니다. 다시 시도해 주세요.');
+        return;
+      }
 
       const payload = { cartId, ...checkout };
       const created = await createOrder(payload);

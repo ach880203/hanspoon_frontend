@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getRecipeList } from "../../api/recipeApi.js";
 
@@ -10,7 +10,7 @@ function Recipesuser() {
     const fetchList = async () => {
       try {
         const response = await getRecipeList({ page: 0, category: "KOREAN" });
-        setRecipes(response.data.content);
+        setRecipes(response.data.content || []);
       } catch (error) {
         console.error("목록 로드 실패:", error);
       }
@@ -21,12 +21,12 @@ function Recipesuser() {
 
   const handleDelete = (id, e) => {
     e.stopPropagation();
-    if (window.confirm("이 레시피를 삭제할까요?")) {
-      const updated = recipes.filter((r) => String(r.id) !== String(id));
-      localStorage.setItem("userRecipes", JSON.stringify(updated));
-      localStorage.setItem("myRecipes", JSON.stringify(updated));
-      setRecipes(updated);
-    }
+    if (!window.confirm("이 레시피를 삭제할까요?")) return;
+
+    const updated = recipes.filter((r) => String(r.id) !== String(id));
+    localStorage.setItem("userRecipes", JSON.stringify(updated));
+    localStorage.setItem("myRecipes", JSON.stringify(updated));
+    setRecipes(updated);
   };
 
   const handleEdit = (recipe, e) => {
@@ -40,8 +40,6 @@ function Recipesuser() {
 
   return (
     <div className="recipe-user-page" style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 0" }}>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
       <div style={{ width: "95%", maxWidth: "1600px", margin: "0 auto" }}>
         <header style={{ marginBottom: "40px", padding: "0 10px" }}>
           <h2 style={{ fontSize: "2.4rem", fontWeight: "bold", color: "#1e293b", marginBottom: "10px" }}>내 레시피 목록</h2>
@@ -50,7 +48,7 @@ function Recipesuser() {
               총 <b>{recipes.length}</b>개의 레시피가 있습니다.
             </p>
             <button onClick={() => navigate("/recipes")} style={navBtnStyle}>
-              <span style={{ fontSize: "1.2rem", marginRight: "8px" }}>+</span> 새 레시피 작성
+              + 새 레시피 작성
             </button>
           </div>
         </header>
@@ -104,11 +102,10 @@ function Recipesuser() {
 
                     <div style={{ marginTop: "20px", display: "flex", gap: "8px", borderTop: "1px solid #f1f5f9", paddingTop: "15px" }}>
                       <button onClick={(e) => handleEdit(recipe, e)} style={smallIconBtnStyle} title="수정">
-                        <i className="fa-solid fa-pen-to-square"></i> 수정
+                        수정
                       </button>
-
                       <button onClick={(e) => handleDelete(recipe.id, e)} style={{ ...smallIconBtnStyle, color: "#ef4444" }} title="삭제">
-                        <i className="fa-solid fa-trash-can"></i> 삭제
+                        삭제
                       </button>
                     </div>
                   </div>
@@ -117,9 +114,7 @@ function Recipesuser() {
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0" }}>
-              <div style={{ marginBottom: "20px" }}>
-                <i className="fa-solid fa-magnifying-glass" style={{ fontSize: "50px", color: "#cbd5e1" }}></i>
-              </div>
+              <div style={{ marginBottom: "20px", fontSize: "50px", color: "#cbd5e1" }}>⌕</div>
               <p style={{ color: "#64748b" }}>아직 작성한 레시피가 없습니다.</p>
               <button onClick={() => navigate("/recipes")} style={navBtnStyle}>
                 레시피 작성하러 가기
