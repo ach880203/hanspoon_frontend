@@ -12,7 +12,7 @@ export default function HomePage() {
           <h1>요리의 즐거움을 <br /><span style={{ color: "var(--primary)" }}>한 스푼</span> 더하다</h1>
           <p>전 세계의 다채로운 레시피와 원데이 클래스, 그리고 신선한 식재료까지. 한스푼에서 당신의 식탁을 특별하게 만들어보세요.</p>
           <div style={{ marginTop: 32 }}>
-            <Link to="/recipes" className="btn-auth-primary" style={{ display: "inline-block" }}>레시피 탐색하기</Link>
+            <Link to="/recipes/list" className="btn-auth-primary" style={{ display: "inline-block" }}>레시피 탐색하기</Link>
           </div>
         </div>
       </div>
