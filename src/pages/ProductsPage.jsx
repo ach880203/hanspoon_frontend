@@ -3,11 +3,14 @@ import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import { fetchProducts } from "../api/products";
 import { toErrorMessage } from "../api/http";
+import BannerSection, { marketBannerSlides } from "../components/BannerSection";
 
 const CATEGORIES = ["ALL", "INGREDIENT", "MEAL_KIT", "KITCHEN_SUPPLY"];
 const SORTS = ["LATEST", "PRICE_ASC", "PRICE_DESC"];
 
 export default function ProductsPage() {
+
+  
   const [category, setCategory] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [sort, setSort] = useState("LATEST");
@@ -38,6 +41,10 @@ export default function ProductsPage() {
 
   return (
     <div>
+      <BannerSection slides={marketBannerSlides} interval={4500} />
+      
+      
+    
       <h1>Products</h1>
 
       <div className="toolbar">
