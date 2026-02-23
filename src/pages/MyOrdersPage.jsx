@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyOrders } from "../api/orders";
 import { toErrorMessage } from "../api/http";
@@ -55,7 +55,6 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     load(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, period, status]);
 
   return (
@@ -135,7 +134,7 @@ export default function MyOrdersPage() {
                       </div>
                     </div>
                     <div className="order-actions">
-                      {/* 상태별 액션 버튼 (예: 배송조회, 재구매) */}
+                      {/* 상태별 액션 버튼 */}
                       <button className="btn-action primary" onClick={() => nav(`/orders/${o.orderId}`)}>
                         주문상세
                       </button>
@@ -166,16 +165,17 @@ export default function MyOrdersPage() {
 
 function getStatusLabel(status) {
   const map = {
-    CREATED: "주문접수",
-    PAYMENT_PENDING: "입금대기",
-    PAYMENT_COMPLETED: "결제완료", // Use PAYMENT_COMPLETED instead of PAID for display if needed, but backend enum is PAID? No, check enum.
-    PAID: "결제완료", // Backend usually sends PAID
-    PREPARING: "상품준비중",
+    CREATED: "주문 접수",
+    PAYMENT_PENDING: "입금 대기",
+    PAYMENT_COMPLETED: "결제 완료",
+    PAID: "결제 완료",
+    PREPARING: "상품 준비중",
     SHIPPING: "배송중",
-    DELIVERED: "배송완료",
-    CANCELED: "취소완료",
-    REFUNDED: "환불완료",
-    CONFIRMED: "구매확정"
+    DELIVERED: "배송 완료",
+    CANCELED: "취소 완료",
+    REFUNDED: "환불 완료",
+    CONFIRMED: "구매 확정"
   };
   return map[status] || status;
 }
+

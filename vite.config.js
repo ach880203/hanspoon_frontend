@@ -17,5 +17,19 @@ export default defineConfig(({ mode }) => {
         "/images": { target: backend, changeOrigin: true },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // 경고를 숨기지 않고, 실제로 번들을 분리해 초기 로드 청크 크기를 낮춥니다.
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("react-router-dom") || id.includes("react-router")) return "router";
+            if (id.includes("react-dom") || id.includes("react")) return "react-vendor";
+            if (id.includes("axios")) return "axios";
+            return "vendor";
+          },
+        },
+      },
+    },
   };
 });

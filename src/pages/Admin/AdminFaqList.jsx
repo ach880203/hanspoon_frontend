@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../../api';
 
 function AdminFaqList() {
@@ -9,10 +9,6 @@ function AdminFaqList() {
     const [totalPages, setTotalPages] = useState(0);
     // Note: AdminFaqController list returns PageResponse<FaqDto>
     // public ResponseEntity<ApiResponse<PageResponse<FaqDto>>> list(@PageableDefault(size = 20) Pageable pageable)
-
-    useEffect(() => {
-        fetchFaqs();
-    }, [page]);
 
     const fetchFaqs = async () => {
         try {
@@ -23,6 +19,10 @@ function AdminFaqList() {
             console.error('FAQ 불러오기 실패:', error);
         }
     };
+
+    useEffect(() => {
+        fetchFaqs();
+    }, [page]);
 
     const handleDelete = async (id) => {
         if (window.confirm('정말 삭제하시겠습니까?')) {

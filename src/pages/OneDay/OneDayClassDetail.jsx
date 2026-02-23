@@ -1,6 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { paymentApi } from "../../api/paymentApi";
 import { loadAuth } from "../../utils/authStorage";
 import {
   answerOneDayReview,
@@ -47,8 +46,6 @@ export const OneDayClassDetail = () => {
   const [selectedReservationId, setSelectedReservationId] = useState("");
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [isWished, setIsWished] = useState(false);
-  const [portOneConfig, setPortOneConfig] = useState(null);
-
   const buildBuyerState = () => {
     // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
     // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
@@ -102,11 +99,6 @@ export const OneDayClassDetail = () => {
   useEffect(() => {
     loadPage();
   }, [loadPage]);
-
-  useEffect(() => {
-    paymentApi.getPortOneConfig().then(setPortOneConfig).catch(console.error);
-  }, []);
-
   const reviewedReservationIds = useMemo(
     () => new Set(reviews.map((review) => Number(review.reservationId)).filter(Boolean)),
     [reviews]
@@ -135,7 +127,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) {
-        throw new Error("예약 ID를 받지 못했습니다.");
+        setError("예약 ID를 받지 못했습니다.");
+        return;
       }
 
       // 핵심 요구사항:
@@ -164,7 +157,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) {
-        throw new Error("예약 ID를 받지 못했습니다.");
+        setError("예약 ID를 받지 못했습니다.");
+        return;
       }
 
       // 2. 결제 화면으로 이동
@@ -209,9 +203,18 @@ export const OneDayClassDetail = () => {
       const rating = Number(reviewForm.rating);
       const content = reviewForm.content.trim();
 
-      if (!reservationId) throw new Error("완료된 예약을 선택해 주세요.");
-      if (!rating || rating < 1 || rating > 5) throw new Error("별점은 1점~5점 사이여야 합니다.");
-      if (!content) throw new Error("리뷰 내용을 입력해 주세요.");
+      if (!reservationId) {
+        setError("완료된 예약을 선택해 주세요.");
+        return;
+      }
+      if (!rating || rating < 1 || rating > 5) {
+        setError("별점은 1점~5점 사이여야 합니다.");
+        return;
+      }
+      if (!content) {
+        setError("리뷰 내용을 입력해 주세요.");
+        return;
+      }
 
       await createOneDayReview({ reservationId, rating, content });
       setReviewForm({ rating: 5, content: "" });
@@ -705,3 +708,5 @@ const okBox = {
   borderRadius: 10,
   padding: 10,
 };
+
+

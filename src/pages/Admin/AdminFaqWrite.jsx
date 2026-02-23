@@ -14,12 +14,6 @@ function AdminFaqWrite() {
         answer: ''
     });
 
-    useEffect(() => {
-        if (isEdit) {
-            fetchFaq();
-        }
-    }, [id]);
-
     const fetchFaq = async () => {
         try {
             const response = await adminApi.getFaq(id);
@@ -35,6 +29,12 @@ function AdminFaqWrite() {
             navigate('/admin/faq');
         }
     };
+
+    useEffect(() => {
+        if (isEdit) {
+            fetchFaq();
+        }
+    }, [id, isEdit]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

@@ -5,15 +5,24 @@ import './DashboardPage.css';
 
 const DashboardPage = () => {
     const [summary, setSummary] = useState(null);
+    const [couponCount, setCouponCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSummary = async () => {
+        const fetchAllData = async () => {
             try {
-                const response = await mypageApi.getSummary();
-                // ApiResponse { status, message, data }
-                if (response && response.data) {
-                    setSummary(response.data);
+                const [summaryRes, couponRes] = await Promise.allSettled([
+                    mypageApi.getSummary(),
+                    mypageApi.getMyCoupons(),
+                ]);
+
+                if (summaryRes.status === 'fulfilled' && summaryRes.value?.success) {
+                    setSummary(summaryRes.value.data);
+                }
+
+                if (couponRes.status === 'fulfilled' && couponRes.value?.success) {
+                    const coupons = couponRes.value.data ?? [];
+                    setCouponCount(coupons.filter(c => c.usable).length);
                 }
             } catch (error) {
                 console.error("대시보드 초기화 실패:", error);
@@ -22,8 +31,9 @@ const DashboardPage = () => {
             }
         };
 
-        fetchSummary();
+        fetchAllData();
     }, []);
+
 
     if (loading) return <div className="dashboard-loading">로딩 중...</div>;
 
@@ -50,10 +60,9 @@ const DashboardPage = () => {
                     <Link to="/mypage/reservations" className="link">예약 확인 &gt;</Link>
                 </div>
                 <div className="stat-card coupon">
-                    <div className="label">읽지 않은 알림</div>
-                    <div className="value">{summary.unreadNotificationCount || 0} <span className="unit">건</span></div>
-                    {/* 알림 페이지는 추후 구현 */}
-                    <span className="link">알림함 확인 &gt;</span>
+                    <div className="label">보유 쿠폰</div>
+                    <div className="value">{couponCount} <span className="unit">개</span></div>
+                    <Link to="/classes/oneday/coupons" className="link">쿠폰함 보기 &gt;</Link>
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-// src/pages/MyInquiriesPage.jsx
+﻿// src/pages/MyInquiriesPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteMyInquiry, fetchMyInquiries, updateMyInquiry } from "../api/productInquiries";
@@ -26,11 +26,11 @@ export default function MyInquiriesPage() {
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(0); }, []);
 
   const startEdit = (q) => {
     setEditingId(q.inqId);
-    // ⚠️ InquiryResponseDto에 secret이 없으면 false로만 편집되게 처리
+    // InquiryResponseDto에 secret이 없으면 false 처리
     setEditForm({
       content: q.content ?? "",
       secret: Boolean(q.secret),
@@ -45,7 +45,7 @@ export default function MyInquiriesPage() {
   const saveEdit = async () => {
     if (!editingId) return;
     if (!editForm.content.trim()) {
-      setErr("내용을 입력해줘.");
+      setErr("내용을 입력해 주세요.");
       return;
     }
     setBusy(true);
@@ -62,7 +62,7 @@ export default function MyInquiriesPage() {
   };
 
   const remove = async (inqId) => {
-    if (!window.confirm("문의를 삭제할까?")) return;
+    if (!window.confirm("문의를 삭제할까요?")) return;
     setBusy(true);
     setErr("");
     try {
@@ -84,7 +84,7 @@ export default function MyInquiriesPage() {
 
       <div className="panel">
         {list.length === 0 ? (
-          <div className="muted">내 문의가 없습니다.</div>
+          <div className="muted">작성한 문의가 없습니다.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {list.map((q) => {
@@ -142,7 +142,7 @@ export default function MyInquiriesPage() {
                         value={editForm.content}
                         onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
                       />
-                      {/* DTO에 secret이 없어서 UI는 “요청 DTO에 맞춰”만 제공 */}
+                      {/* DTO에 secret이 없으면 기본값 false로 처리 */}
                       <label className="row" style={{ gap: 6 }}>
                         <input
                           type="checkbox"
@@ -152,7 +152,7 @@ export default function MyInquiriesPage() {
                         비밀글
                       </label>
                       <div className="muted" style={{ fontSize: 12 }}>
-                        (DTO에 secret이 내려오지 않으면, 수정 화면에서는 기본값 false로 보입니다)
+                        (DTO에서 secret을 내려주지 않으면 수정 화면 기본값은 false입니다)
                       </div>
                     </div>
                   )}
@@ -173,3 +173,4 @@ export default function MyInquiriesPage() {
     </div>
   );
 }
+

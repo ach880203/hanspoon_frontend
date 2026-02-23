@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { getBackendBaseUrl } from "../utils/backendUrl";
 import "./Auth/Auth.css";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const nav = useNavigate();
+  const oauthBaseUrl = getBackendBaseUrl("http://localhost:8080");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,11 +92,11 @@ export default function LoginPage() {
         </div>
 
         <div className="social-grid">
-          <a href="http://localhost:8080/oauth2/authorization/google" className="btn-social btn-google">
+          <a href={`${oauthBaseUrl}/oauth2/authorization/google`} className="btn-social btn-google">
             <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="social-icon" />
             구글 계정으로 시작하기
           </a>
-          <a href="http://localhost:8080/oauth2/authorization/kakao" className="btn-social btn-kakao">
+          <a href={`${oauthBaseUrl}/oauth2/authorization/kakao`} className="btn-social btn-kakao">
             <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png" alt="Kakao" className="social-icon" />
             카카오 계정으로 시작하기
           </a>

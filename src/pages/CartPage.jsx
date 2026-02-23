@@ -1,9 +1,10 @@
 // src/pages/CartPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyCart, addMyCartItem, deleteMyCartItem, updateMyCartItem } from "../api/carts";
+import { fetchMyCart, deleteMyCartItem, updateMyCartItem } from "../api/carts";
 import { createOrder } from "../api/orders";
 import { toErrorMessage } from "../api/http";
+import AddressSearch from "../components/AddressSearch";
 
 export default function CartPage() {
   const nav = useNavigate();
@@ -15,6 +16,7 @@ export default function CartPage() {
   const [checkout, setCheckout] = useState({
     receiverName: "",
     receiverPhone: "",
+    zipCode: "",
     address1: "",
     address2: "",
   });
@@ -84,7 +86,10 @@ export default function CartPage() {
       // ✅ 지금 백엔드 OrderCreateRequestDto가 cartId를 받는 구조면 cartId 포함해서 보내야 함
       // (다음 단계에서 order를 "유저 기반"으로 바꾸면 cartId 제거할 거야)
       const cartId = cart?.cartId;
-      if (!cartId) throw new Error("장바구니 정보를 불러오지 못했습니다. 다시 시도해주세요.");
+      if (!cartId) {
+        setErr('장바구니 정보를 불러오지 못했습니다. 다시 시도해 주세요.');
+        return;
+      }
 
       const payload = { cartId, ...checkout };
       const created = await createOrder(payload);
@@ -203,15 +208,34 @@ export default function CartPage() {
               />
             </div>
 
+            {/* 주소 검색 */}
+            <div style={{ marginTop: 8 }}>
+              <AddressSearch
+                onSelect={({ zipCode, address1 }) =>
+                  setCheckout((prev) => ({ ...prev, zipCode, address1, address2: "" }))
+                }
+              />
+            </div>
+            {/* 우편번호 (자동 입력) */}
+            {checkout.zipCode && (
+              <input
+                style={{ marginTop: 8 }}
+                placeholder="우편번호"
+                value={checkout.zipCode}
+                readOnly
+              />
+            )}
+            {/* 기본주소 (자동 입력) */}
             <input
               style={{ marginTop: 8 }}
-              placeholder="주소1"
+              placeholder="기본 주소 (검색 후 자동 입력)"
               value={checkout.address1}
-              onChange={(e) => setCheckout({ ...checkout, address1: e.target.value })}
+              readOnly
             />
+            {/* 상세주소 (직접 입력) */}
             <input
               style={{ marginTop: 8 }}
-              placeholder="주소2"
+              placeholder="상세 주소 (동/호수 등)"
               value={checkout.address2}
               onChange={(e) => setCheckout({ ...checkout, address2: e.target.value })}
             />

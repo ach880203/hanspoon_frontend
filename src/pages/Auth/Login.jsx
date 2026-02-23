@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
+import { getBackendBaseUrl } from '../../utils/backendUrl';
 import './Auth.css';
 
 function Login() {
@@ -43,7 +44,7 @@ function Login() {
 
     const handleOAuthLogin = (provider) => {
         // OAuth2 로그인 URL로 리다이렉트
-        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        const backendUrl = getBackendBaseUrl('http://localhost:8080');
         window.location.href = `${backendUrl}/oauth2/authorization/${provider}`;
     };
 

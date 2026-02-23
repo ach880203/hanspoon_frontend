@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 
 export default function ProductCard({ p }) {
   return (
@@ -15,9 +15,10 @@ export default function ProductCard({ p }) {
         <div className="title">{p.name}</div>
         <div className="row">
           <div className="price">{p.price.toLocaleString()}원</div>
-          <div className="stock">재고 {p.stock}</div>
+          <div className="stock">?ш퀬 {p.stock}</div>
         </div>
       </div>
     </Link>
   );
 }
+

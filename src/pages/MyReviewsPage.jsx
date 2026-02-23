@@ -1,4 +1,4 @@
-// src/pages/MyReviewsPage.jsx
+﻿// src/pages/MyReviewsPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteReview, fetchMyReviews, updateReview } from "../api/productReviews";
@@ -26,7 +26,7 @@ export default function MyReviewsPage() {
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(0); }, []);
 
   const startEdit = (r) => {
     setEditingId(r.revId);
@@ -44,7 +44,7 @@ export default function MyReviewsPage() {
   const saveEdit = async () => {
     if (!editingId) return;
     if (!editForm.content.trim()) {
-      setErr("내용을 입력해줘.");
+      setErr("내용을 입력해 주세요.");
       return;
     }
     setBusy(true);
@@ -61,7 +61,7 @@ export default function MyReviewsPage() {
   };
 
   const remove = async (revId) => {
-    if (!window.confirm("후기를 삭제할까?")) return;
+    if (!window.confirm("리뷰를 삭제할까요?")) return;
     setBusy(true);
     setErr("");
     try {
@@ -83,7 +83,7 @@ export default function MyReviewsPage() {
 
       <div className="panel">
         {list.length === 0 ? (
-          <div className="muted">내 후기가 없습니다.</div>
+          <div className="muted">작성한 리뷰가 없습니다.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {list.map((r) => {
@@ -151,3 +151,4 @@ export default function MyReviewsPage() {
     </div>
   );
 }
+

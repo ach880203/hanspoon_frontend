@@ -1,7 +1,7 @@
-// src/api/reviews.js
+﻿// src/api/reviews.js
 import { http } from "./http";
 
-// 상품별 후기 목록 (로그인 없어도 조회 가능)
+// ?곹뭹蹂??꾧린 紐⑸줉 (濡쒓렇???놁뼱??議고쉶 媛??
 export async function fetchProductReviews(productId, page = 0, size = 10) {
   const { data } = await http.get(
     `/api/products/${Number(productId)}/reviews?page=${page}&size=${size}`
@@ -9,13 +9,13 @@ export async function fetchProductReviews(productId, page = 0, size = 10) {
   return data; // Page<ReviewResponseDto>
 }
 
-// 내 후기 목록
+// ???꾧린 紐⑸줉
 export async function fetchMyReviews(page = 0, size = 10) {
   const { data } = await http.get(`/api/reviews/me?page=${page}&size=${size}`);
   return data; // Page<ReviewResponseDto>
 }
 
-// 후기 등록(내 계정)
+// ?꾧린 ?깅줉(??怨꾩젙)
 export async function createProductReview(productId, { rating, content }) {
   const { data } = await http.post(`/api/products/${Number(productId)}/reviews`, {
     rating: Number(rating),
@@ -24,7 +24,7 @@ export async function createProductReview(productId, { rating, content }) {
   return data; // ReviewResponseDto
 }
 
-// 후기 수정(내 후기만)
+// ?꾧린 수정(???꾧린留?
 export async function updateReview(revId, { rating, content }) {
   const { data } = await http.patch(`/api/reviews/${Number(revId)}`, {
     rating: Number(rating),
@@ -33,7 +33,8 @@ export async function updateReview(revId, { rating, content }) {
   return data; // ReviewResponseDto
 }
 
-// 후기 삭제(내 후기만)
+// ?꾧린 삭제(???꾧린留?
 export async function deleteReview(revId) {
   await http.del(`/api/reviews/${Number(revId)}`);
 }
+

@@ -10,12 +10,8 @@ export const noticeApi = {
      * @returns {Promise<Object>}
      */
     getNotices: async (params = { page: 0, size: 10 }) => {
-        try {
-            const response = await axiosInstance.get('/api/notice', { params });
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.get('/api/notice', { params });
+        return response.data;
     },
 
     /**
@@ -24,12 +20,8 @@ export const noticeApi = {
      * @returns {Promise<Object>}
      */
     getNoticeById: async (id) => {
-        try {
-            const response = await axiosInstance.get(`/api/notice/${id}`);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.get(`/api/notice/${id}`);
+        return response.data;
     }
 };
 
@@ -42,11 +34,7 @@ export const faqApi = {
      * @returns {Promise<Object>}
      */
     getFaqs: async () => {
-        try {
-            const response = await axiosInstance.get('/api/faq');
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.get('/api/faq');
+        return response.data;
     }
 };

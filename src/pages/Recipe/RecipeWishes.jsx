@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyWishes, toggleWish } from "../api/productWishes";
-import { toErrorMessage } from "../api/http";
+import { fetchMyWishes, toggleWish } from "../../api/productWishes";
+import { toErrorMessage } from "../../api/http";
 
 export default function MyWishesPage() {
   const nav = useNavigate();
@@ -22,13 +22,13 @@ export default function MyWishesPage() {
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(0); }, []);
 
   const unWish = async (productId) => {
     setBusy(true);
     setErr("");
     try {
-      await toggleWish(productId); // 토글로 해제
+      await toggleWish(productId); // 찜 해제
       await load(page);
     } catch (e) {
       setErr(toErrorMessage(e));
@@ -41,12 +41,12 @@ export default function MyWishesPage() {
 
   return (
     <div>
-      <h1>My Wishes</h1>
+      <h1>내 찜 목록</h1>
       {err && <div className="error">{err}</div>}
 
       <div className="panel">
         {list.length === 0 ? (
-          <div className="muted">관심목록이 비었습니다.</div>
+          <div className="muted">관심 목록이 비어 있습니다.</div>
         ) : (
           <div className="cartList">
             {list.map((w) => (
@@ -85,3 +85,5 @@ export default function MyWishesPage() {
     </div>
   );
 }
+
+

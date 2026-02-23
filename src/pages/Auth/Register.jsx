@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
+import { getBackendBaseUrl } from '../../utils/backendUrl';
 import './Auth.css';
 
 function Register() {
@@ -62,7 +63,7 @@ function Register() {
     };
 
     const handleOAuthRegister = (provider) => {
-        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        const backendUrl = getBackendBaseUrl('http://localhost:8080');
         window.location.href = `${backendUrl}/oauth2/authorization/${provider}`;
     };
 

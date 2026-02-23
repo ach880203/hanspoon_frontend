@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { noticeApi } from '../../api';
 import './Notice.css';
@@ -80,13 +80,13 @@ function NoticeDetail() {
                 <div className="notice-detail-card">
                     <div className="notice-detail-header">
                         {notice.isImportant && (
-                            <span className="badge badge-important">중요</span>
+                            <span className="badge badge-important">以묒슂</span>
                         )}
                         <h1 className="notice-detail-title">{notice.title}</h1>
                         <div className="notice-detail-meta">
-                            <span>작성일: {formatDate(notice.createdAt)}</span>
+                            <span>작성일 {formatDate(notice.createdAt)}</span>
                             {notice.updatedAt && notice.updatedAt !== notice.createdAt && (
-                                <span>수정일: {formatDate(notice.updatedAt)}</span>
+                                <span>수정일 {formatDate(notice.updatedAt)}</span>
                             )}
                         </div>
                     </div>
@@ -110,3 +110,4 @@ function NoticeDetail() {
 }
 
 export default NoticeDetail;
+

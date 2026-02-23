@@ -1,33 +1,31 @@
-// src/components/InquirySection.jsx
+﻿// src/components/InquirySection.jsx
 import { useEffect, useState } from "react";
 import { createProductInquiry, fetchProductInquiries } from "../api/productInquiries";
 import { toErrorMessage } from "../api/http";
 
 export default function InquirySection({ productId }) {
-  const [page, setPage] = useState(0);
   const [data, setData] = useState(null); // Page<InquiryResponseDto>
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const [form, setForm] = useState({ content: "", secret: false }); // secret은 req DTO에 맞춰 유지
+  const [form, setForm] = useState({ content: "", secret: false });
 
   const load = async (p = 0) => {
     setErr("");
     try {
       const d = await fetchProductInquiries(productId, p, 10);
       setData(d);
-      setPage(d?.number ?? p);
     } catch (e) {
       setErr(toErrorMessage(e));
       setData(null);
     }
   };
 
-  useEffect(() => { load(0); /* eslint-disable-next-line */ }, [productId]);
+  useEffect(() => { load(0); }, [productId]);
 
   const submit = async () => {
     if (!form.content.trim()) {
-      setErr("문의 내용을 입력해줘.");
+      setErr("문의 내용을 입력해 주세요.");
       return;
     }
     setBusy(true);
@@ -115,3 +113,4 @@ export default function InquirySection({ productId }) {
     </div>
   );
 }
+

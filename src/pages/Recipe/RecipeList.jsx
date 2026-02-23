@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getRecipeList } from '../../api/recipeApi';
+import { toBackendUrl } from '../../utils/backendUrl';
 
 const RecipeList = () => {
     const [recipes, setRecipes] = useState([]);
@@ -18,9 +19,9 @@ const RecipeList = () => {
                 // API 호출 시 쿼리 파라미터 전달
                 const response = await getRecipeList({ keyword, category, page });
                 setRecipes(response.data.content || []);
-                setPageInfo(response.data); // 페이징 정보 저장
+                setPageInfo(response.data); // 페이지 정보 저장
             } catch (error) {
-                console.error("데이터 로드 실패:", error);
+                console.error("레시피 목록 로드 실패:", error);
             }
         };
         fetchRecipes();
@@ -40,14 +41,11 @@ const RecipeList = () => {
 
     return (
         <div className="container mt-5 d-flex flex-column align-items-center">
-            {/* 폰트/아이콘은 index.html에 추가하거나 import 하세요 */}
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
             <div className="text-center mb-6 w-100">
                 <h2 className="main-title mb-3" style={{ fontWeight: 800, color: '#1a1a1a' }}>맛있는 레시피 찾아보기</h2>
                 <div className="d-flex justify-content-center mb-4">
                     <Link to="/recipes" className="btn btn-register shadow-sm" style={btnRegisterStyle}>
-                        <i className="bi bi-plus-circle-fill me-2"></i>나만의 레시피 등록
+                        + 나만의 레시피 등록
                     </Link>
                 </div>
 
@@ -60,11 +58,11 @@ const RecipeList = () => {
                                 type="search" 
                                 name="keyword"
                                 defaultValue={keyword}
-                                placeholder="검색어를 입력하세요 (예: 제육덮밥)"
+                                placeholder="검색어를 입력하세요 (예: 제육볶음)"
                                 style={searchInputStyle}
                             />
                             <button className="btn btn-dark search-btn" type="submit" style={searchBtnStyle}>
-                                <i className="bi bi-search"></i>
+                                검색
                             </button>
                         </form>
                     </div>
@@ -84,14 +82,14 @@ const RecipeList = () => {
                                 onClick={() => handleCategoryChange(cat)}
                                 style={category === cat ? activeNavLinkStyle : navLinkStyle}
                             >
-                                {cat === '' ? '전체' : cat === 'KOREAN' ? '한식' : cat === 'BAKERY' ? '제빵' : cat === 'DESSERT' ? '제과' : '기타'}
+                                {cat === '' ? '전체' : cat === 'KOREAN' ? '한식' : cat === 'BAKERY' ? '베이커리' : cat === 'DESSERT' ? '디저트' : '기타'}
                             </button>
                         </li>
                     ))}
                 </ul>
             </div>
 
-            {/* 레시피 리스트 */}
+            {/* 레시피 목록 */}
             <div className="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
                 {recipes.length > 0 ? (
                     recipes.map((recipe) => (
@@ -100,7 +98,7 @@ const RecipeList = () => {
                                 <div className="card-img-wrapper" style={imgWrapperStyle}>
                                     <Link to={`/recipes/${recipe.id}`}>
                                         <img 
-                                            src={recipe.recipeImg ? `http://localhost:8080/images/recipe/${recipe.recipeImg}` : '/images/recipe/default.jpg'}
+                                            src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : '/images/recipe/default.jpg'}
                                             className="card-img-top" 
                                             style={{ height: '100%', width: '100%', objectFit: 'cover', transition: '0.5s' }}
                                             alt={recipe.title}
@@ -111,7 +109,7 @@ const RecipeList = () => {
                                     <h5 className="card-title text-truncate" style={{ fontWeight: 700 }}>{recipe.title}</h5>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <span className="review-info" style={{ color: '#ff9f43', fontWeight: 700 }}>
-                                            <i className="bi bi-star-fill me-1"></i>리뷰 <span>{recipe.reviewCount || 0}</span>
+                                            리뷰 <span>{recipe.reviewCount || 0}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -126,7 +124,7 @@ const RecipeList = () => {
                 )}
             </div>
 
-            {/* 페이징 (간략화) */}
+            {/* 페이지네이션 */}
             <nav className="py-5">
                 <ul className="pagination justify-content-center">
                     {!pageInfo.first && (
@@ -151,7 +149,7 @@ const RecipeList = () => {
     );
 };
 
-// --- 인라인 스타일 정의 (Thymeleaf CSS를 리액트 객체로 변환) ---
+// 스타일 객체
 const btnRegisterStyle = {
     backgroundColor: '#ff6b6b', color: 'white', borderRadius: '50px',
     padding: '10px 24px', fontWeight: '600', border: 'none'

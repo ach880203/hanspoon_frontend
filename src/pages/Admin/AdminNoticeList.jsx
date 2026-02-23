@@ -1,18 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../../api';
 
 function AdminNoticeList() {
     const [notices, setNotices] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchNotices();
-    }, [page]);
-
     const fetchNotices = async () => {
         try {
             const response = await adminApi.getNotices({ page, size: 10 });
@@ -23,6 +17,10 @@ function AdminNoticeList() {
             // alert('공지사항 목록을 불러오는데 실패했습니다.');
         }
     };
+
+    useEffect(() => {
+        fetchNotices();
+    }, [page]);
 
     const handleDelete = async (id) => {
         if (window.confirm('정말 삭제하시겠습니까?')) {

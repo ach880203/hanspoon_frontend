@@ -7,10 +7,6 @@ function AdminPaymentList() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    useEffect(() => {
-        fetchPayments();
-    }, [page]);
-
     const fetchPayments = async () => {
         try {
             const response = await adminApi.getAllPayments({ page, size: 10 });
@@ -20,6 +16,10 @@ function AdminPaymentList() {
             console.error('결제 내역 불러오기 실패:', error);
         }
     };
+
+    useEffect(() => {
+        fetchPayments();
+    }, [page]);
 
     const handleRefund = async (payId) => {
         if (window.confirm('정말 이 결제를 환불 처리하시겠습니까?')) {

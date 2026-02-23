@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { cancelOrder, deliverOrder, fetchOrder, payOrder, shipOrder } from "../api/orders";
+﻿import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { cancelOrder, deliverOrder, fetchOrder, shipOrder } from "../api/orders";
 import { toErrorMessage } from "../api/http";
 
 export default function OrderPage() {
+  const nav = useNavigate();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [err, setErr] = useState("");
@@ -20,7 +21,7 @@ export default function OrderPage() {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orderId]);
+  useEffect(() => { load(); }, [orderId]);
 
   const action = async (fn) => {
     setBusy(true);
@@ -81,7 +82,7 @@ export default function OrderPage() {
               <div className="cartInfo">
                 <div className="title">{it.productName}</div>
                 <div className="muted">
-                  {it.orderPrice.toLocaleString()}원 × {it.quantity} ={" "}
+                  {it.orderPrice.toLocaleString()}원 x {it.quantity} ={" "}
                   <b>{it.lineTotal.toLocaleString()}원</b>
                 </div>
               </div>
@@ -131,3 +132,4 @@ export default function OrderPage() {
     </div>
   );
 }
+
