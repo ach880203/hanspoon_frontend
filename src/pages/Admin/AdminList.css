@@ -19,7 +19,7 @@
     letter-spacing: -0.03em;
 }
 
-/* ???????? (???? ???) */
+/* 검색/필터 영역 (상단 패널) */
 .admin-list-controls {
     background: #ffffff;
     padding: 24px;
@@ -84,7 +84,7 @@
     min-width: 180px;
 }
 
-/* ???????? */
+/* 테이블 카드 */
 .admin-table-card {
     background: #ffffff;
     border-radius: 24px;
@@ -126,7 +126,7 @@
     border-bottom: none;
 }
 
-/* ??? ?????*/
+/* 상태 배지 */
 .admin-badge {
     padding: 6px 12px;
     border-radius: 8px;
@@ -157,7 +157,7 @@
     color: #6B7280;
 }
 
-/* ??? ??? */
+/* 액션 버튼 */
 .admin-btn-sm {
     padding: 8px 16px;
     border-radius: 10px;
@@ -188,7 +188,7 @@
     color: #DC2626;
 }
 
-/* ??????????*/
+/* 페이지네이션 */
 .admin-pagination {
     display: flex;
     justify-content: center;
@@ -240,7 +240,7 @@
     }
 }
 
-/* ??? ????????? ???????*/
+/* 탭형 관리자 레이아웃 */
 .admin-management-container {
     max-width: 1300px;
     margin: 40px auto;
@@ -290,7 +290,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ??? ??????????? ??? ?????? ?????? ??? ??? */
+/* 탭 내부에서 리스트 페이지 기본 여백 제거 */
 .admin-tab-content .admin-list-container {
     margin: 0 !important;
     padding: 0 !important;
