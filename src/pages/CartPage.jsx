@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchMyCart, addMyCartItem, deleteMyCartItem, updateMyCartItem } from "../api/carts";
 import { createOrder } from "../api/orders";
 import { toErrorMessage } from "../api/http";
+import AddressSearch from "../components/AddressSearch";
 
 export default function CartPage() {
   const nav = useNavigate();
@@ -15,6 +16,7 @@ export default function CartPage() {
   const [checkout, setCheckout] = useState({
     receiverName: "",
     receiverPhone: "",
+    zipCode: "",
     address1: "",
     address2: "",
   });
@@ -203,15 +205,34 @@ export default function CartPage() {
               />
             </div>
 
+            {/* 주소 검색 */}
+            <div style={{ marginTop: 8 }}>
+              <AddressSearch
+                onSelect={({ zipCode, address1 }) =>
+                  setCheckout((prev) => ({ ...prev, zipCode, address1, address2: "" }))
+                }
+              />
+            </div>
+            {/* 우편번호 (자동 입력) */}
+            {checkout.zipCode && (
+              <input
+                style={{ marginTop: 8 }}
+                placeholder="우편번호"
+                value={checkout.zipCode}
+                readOnly
+              />
+            )}
+            {/* 기본주소 (자동 입력) */}
             <input
               style={{ marginTop: 8 }}
-              placeholder="주소1"
+              placeholder="기본 주소 (검색 후 자동 입력)"
               value={checkout.address1}
-              onChange={(e) => setCheckout({ ...checkout, address1: e.target.value })}
+              readOnly
             />
+            {/* 상세주소 (직접 입력) */}
             <input
               style={{ marginTop: 8 }}
-              placeholder="주소2"
+              placeholder="상세 주소 (동/호수 등)"
               value={checkout.address2}
               onChange={(e) => setCheckout({ ...checkout, address2: e.target.value })}
             />
