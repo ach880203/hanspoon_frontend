@@ -5,8 +5,15 @@ const api = axiosInstance.create({
     timeout: 5000
 })
 //1. 목록 조회 (페이징/검색/카테고리 포함)
-export const getRecipeList = (params) => {
-    return api.get(`/api/recipe/list`, {params});
+export const getRecipeList = ({ keyword = "", category = "", page = 0, size } = {}) => {
+  return api.get("/api/recipe/list", {   
+    params: {
+      keyword,
+      category,
+      page,
+      ...(size ? { size } : {}),
+    },
+  });
 };
 
 //2. 상세 조회

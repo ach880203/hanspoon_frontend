@@ -1,40 +1,277 @@
-﻿import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+﻿import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import "./Layout.css";
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const drawerRef = useRef(null);
+  const searchRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  const isAdmin = !!user?.role?.includes("ADMIN");
+
+  const primaryNav = useMemo(
+    () => [
+      { to: "/recipes", label: "Recipes" },
+      { to: "/classes/oneday", label: "Classes" },
+      { to: "/products", label: "Market" },
+      { to: "/notice", label: "Notice" },
+      { to: "/faq", label: "FAQ" },
+    ],
+    []
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 6);
+    onScroll();
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // ESC로 오버레이 닫기 + 바디 스크롤 잠금
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== "Escape") return;
+      setMobileOpen(false);
+      setSearchOpen(false);
+      setUserMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const locked = mobileOpen || searchOpen;
+    document.body.style.overflow = locked ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen, searchOpen]);
+
+  useOnClickOutside(drawerRef, () => setMobileOpen(false), mobileOpen);
+  useOnClickOutside(searchRef, () => setSearchOpen(false), searchOpen);
+  useOnClickOutside(userMenuRef, () => setUserMenuOpen(false), userMenuOpen);
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    setSearchValue("");
+    // 다음 tick에 포커스
+    setTimeout(() => {
+      const el = document.getElementById("hs-search-input");
+      el?.focus();
+    }, 0);
+  };
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = searchValue.trim();
+    setSearchOpen(false);
+    if (!q) return;
+    navigate(`/search?query=${encodeURIComponent(q)}`);
+  };
+
+  const onLogout = async () => {
+    setUserMenuOpen(false);
+    await logout();
+    navigate("/");
+  };
+
   return (
     <div className="layout-root">
-      <header className="layout-header">
-        <Link to="/" className="layout-brand">Hanspoon</Link>
+      <header className={`hs-header ${isScrolled ? "is-scrolled" : ""}`}>
+        <div className="hs-header-inner">
+          {/* LEFT */}
+          <div className="hs-left">
+            <Link to="/" className="hs-brand" aria-label="Hanspoon home">
+              <span className="hs-brand-mark" aria-hidden="true">🥄</span>
+              <span className="hs-brand-text">Hanspoon</span>
+            </Link>
+          </div>
 
-        <nav className="layout-nav">
-          <MenuLink to="/recipes" label="Recipes" />
-          <MenuLink to="/classes/oneday" label="Classes" />
-          <MenuLink to="/products" label="Market" />
-          <MenuLink to="/notice" label="Notice" />
-          <MenuLink to="/faq" label="FAQ" />
-          <MenuLink to="/mypage" label="MyPage" />
-          <MenuLink to="/cart" label="Cart" />
+          {/* CENTER */}
+          <nav className="hs-nav" aria-label="Primary navigation">
+            {primaryNav.map((m) => (
+              <NavLink
+                key={m.to}
+                to={m.to}
+                className={({ isActive }) => `hs-navLink ${isActive ? "active" : ""}`}
+              >
+                {m.label}
+              </NavLink>
+            ))}
+          </nav>
 
-          {user?.role?.includes("ADMIN") && <MenuLink to="/admin" label="Admin" />}
+          {/* RIGHT */}
+          <div className="hs-actions">
+            {isAdmin && (
+              <Link to="/admin" className="hs-pill hs-pill--admin">
+                Admin
+              </Link>
+            )}
 
-          {user ? (
-            <button className="logout-btn" onClick={logout}>
-              Logout ({user.userName || user.email})
+            <button className="hs-iconBtn" onClick={openSearch} aria-label="Search">
+              <IconSearch />
             </button>
-          ) : (
-            <Link to="/login" className="login-link">Login</Link>
-          )}
-        </nav>
+
+            <Link to="/cart" className="hs-iconBtn" aria-label="Cart">
+              <IconCart />
+            </Link>
+
+            {user ? (
+              <div className="hs-user" ref={userMenuRef}>
+                <button
+                  className="hs-userBtn"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                >
+                  <span className="hs-avatar" aria-hidden="true">
+                    {(user.userName || user.email || "U").slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="hs-userLabel">
+                    {(user.userName || user.email || "User").toString()}
+                  </span>
+                  <span className="hs-chev" aria-hidden="true">
+                    <IconChevronDown />
+                  </span>
+                </button>
+
+                {userMenuOpen && (
+                  <div className="hs-userMenu" role="menu">
+                    <Link to="/mypage" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      MyPage
+                    </Link>
+                    <Link to="/cart" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      Cart
+                    </Link>
+                    {isAdmin && (
+                      <Link to="/admin" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                        Admin
+                      </Link>
+                    )}
+                    <button className="hs-userItem hs-userItem--danger" role="menuitem" onClick={onLogout}>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="hs-pill hs-pill--primary">
+                Login
+              </Link>
+            )}
+
+            <button
+              className="hs-burger"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+            >
+              <IconMenu />
+            </button>
+          </div>
+        </div>
+
+        {/* SEARCH OVERLAY */}
+        {searchOpen && (
+          <div className="hs-overlay" role="dialog" aria-modal="true">
+            <div className="hs-searchPanel" ref={searchRef}>
+              <div className="hs-searchTop">
+                <div className="hs-searchTitle">Search</div>
+                <button className="hs-iconBtn" onClick={() => setSearchOpen(false)} aria-label="Close search">
+                  <IconClose />
+                </button>
+              </div>
+
+              <form className="hs-searchForm" onSubmit={submitSearch}>
+                <input
+                  id="hs-search-input"
+                  className="hs-searchInput"
+                  placeholder="레시피 · 클래스 · 상품을 검색해보세요"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+                <button className="hs-searchSubmit" type="submit">
+                  Search
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MOBILE DRAWER */}
+        {mobileOpen && (
+          <div className="hs-overlay" role="dialog" aria-modal="true">
+            <aside className="hs-drawer" ref={drawerRef}>
+              <div className="hs-drawerTop">
+                <Link to="/" className="hs-brand" onClick={() => setMobileOpen(false)}>
+                  <span className="hs-brand-mark" aria-hidden="true">🥄</span>
+                  <span className="hs-brand-text">Hanspoon</span>
+                </Link>
+                <button className="hs-iconBtn" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                  <IconClose />
+                </button>
+              </div>
+
+              <div className="hs-drawerSection">
+                {primaryNav.map((m) => (
+                  <NavLink
+                    key={m.to}
+                    to={m.to}
+                    className={({ isActive }) => `hs-drawerLink ${isActive ? "active" : ""}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {m.label}
+                  </NavLink>
+                ))}
+              </div>
+
+              <div className="hs-drawerSection hs-drawerSection--sub">
+                <Link to="/mypage" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
+                  MyPage
+                </Link>
+                <Link to="/cart" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
+                  Cart
+                </Link>
+                {isAdmin && (
+                  <Link to="/admin" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
+                    Admin
+                  </Link>
+                )}
+              </div>
+
+              <div className="hs-drawerBottom">
+                {user ? (
+                  <button className="hs-drawerCta hs-drawerCta--ghost" onClick={onLogout}>
+                    Logout
+                  </button>
+                ) : (
+                  <Link to="/login" className="hs-drawerCta" onClick={() => setMobileOpen(false)}>
+                    Login
+                  </Link>
+                )}
+                <button className="hs-drawerCta hs-drawerCta--ghost" onClick={openSearch}>
+                  Search
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
       </header>
 
       <main className="layout-mainContainer">
@@ -42,9 +279,22 @@ export default function Layout() {
       </main>
 
       <footer className="layout-footer">
-        <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: "var(--primary)" }}>Hanspoon</div>
-        <p>요리의 즐거움을 나누는 Hanspoon 입니다.</p>
-        <p style={{ marginTop: 24, fontSize: 12 }}>Hanspoon © 2026. All rights reserved.</p>
+        <div className="layout-footer-inner">
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: 18,
+              marginBottom: 8,
+              color: "var(--primary)",
+            }}
+          >
+            Hanspoon
+          </div>
+          <p>요리의 즐거움을 나누는 Hanspoon 입니다.</p>
+          <p style={{ marginTop: 24, fontSize: 12 }}>
+            Hanspoon © 2026. All rights reserved.
+          </p>
+        </div>
       </footer>
 
       <ScrollTopButton />
@@ -56,34 +306,93 @@ function ScrollTopButton() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const toggleVisibility = () => {
-      setIsVisible(window.scrollY > 300);
-    };
-
+    const toggleVisibility = () => setIsVisible(window.scrollY > 300);
     window.addEventListener("scroll", toggleVisibility);
     return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
-
   if (!isVisible) return null;
 
   return (
-    <button className="scroll-top-btn" onClick={scrollToTop} aria-label="Scroll to top">
+    <button
+      className="scroll-top-btn"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Scroll to top"
+    >
       ↑
     </button>
   );
 }
 
-function MenuLink({ to, label }) {
+function useOnClickOutside(ref, handler, enabled = true) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    const listener = (e) => {
+      const el = ref?.current;
+      if (!el) return;
+      if (el.contains(e.target)) return;
+      handler?.();
+    };
+
+    document.addEventListener("mousedown", listener);
+    document.addEventListener("touchstart", listener);
+    return () => {
+      document.removeEventListener("mousedown", listener);
+      document.removeEventListener("touchstart", listener);
+    };
+  }, [ref, handler, enabled]);
+}
+
+/* ---------- Icons (no deps) ---------- */
+function IconSearch() {
   return (
-    <NavLink to={to} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
-      {label}
-    </NavLink>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path d="M21 21l-4.3-4.3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconCart() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 7h15l-1.5 9h-12L6 7Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M6 7 5 3H2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor" />
+      <path d="M18 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconMenu() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 12h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconClose() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconChevronDown() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
