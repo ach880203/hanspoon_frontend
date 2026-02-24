@@ -20,7 +20,7 @@ const RecipePage = () => {
     return value;
   };
 
-  const [recipe, setRecipe] = useState({
+  const [recipe, setRecipe] = useState(() =>({
     id: Date.now(),
     title: '',
     spiciness: 3,
@@ -57,14 +57,14 @@ const RecipePage = () => {
           ] 
         }],
     subRecipes: []
-  });
+  }));
 
   // 수정 모드일 때 기존 데이터 로드
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
         const response = await api.get(`/api/recipe/edit/${id}`);
-        const data = response.data;
+        const data = response.data.data;
 
         setRecipe({
           ...data,
@@ -343,7 +343,8 @@ const RecipePage = () => {
           <div className="section-title"><i className="fa-solid fa-basket-shopping" style={{color:'#28a745'}}></i> 재료 정보</div>
           <button className="add-group-btn" onClick={addIngredientGroup}>그룹 추가</button>
           {recipe.ingredientGroup.map((group, gIdx) => (
-            <div className="group-box" key={group.id}>
+            <div className="group-box" key={`group-${gIdx}-${group.id || 'new'}`}
+                style={{ mrginbottom: '20px'}}>
               <i className="fa-solid fa-trash-can remove-icon-btn group-remove-pos" onClick={() => removeElement('ingredientGroups', gIdx)}></i>
               <input type="text" className="custom-input" style={{width: '300px', fontWeight: 'bold'}} placeholder="그룹명(예: 메인 재료)" value={group.name} onChange={(e) => {
                 const newGroups = [...recipe.ingredientGroup];
@@ -351,7 +352,7 @@ const RecipePage = () => {
                 setRecipe({...recipe, ingredientGroup: newGroups});
               }} />
               {group.ingredients.map((ing, rIdx) => (
-                <div className="ing-row" key={ing.id}>
+                <div className="ing-row" key={`ing-${gIdx}-${rIdx}-${ing.id || 'temp'}`}>
                   <input type="text" className="custom-input ing-name" placeholder="재료명" value={ing.name} onChange={(e) => {
                     const newGroups = [...recipe.ingredientGroup];
                     newGroups[gIdx].ingredients[rIdx].name = e.target.value;
@@ -402,7 +403,7 @@ const RecipePage = () => {
           <div className="section-title"><i className="fa-solid fa-fire-burner" style={{color:'#ff6b6b'}}></i> 조리 순서</div>
           <button className="add-step-btn" onClick={addInstructionGroup}>단계 그룹 추가</button>
           {recipe.instructionGroup.map((group, gIdx) => (
-            <div className="group-box" key={group.id} style={{paddingBottom: '40px'}}>
+            <div className="group-box" key={`inst-group-${gIdx}`} style={{paddingBottom: '40px'}}>
               <i className="fa-solid fa-trash-can remove-icon-btn group-remove-pos" onClick={() => removeElement('instructionGroup', gIdx)}></i>
               <input type="text" className="custom-input" style={{width: '300px', fontWeight: 'bold'}} placeholder="순서 제목 (예: 고기 밑간하기)" value={group.title} onChange={(e) => {
                 const newGroups = [...recipe.instructionGroup];

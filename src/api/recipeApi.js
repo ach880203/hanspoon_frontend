@@ -1,4 +1,5 @@
 ﻿import axiosInstance from "./axios";
+import {loadAuth} from "../utils/authStorage.js";
 
 // 공통 axios 인스턴스를 그대로 사용합니다.
 // 이렇게 하면 인증 토큰/에러 처리/환경변수(baseURL) 정책이 전체 API에서 일관됩니다.
@@ -57,10 +58,6 @@ export const createwishes = (id) => {
 };
 
 //9.관심목록
-export const wisheslist = (params) => {
-    return api.get(`/api/recipe/wishesList`,
-         {params: {category: category}});
-};
 
 export const fetchMyWishes = async (page = 0, size = 12, category = '') => {
     const authData = loadAuth();
@@ -80,7 +77,7 @@ export const toggleWish = async (id) => {
     const authData = loadAuth();
     const token = authData?.accessToken;
 
-    const response = await api.post(`/api/recipe/createWishes/${id}`, {}, {
+    const response = await api.post(`/api/recipe/toggleWish/${id}`, {}, {
         headers: {
             Authorization: token ? `Bearer ${token}` : ""
         }
