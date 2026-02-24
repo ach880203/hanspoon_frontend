@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyWishes, toggleWish } from "../../api/productWishes";
-import { toErrorMessage } from "../../api/http";
+import {fetchMyWishes, toggleWish} from "../../api/recipeApi.js";
+import {toErrorMessage} from "../../api/http.js";
 
 export default function MyWishesPage() {
   const nav = useNavigate();

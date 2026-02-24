@@ -1,55 +1,84 @@
 ﻿import axiosInstance from "./axios";
+import {loadAuth} from "../utils/authStorage.js";
 
 const api = axiosInstance;
 
+//1. 목록 조회 (페이징/검색/카테고리 포함)
 export const getRecipeList = (params) => {
-  return api.get("/api/recipe/list", { params });
+    return api.get(`/api/recipe/list`, {params});
 };
 
+//2. 상세 조회
 export const getRecipeDetail = (id) => {
-  return api.get(`/api/recipe/detail/${id}`);
+    return api.get(`/api/recipe/detail/${id}`);
 };
 
+//3. 등록
 export const createRecipe = (recipeData) => {
-  return api.post("/api/recipe/new", recipeData);
+    return api.post(`/api/recipe/new`, recipeData);
 };
 
+//4. 수정
 export const updateRecipe = (id, recipeData) => {
-  return api.post(`/api/recipe/edit/${id}`, recipeData);
+    return api.post(`/api/recipe/edit/${id}`, recipeData);
 };
 
+//5. 삭제
 export const deleteRecipe = (id) => {
-  return api.post(`/api/recipe/delete/${id}`);
+    return api.post(`/api/recipe/delete/${id}`);
 };
 
+//6. 삭제리스트
 export const deletelist = (category) => {
-  return api.get("/api/recipe/deleted", {
-    params: { category },
-  });
+    return api.get(`/api/recipe/deleted`, {
+        params: {category: category}
+    });
 };
 
+//7. 복원
 export const deletereturn = (id) => {
-  return api.post(`/api/recipe/deleteReturn/${id}`);
+    return api.post(`/api/recipe/deleteReturn/${id}`);
 };
 
+//8.관심등록
 export const createwishes = (id) => {
-  return api.post(`/api/recipe/createWishes/${id}`, {});
+
+    const authData = loadAuth();
+    const token = authData?.accessToken;
+
+    console.log("실제 전송되는 토큰:", token);
+
+    return api.post(`/api/recipe/createWishes/${id}`, {}, {
+        headers: {
+            Authorization: token ? `Bearer ${token}` : ""
+        }
+    });
 };
 
-export const wisheslist = ({ page = 0, size = 12, category = "" } = {}) => {
-  return api.get("/api/recipe/wishesList", {
-    params: { page, size, category },
-  });
-};
+//9.관심목록
 
-export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
-  const response = await api.get("/api/recipe/wishesList", {
-    params: { page, size, category },
-  });
-  return response.data;
+export const fetchMyWishes = async (page = 0, size = 12, category = '') => {
+    const authData = loadAuth();
+    const token = authData?.accessToken;
+
+    const url = `/api/recipe/ResipeWiahes?page=${page}$size=${size}${category ? `&category=${category}` : ''}`;
+
+    const response = await api.get(url, {
+        headers: {
+            authorization: token ? `Bearer ${token}` : ""
+        }
+    });
+    return response.data;
 };
 
 export const toggleWish = async (id) => {
-  const response = await api.post(`/api/recipe/createWishes/${id}`, {});
-  return response.data;
+    const authData = loadAuth();
+    const token = authData?.accessToken;
+
+    const response = await api.post(`/api/recipe/toggleWish/${id}`, {}, {
+        headers: {
+            Authorization: token ? `Bearer ${token}` : ""
+        }
+    });
+    return response.data;
 };

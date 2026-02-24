@@ -1,32 +1,70 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { createwishes, deleteRecipe, getRecipeDetail } from '../../api/recipeApi'; // API 함수 임포트
+import {deleteRecipe, getRecipeDetail, toggleWish} from '../../api/recipeApi'; // API 함수 임포트
 import { toBackendUrl } from '../../utils/backendUrl';
 
+const getCalculatedAmount = (ing, ratio, recipeData, flavor) =>{
+  let amount = Number(ing.baseAmount);
+
+  let adjustedRatio = ratio;
+
+  if (recipeData.category === 'KOREAN' || recipeData.category === '한식') {
+    if(!ing.main && ratio >1) {
+      adjustedRatio = 1 + (ratio - 1) * 0.5;
+    }
+  }
+  amount = amount * adjustedRatio;
+
+  const getWeight = (key) => 1 + (flavor[key] - (recipeData[key] || 3)) * 0.1;
+
+  if (ing.tasteType === 'SPICY') amount *= getWeight('spiciness');
+  if (ing.tasteType === 'SWEET') amount *= getWeight('sweetness');
+  if (ing.tasteType === 'SALTY') amount *= getWeight('saltiness');
+  if (isNaN(amount)) return "0";
+  console.log("----------getCalculatedAmount")
+
+  return amount.toFixed(1).replace(/\.0$/,'');
+};
+
 // [치환 로직] @재료명 -> 실시간 수치 포함 텍스트로 변경
-  const renderInstruction = (content, currentRatio, recipe, getCalculatedAmount) => {
-    if (!content || !recipe) return content;
-    const regex = /@([가-힣a-zA-Z0-9\s]+?)(?=\s|$|[.,!])/g;
+const renderInstruction = (content, ratio, recipe, flavor) => {
+  // 1. 데이터 확인 로그
+  console.log("🛠️ 치환 함수 진입! 현재 배율:", ratio);
 
-    return content.replace(regex, (match, ingName) => {
-      const trimmedName = ingName.trim();
-      let foundIng = null;
+  if (!content || !recipe) return content;
 
-      const groups = recipe.ingredientGroups || recipe.ingredientGroup;
-      groups?.forEach(group => {
-        const ing = group.ingredients?.find(i => i.name.trim() === trimmedName);
-        if (ing) foundIng = ing;
-        console.log("----------------")
-      });
+  // 2. [수정] 정규표현식 범위를 가-힣(ㅎ)으로 수정
+  const regex = /@([가-힣a-zA-Z0-9]+)/g;
+  console.log("------------renderInstruction")
 
-      if (foundIng) {
-        const calcAmount = getCalculatedAmount(foundIng, currentRatio);
-        return `<strong style="color: #ff6b6b; font-weight: bold;">${trimmedName} ${calcAmount}${foundIng.unit}</strong>`;
+  return content.replace(regex, (match, ingName) => {
+    console.log("-----------replace")
+    const trimmedName = ingName.trim();
+    let foundIng = null;
+
+    // 3. 재료 찾기
+    const groups = recipe.ingredientGroup || [];
+    groups.forEach(group => {
+      const ing = group.ingredients?.find(i => i.name.trim() === trimmedName);
+      if (ing) {
+        foundIng = ing;
+        console.log("✅ 재료 매칭 성공:", ing.name);
       }
-      console.log("-------로직변화------" , match);
-      return match;
     });
-  };
+
+    if (foundIng) {
+
+      const finalAmount = getCalculatedAmount(foundIng, ratio, recipe, flavor)
+
+      return `<strong style="color: #ff6b6b; font-weight: bold;">${trimmedName} ${finalAmount}${foundIng.unit}</strong>`;
+    }
+
+    console.log("❓ 패턴은 찾았으나 재료 리스트에 없음:", trimmedName);
+    return match;
+  });
+};
+
+
 
 const Recipesid = () => {
   const { id } = useParams();
@@ -47,7 +85,7 @@ const Recipesid = () => {
       try {
         setLoading(true);
         const response = await getRecipeDetail(id);
-        const data = response?.data?.data ?? response?.data;
+        const data = response.data.data;
 
         console.log("서버 원본 데이터:", data);
         
@@ -82,39 +120,11 @@ const Recipesid = () => {
   const ratio = useMemo(() => {
     if (!recipe || !recipe.baseServings) return 1;
     const base = Number(recipe.baseServings);
+    const current = Number(currentServings);
+    console.log("배율 계산됨:" , current/base);
     return base > 0 ? currentServings / base : 1;
   }, [currentServings, recipe]);
 
-  const getFlavorWeight = (key, currentVal) => {
-    if (!baseFlavor || baseFlavor[key] === undefined) return 1;
-    const baseVal = baseFlavor[key];
-    return 1+ (currentVal - baseVal) * 0.1;
-  };
-
-  const getCalculatedAmount = (ing) =>{
-    let amount = Number(ing.baseAmount);
-
-    let adjustedRatio = ratio;
-
-    if (recipe.category === 'KOREAN' || recipe.category === '한식') {
-      if(!ing.main) {
-        if (ratio > 1) {
-          adjustedRatio = 1 + (ratio - 1) * 0.5;
-        } else if (ratio < 1) {
-          adjustedRatio = ratio;
-        }
-      }
-    }
-    amount = amount * adjustedRatio;
-
-
-    if (ing.tasteType === 'SPICY') amount *= getFlavorWeight('spiciness', flavor.spiciness);
-    if (ing.tasteType === 'SWEET') amount *= getFlavorWeight('sweetness', flavor.sweetness);
-    if (ing.tasteType === 'SALTY') amount *= getFlavorWeight('saltiness', flavor.saltiness);
-    if (isNaN(amount)) return "0";
-
-    return amount.toFixed(1).replace(/\.0$/,'');
-  };
 
   const handleIngAmountChange = (ingId, ingBaseAmount, inputValue) => {
 
@@ -143,14 +153,18 @@ const Recipesid = () => {
         console.error("삭제 실패:", error);
         alert("삭제 중 오류가 발생했습니다");
       }
+    }catch (error) {
+      console.error("관심등록 실패:" , error);
+      alert("로그인이 필요하거나 요청을 처리할 수 없습니다");
     }
+      
   };
 
   const toggleFavorite = async () => {
     console.log("레시피 id" , id);
     try{
 
-      const response = await createwishes(id);
+      const response = await toggleWish(id);
 
       if (response.status === 200) {
 
@@ -165,6 +179,8 @@ const Recipesid = () => {
     }
       
   };
+
+
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>데이터를 불러오는 중입니다...</div>;
   if (!recipe) return <div style={{ padding: '100px', textAlign: 'center' }}>레시피 정보를 찾을 수 없습니다.</div>;
@@ -254,7 +270,7 @@ const Recipesid = () => {
               </h4>
 
               <div style={ingredientScrollArea}>
-                {(recipe.ingredientGroups || recipe.ingredientGroup)?.map((group, gIdx) => (
+                {(recipe.ingredientGroup ||[])?.map((group, gIdx) => (
                   <div key={gIdx} style={{ marginBottom: '15px' }}>
                     <div style={ingGroupTitle}>{group.groupName || group.name}</div>
                     {group.ingredients?.map((ing, iIdx) => (
@@ -293,7 +309,7 @@ const Recipesid = () => {
                                   ? editingIng.value
                                   : (currentServings === 0 
                                     ? "" 
-                                    : getCalculatedAmount(ing)
+                                    : getCalculatedAmount(ing, ratio, recipe, flavor)
                                         )}
                                 step="0.1"
                                 onChange={(e) => handleIngAmountChange(
@@ -330,7 +346,7 @@ const Recipesid = () => {
       <div style={{...containerStyle, marginTop:'40px', paddingBottom:'80px'}}>
         <h3 style={sectionTitleStyle}><i className="fa-solid fa-fire-burner"></i> 조리 순서</h3>
         <div style={{maxWidth: '850px', margin: '0 auto'}}>
-          {(recipe.instructionGroup || recipe.instructionGroup)?.map((group, gIdx) => (
+          {(recipe.instructionGroup || [])?.map((group, gIdx) => (
             <div key={gIdx} style={{marginBottom: '40px'}}>
               <h5 style={stepGroupTitle}>{group.groupTitle || group.title}</h5>
               {group.instructions?.map((step, sIdx) => (
@@ -346,7 +362,7 @@ const Recipesid = () => {
                             step.content, 
                             ratio,
                             recipe,
-                            getCalculatedAmount) }}
+                            flavor) }}
                       />
                     </div>
                     {step.stepImg && (
