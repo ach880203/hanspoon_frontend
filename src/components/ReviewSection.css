@@ -1,0 +1,241 @@
+/* src/components/ReviewSection.css */
+
+.rvWrap {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+}
+
+.rvHeader {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.rvTitleBox {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rvTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.rvSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.85;
+}
+
+.rvAvg {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.rvAvgNum {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rvAvgText {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.rvCount {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.rvError {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,0,0,0.06);
+}
+
+/* 작성 폼 */
+.rvForm {
+  margin-top: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(0,0,0,0.02);
+}
+
+.rvFormTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+
+.rvFormLabel {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.rvStars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rvStarBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+  opacity: 0.25;
+}
+
+.rvStarBtn.active {
+  opacity: 1;
+}
+
+.rvStarBtn:disabled {
+  cursor: default;
+}
+
+.rvStarValue {
+  margin-left: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.rvFormBody {
+  display: grid;
+  gap: 10px;
+}
+
+.rvTextarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.10);
+  outline: none;
+  background: #fff;
+  line-height: 1.6;
+}
+
+.rvTextarea:focus {
+  border-color: rgba(0,0,0,0.35);
+}
+
+.rvFormBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rvHint {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.rvSubmit {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+}
+
+.rvSubmit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 리스트 */
+.rvList {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.rvEmpty {
+  padding: 18px 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(0,0,0,0.12);
+  opacity: 0.75;
+  text-align: center;
+}
+
+.rvItem {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 12px;
+  background: #fff;
+}
+
+.rvItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rvMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.rvWriter {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.rvDate {
+  opacity: 0.75;
+}
+
+.rvContent {
+  margin-top: 8px;
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+/* 페이지네이션 */
+.rvPager {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.rvGhost {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.rvGhost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rvPageText {
+  font-size: 12px;
+  opacity: 0.7;
+}
