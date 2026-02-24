@@ -1,4 +1,4 @@
-// src/pages/SignupPage.jsx
+﻿// src/pages/SignupPage.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../api/auth";
@@ -20,11 +20,7 @@ export default function SignupPage() {
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
 
   const checkCapsLock = (e) => {
-    if (e.getModifierState("CapsLock")) {
-      setIsCapsLockOn(true);
-    } else {
-      setIsCapsLockOn(false);
-    }
+    setIsCapsLockOn(e.getModifierState("CapsLock"));
   };
 
   const onChange = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -34,15 +30,15 @@ export default function SignupPage() {
     setOk(null);
 
     if (!form.email.trim()) {
-      setErr("이메일을 입력해주세요.");
+      setErr("이메일을 입력해 주세요.");
       return;
     }
 
     try {
       const available = await authApi.checkEmail(form.email.trim());
-      setOk(available ? "사용 가능한 이메일입니다." : "이미 사용중인 이메일입니다.");
+      setOk(available ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.");
     } catch (e) {
-      setErr(e?.message || "이메일 확인 실패");
+      setErr(e?.message || "이메일 확인에 실패했습니다.");
     }
   };
 
@@ -50,12 +46,11 @@ export default function SignupPage() {
     const email = form.email.trim();
     const userName = form.userName.trim();
 
-    if (!email) return "이메일을 입력해주세요.";
-    if (!userName) return "이름을 입력해주세요.";
-    if (!form.password) return "비밀번호를 입력해주세요.";
-    if (form.password.length < 8 || form.password.length > 20)
-      return "비밀번호는 8~20자로 입력해주세요.";
-    if (!form.passwordConfirm) return "비밀번호 확인을 입력해주세요.";
+    if (!email) return "이메일을 입력해 주세요.";
+    if (!userName) return "이름을 입력해 주세요.";
+    if (!form.password) return "비밀번호를 입력해 주세요.";
+    if (form.password.length < 8 || form.password.length > 20) return "비밀번호는 8~20자로 입력해 주세요.";
+    if (!form.passwordConfirm) return "비밀번호 확인을 입력해 주세요.";
     if (form.password !== form.passwordConfirm) return "비밀번호가 일치하지 않습니다.";
     return null;
   };
@@ -73,7 +68,6 @@ export default function SignupPage() {
 
     setBusy(true);
     try {
-      // 백엔드 DTO와 키 이름 일치시켜서 전송
       await authApi.register({
         email: form.email.trim(),
         password: form.password,
@@ -85,7 +79,7 @@ export default function SignupPage() {
 
       nav("/login", { replace: true });
     } catch (e) {
-      setErr(e?.message || "회원가입 실패");
+      setErr(e?.message || "회원가입에 실패했습니다.");
     } finally {
       setBusy(false);
     }
@@ -94,8 +88,8 @@ export default function SignupPage() {
   return (
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: 520 }}>
-        <h1 className="auth-title">Create Account</h1>
-        <p className="auth-subtitle">한스푼의 회원이 되어 <br />더 많은 혜택과 레시피를 누려보세요.</p>
+        <h1 className="auth-title">회원가입</h1>
+        <p className="auth-subtitle">한스푼의 회원이 되어 다양한 혜택을 받아보세요.</p>
 
         <form onSubmit={onSubmit} className="auth-form">
           <div className="form-group">
@@ -104,7 +98,7 @@ export default function SignupPage() {
               <input
                 value={form.email}
                 onChange={onChange("email")}
-                placeholder="example@hanspoon.com"
+                placeholder="이메일 주소를 입력해 주세요"
                 autoComplete="email"
                 required
                 style={{ flex: 1 }}
@@ -145,11 +139,7 @@ export default function SignupPage() {
               autoComplete="new-password"
               required
             />
-            {isCapsLockOn && (
-              <div className="caps-lock-warning">
-                Caps Lock이 켜져 있습니다.
-              </div>
-            )}
+            {isCapsLockOn && <div className="caps-lock-warning">대문자 입력 상태입니다.</div>}
           </div>
 
           <div className="form-group">
@@ -159,16 +149,12 @@ export default function SignupPage() {
               onChange={onChange("passwordConfirm")}
               onKeyDown={checkCapsLock}
               onKeyUp={checkCapsLock}
-              placeholder="비밀번호를 한번 더 입력해주세요"
+              placeholder="비밀번호를 다시 입력해 주세요"
               type="password"
               autoComplete="new-password"
               required
             />
-            {isCapsLockOn && (
-              <div className="caps-lock-warning">
-                Caps Lock이 켜져 있습니다.
-              </div>
-            )}
+            {isCapsLockOn && <div className="caps-lock-warning">대문자 입력 상태입니다.</div>}
           </div>
 
           <div className="form-group">
@@ -186,7 +172,7 @@ export default function SignupPage() {
             <input
               value={form.address}
               onChange={onChange("address")}
-              placeholder="배송받으실 주소를 입력해주세요"
+              placeholder="배송받을 주소를 입력해 주세요"
               autoComplete="street-address"
             />
           </div>

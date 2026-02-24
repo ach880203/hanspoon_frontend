@@ -119,7 +119,7 @@ export default function MyOrdersPage() {
                       {o.firstItemThumbnailUrl ? (
                         <img src={o.firstItemThumbnailUrl} alt={o.firstItemName} />
                       ) : (
-                        <div className="no-img">No Image</div>
+                        <div className="no-img">이미지 없음</div>
                       )}
                     </div>
                     <div className="order-info">

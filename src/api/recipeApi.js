@@ -57,16 +57,18 @@ export const createwishes = (id) => {
 
 //9.관심목록
 
-export const fetchMyWishes = async (page = 0, size = 12, category = '') => {
+export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
     const authData = loadAuth();
     const token = authData?.accessToken;
-
-    const url = `/api/recipe/ResipeWiahes?page=${page}$size=${size}${category ? `&category=${category}` : ''}`;
-
-    const response = await api.get(url, {
-        headers: {
-            authorization: token ? `Bearer ${token}` : ""
-        }
+    const response = await api.get(`/api/recipe/ResipeWishes`, {
+      params: {
+        page,
+        size,
+        ...(category ? { category } : {}),
+      },
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
     });
     return response.data;
 };

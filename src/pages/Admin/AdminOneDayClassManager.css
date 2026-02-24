@@ -163,8 +163,19 @@
 
 .session-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 8px;
+}
+
+.session-grid label {
+  min-width: 0;
+}
+
+.session-grid input,
+.session-grid select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .form-actions {
@@ -233,6 +244,16 @@
 
 @media (max-width: 1100px) {
   .admin-oneday-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .session-grid {
     grid-template-columns: 1fr;
   }
 }

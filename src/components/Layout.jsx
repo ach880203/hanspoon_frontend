@@ -25,11 +25,11 @@ export default function Layout() {
 
   const primaryNav = useMemo(
     () => [
-      { to: "/recipes", label: "Recipes" },
-      { to: "/classes/oneday", label: "Classes" },
-      { to: "/products", label: "Market" },
-      { to: "/notice", label: "Notice" },
-      { to: "/faq", label: "FAQ" },
+      { to: "/recipes", label: "레시피" },
+      { to: "/classes/oneday", label: "클래스" },
+      { to: "/products", label: "마켓" },
+      { to: "/notice", label: "공지사항" },
+      { to: "/faq", label: "자주 묻는 질문" },
     ],
     []
   );
@@ -98,14 +98,14 @@ export default function Layout() {
         <div className="hs-header-inner">
           {/* LEFT */}
           <div className="hs-left">
-            <Link to="/" className="hs-brand" aria-label="Hanspoon home">
+            <Link to="/" className="hs-brand" aria-label="한스푼 홈">
               <span className="hs-brand-mark" aria-hidden="true">🥄</span>
-              <span className="hs-brand-text">Hanspoon</span>
+              <span className="hs-brand-text">한스푼</span>
             </Link>
           </div>
 
           {/* CENTER */}
-          <nav className="hs-nav" aria-label="Primary navigation">
+          <nav className="hs-nav" aria-label="주요 메뉴">
             {primaryNav.map((m) => (
               <NavLink
                 key={m.to}
@@ -121,19 +121,19 @@ export default function Layout() {
           <div className="hs-actions">
             {isAdmin && (
               <Link to="/admin" className="hs-pill hs-pill--admin">
-                Admin
+                관리자
               </Link>
             )}
 
-            <button className="hs-iconBtn" onClick={openSearch} aria-label="Search">
+            <button className="hs-iconBtn" onClick={openSearch} aria-label="검색">
               <img
                 src="https://cdn-icons-png.flaticon.com/512/861/861627.png"
-                alt="Search"
+                alt="검색"
                 className="hs-search-img"
               />
             </button>
 
-            <Link to="/cart" className="hs-iconBtn" aria-label="Cart">
+            <Link to="/cart" className="hs-iconBtn" aria-label="장바구니">
               <IconCart />
             </Link>
 
@@ -141,14 +141,14 @@ export default function Layout() {
               <MyPageDropdown />
             ) : (
               <Link to="/login" className="hs-pill hs-pill--primary">
-                Login
+                로그인
               </Link>
             )}
 
             <button
               className="hs-burger"
               onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
+              aria-label="메뉴 열기"
             >
               <IconMenu />
             </button>
@@ -160,8 +160,8 @@ export default function Layout() {
           <div className="hs-overlay" role="dialog" aria-modal="true">
             <div className="hs-searchPanel" ref={searchRef}>
               <div className="hs-searchTop">
-                <div className="hs-searchTitle">Search</div>
-                <button className="hs-iconBtn" onClick={() => setSearchOpen(false)} aria-label="Close search">
+                <div className="hs-searchTitle">검색</div>
+                <button className="hs-iconBtn" onClick={() => setSearchOpen(false)} aria-label="검색 닫기">
                   <IconClose />
                 </button>
               </div>
@@ -175,7 +175,7 @@ export default function Layout() {
                   onChange={(e) => setSearchValue(e.target.value)}
                 />
                 <button className="hs-searchSubmit" type="submit">
-                  Search
+                  검색
                 </button>
               </form>
             </div>
@@ -189,9 +189,9 @@ export default function Layout() {
               <div className="hs-drawerTop">
                 <Link to="/" className="hs-brand" onClick={() => setMobileOpen(false)}>
                   <span className="hs-brand-mark" aria-hidden="true">🥄</span>
-                  <span className="hs-brand-text">Hanspoon</span>
+                  <span className="hs-brand-text">한스푼</span>
                 </Link>
-                <button className="hs-iconBtn" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                <button className="hs-iconBtn" onClick={() => setMobileOpen(false)} aria-label="메뉴 닫기">
                   <IconClose />
                 </button>
               </div>
@@ -211,14 +211,14 @@ export default function Layout() {
 
               <div className="hs-drawerSection hs-drawerSection--sub">
                 <Link to="/mypage" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
-                  MyPage
+                  마이페이지
                 </Link>
                 <Link to="/cart" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
-                  Cart
+                  장바구니
                 </Link>
                 {isAdmin && (
                   <Link to="/admin" className="hs-drawerLink" onClick={() => setMobileOpen(false)}>
-                    Admin
+                    관리자
                   </Link>
                 )}
               </div>
@@ -226,15 +226,15 @@ export default function Layout() {
               <div className="hs-drawerBottom">
                 {user ? (
                   <button className="hs-drawerCta hs-drawerCta--ghost" onClick={onLogout}>
-                    Logout
+                    로그아웃
                   </button>
                 ) : (
                   <Link to="/login" className="hs-drawerCta" onClick={() => setMobileOpen(false)}>
-                    Login
+                    로그인
                   </Link>
                 )}
                 <button className="hs-drawerCta hs-drawerCta--ghost" onClick={openSearch}>
-                  Search
+                  검색
                 </button>
               </div>
             </aside>
@@ -256,11 +256,11 @@ export default function Layout() {
               color: "var(--primary)",
             }}
           >
-            Hanspoon
+            한스푼
           </div>
-          <p>요리의 즐거움을 나누는 Hanspoon 입니다.</p>
+          <p>요리의 즐거움을 나누는 한스푼입니다.</p>
           <p style={{ marginTop: 24, fontSize: 12 }}>
-            Hanspoon © 2026. All rights reserved.
+            한스푼 © 2026. 모든 권리 보유.
           </p>
         </div>
       </footer>
@@ -285,7 +285,7 @@ function ScrollTopButton() {
     <button
       className="scroll-top-btn"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Scroll to top"
+      aria-label="맨 위로 이동"
     >
       ↑
     </button>

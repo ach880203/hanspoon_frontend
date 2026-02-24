@@ -1,40 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./BannerSection.css";
 
 export const marketBannerSlides = [
   {
     id: "m1",
-    eyebrow: "신선한 오리원육과 천연 훈연으로 담백하고 건강하게 만든",
-    title: "첨가물 0% ‘자연누리 무항생제 훈제오리’",
+    eyebrow: "신선한 오리와 천연 재료로 담백하고 건강하게 만든",
+    title: "첨가물 0% 순살 오리 무항생제 밀키트",
     period: "2.17 - 2.23",
     imageSrc: "/img/banner-duck.png",
-    imageAlt: "훈제오리 배너 이미지",
+    imageAlt: "오리 요리 배너 이미지",
     bg: "#ded2bf",
     badges: [
       { label: "공동구매", tone: "dark" },
-      { label: "쿠폰할인", tone: "light" },
+      { label: "쿠폰 할인", tone: "light" },
     ],
     to: "/products",
   },
   {
     id: "m2",
-    eyebrow: "겉바속촉 시즈닝으로 풍미를 올린",
-    title: "에어프라이어로 끝! ‘크리스피 순살치킨’",
+    eyebrow: "겉바속촉 수제 양념으로 완성한",
+    title: "에어프라이어로도 가능한 순살 치킨",
     period: "2.24 - 3.02",
     imageSrc: "/img/banner-chicken.png",
     imageAlt: "치킨 배너 이미지",
     bg: "#e8d6c5",
     badges: [
-      { label: "런칭", tone: "dark" },
-      { label: "한정", tone: "light" },
+      { label: "한정", tone: "dark" },
+      { label: "신상", tone: "light" },
     ],
     to: "/products",
   },
   {
     id: "m3",
-    eyebrow: "담백한 단백질 & 산뜻한 풍미의 조합",
-    title: "노르웨이산 ‘저염 훈제연어 스테이크’",
+    eyebrow: "담백한 연어와 허브의 완벽한 조합",
+    title: "노르웨이산 연어 허브 스테이크",
     period: "3.03 - 3.09",
     imageSrc: "/img/banner-salmon.png",
     imageAlt: "연어 배너 이미지",
@@ -48,38 +48,22 @@ export const marketBannerSlides = [
   {
     id: "m4",
     eyebrow: "가볍게 먹어도 든든한 한 그릇",
-    title: "비건 ‘컬러풀 그레인 샐러드 볼’",
+    title: "비건 단백질 샐러드 보울 세트",
     period: "3.10 - 3.16",
     imageSrc: "/img/banner-veggie.png",
-    imageAlt: "샐러드 볼 배너 이미지",
+    imageAlt: "샐러드 보울 배너 이미지",
     bg: "#e7e1d1",
     badges: [
       { label: "건강식", tone: "dark" },
-      { label: "신상품", tone: "light" },
+      { label: "저칼로리", tone: "light" },
     ],
     to: "/products",
   },
 ];
 
-
 /**
- * 자동 슬라이드 배너 섹션 (텍스트 좌 / 이미지 우 / 배지 / 좌우 화살표)
- *
- * slides: [
- *   {
- *     id: "b1",
- *     eyebrow: "신선한 오리원육과 천연 훈연으로 담백하고 건강하게 만든",
- *     title: "첨가물 0% ‘자연누리 무항생제 훈제오리’",
- *     period: "2.17 - 2.23",
- *     imageSrc: "/img/banner1.png",
- *     imageAlt: "훈제오리 접시",
- *     bg: "#ded2bf",
- *     badges: [{ label: "공동구매", tone: "dark" }, { label: "쿠폰할인", tone: "light" }],
- *     to: "/products/123" // 또는 href
- *   }
- * ]
+ * 자동 슬라이드 배너 섹션
  */
-
 export default function BannerSection({
   slides = [],
   autoPlay = true,
@@ -110,7 +94,7 @@ export default function BannerSection({
   const goPrev = () => go((i) => i - 1);
   const goNext = () => go((i) => i + 1);
 
-  // autoplay
+  // 자동 재생
   useEffect(() => {
     if (!autoPlay || len <= 1) return;
     if (pauseOnHover && isHover) return;
@@ -129,7 +113,7 @@ export default function BannerSection({
     };
   }, [autoPlay, interval, len, isHover, pauseOnHover]);
 
-  // 페이지 비활성화 시 자동 멈춤(UX)
+  // 페이지 비활성화 시 자동 재생 일시 정지
   useEffect(() => {
     const onVis = () => {
       if (document.hidden) {
@@ -155,7 +139,7 @@ export default function BannerSection({
       style={styleVars}
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => setIsHover(false)}
-      aria-label="Main banner"
+      aria-label="메인 배너"
     >
       <div className="hs-bannerCarousel-inner">
         <div className="hs-bannerFrame">
@@ -164,7 +148,6 @@ export default function BannerSection({
 
             const content = (
               <div className="hs-bannerSlideContent">
-                {/* Badges */}
                 {!!s?.badges?.length && (
                   <div className="hs-bannerBadges" aria-hidden="true">
                     {s.badges.map((b, bi) => (
@@ -178,18 +161,16 @@ export default function BannerSection({
                   </div>
                 )}
 
-                {/* Text */}
                 <div className="hs-bannerText">
                   {s.eyebrow && <div className="hs-bannerEyebrow">{s.eyebrow}</div>}
                   {s.title && <div className="hs-bannerTitle">{s.title}</div>}
                   {s.period && <div className="hs-bannerPeriod">{s.period}</div>}
                 </div>
 
-                {/* Image */}
                 <div className="hs-bannerMedia">
                   <img
                     src={s.imageSrc}
-                    alt={s.imageAlt || s.title || "banner"}
+                    alt={s.imageAlt || s.title || "배너"}
                     loading={active ? "eager" : "lazy"}
                     className="hs-bannerImg"
                   />
@@ -221,7 +202,6 @@ export default function BannerSection({
             );
           })}
 
-          {/* Arrows */}
           {len > 1 && (
             <>
               <button
@@ -232,7 +212,7 @@ export default function BannerSection({
                   e.stopPropagation();
                   goPrev();
                 }}
-                aria-label="Previous banner"
+                aria-label="이전 배너"
               >
                 <IconChevronLeft />
               </button>
@@ -245,23 +225,22 @@ export default function BannerSection({
                   e.stopPropagation();
                   goNext();
                 }}
-                aria-label="Next banner"
+                aria-label="다음 배너"
               >
                 <IconChevronRight />
               </button>
             </>
           )}
 
-          {/* Dots */}
           {showDots && len > 1 && (
-            <div className="hs-bannerDots" aria-label="Banner pagination">
+            <div className="hs-bannerDots" aria-label="배너 페이지네이션">
               {safeSlides.map((_, di) => (
                 <button
                   key={`dot-${di}`}
                   type="button"
                   className={`hs-dot ${di === index ? "is-active" : ""}`}
                   onClick={() => go(di)}
-                  aria-label={`Go to banner ${di + 1}`}
+                  aria-label={`${di + 1}번 배너로 이동`}
                 />
               ))}
             </div>

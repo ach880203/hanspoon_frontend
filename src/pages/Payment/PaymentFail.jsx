@@ -10,7 +10,7 @@ function PaymentFail() {
         <div className="payment-result-page">
             <div className="container">
                 <div className="result-card fail">
-                    <div className="result-icon">X</div>
+                    <div className="result-icon">실패</div>
                     <h1 className="result-title">결제에 실패했습니다</h1>
                     <p className="result-message">
                         {errorMessage}

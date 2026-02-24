@@ -90,7 +90,7 @@ export default function MyPageDropdown() {
             <circle cx="12" cy="7" r="4" />
           </svg>
         </span>
-        <span className="trigger-text">My Page</span>
+        <span className="trigger-text">마이페이지</span>
       </button>
 
       {isOpen && (
@@ -115,7 +115,7 @@ export default function MyPageDropdown() {
                 </div>
               </div>
               <div className="user-info">
-                <div className="user-name">{user?.userName || "User"}</div>
+                <div className="user-name">{user?.userName || "사용자"}</div>
                 <div className="user-handle">#{summary?.userId || "guest"}</div>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function MyPageDropdown() {
                 </svg>
               </div>
               <div className="stat-label">
-                <span className="label-text">Points</span>
+                <span className="label-text">포인트</span>
                 <span className="stat-value">
                   {statsLoading ? "..." : (summary?.spoonBalance ?? 0).toLocaleString()}
                 </span>
@@ -157,7 +157,7 @@ export default function MyPageDropdown() {
                 </svg>
               </div>
               <div className="stat-label">
-                <span className="label-text">Coupons</span>
+                <span className="label-text">쿠폰</span>
                 <span className="stat-value">{statsLoading ? "..." : couponCount ?? 0}</span>
               </div>
             </Link>
@@ -166,32 +166,32 @@ export default function MyPageDropdown() {
           <ul className="dropdown-links">
             <li>
               <Link to="/mypage/orders" onClick={() => setIsOpen(false)}>
-                Orders
+                주문/배송 조회
               </Link>
             </li>
             <li>
               <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
-                Reviews
+                나의 리뷰
               </Link>
             </li>
             <li>
               <Link to="/mypage/wishlist" onClick={() => setIsOpen(false)}>
-                Wishlist
+                찜 목록
               </Link>
             </li>
             <li>
               <Link to="/mypage/profile" onClick={() => setIsOpen(false)}>
-                Profile
+                내 정보 수정
               </Link>
             </li>
             <li>
               <Link to="/events" onClick={() => setIsOpen(false)}>
-                Events
+                이벤트
               </Link>
             </li>
             <li className="logout-item">
               <button className="logout-btn-link" onClick={handleLogout}>
-                Logout
+                로그아웃
               </button>
             </li>
           </ul>

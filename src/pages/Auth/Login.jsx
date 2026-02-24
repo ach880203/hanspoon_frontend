@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
 import { getBackendBaseUrl } from '../../utils/backendUrl';
@@ -31,7 +31,7 @@ function Login() {
             if (result.success) {
                 alert('로그인 성공!');
                 navigate('/');
-                window.location.reload(); // 페이지 새로고침으로 Header 업데이트
+                window.location.reload();
             } else {
                 setError(result.message || '로그인에 실패했습니다.');
             }
@@ -43,7 +43,6 @@ function Login() {
     };
 
     const handleOAuthLogin = (provider) => {
-        // OAuth2 로그인 URL로 리다이렉트
         const backendUrl = getBackendBaseUrl('http://localhost:8080');
         window.location.href = `${backendUrl}/oauth2/authorization/${provider}`;
     };
@@ -54,7 +53,7 @@ function Login() {
                 <div className="auth-container">
                     <div className="auth-card">
                         <h1 className="auth-title">로그인</h1>
-                        <p className="auth-subtitle">한스푼에 오신 것을 환영합니다</p>
+                        <p className="auth-subtitle">한스푼에 오신 것을 환영합니다.</p>
 
                         {error && (
                             <div className="alert alert-error">
@@ -69,7 +68,7 @@ function Login() {
                                     type="email"
                                     name="email"
                                     className="form-input"
-                                    placeholder="example@email.com"
+                                    placeholder="이메일 주소를 입력해 주세요"
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
@@ -82,7 +81,7 @@ function Login() {
                                     type="password"
                                     name="password"
                                     className="form-input"
-                                    placeholder="비밀번호를 입력하세요"
+                                    placeholder="비밀번호를 입력해 주세요"
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
@@ -107,15 +106,15 @@ function Login() {
                                 onClick={() => handleOAuthLogin('google')}
                                 className="btn-oauth btn-google"
                             >
-                                <span className="oauth-icon">G</span>
-                                Google로 로그인
+                                <span className="oauth-icon">구</span>
+                                구글로 로그인
                             </button>
                             <button
                                 onClick={() => handleOAuthLogin('kakao')}
                                 className="btn-oauth btn-kakao"
                             >
-                                <span className="oauth-icon">K</span>
-                                Kakao로 로그인
+                                <span className="oauth-icon">카</span>
+                                카카오로 로그인
                             </button>
                         </div>
 

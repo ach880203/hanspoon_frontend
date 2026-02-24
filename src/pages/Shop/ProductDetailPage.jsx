@@ -130,7 +130,7 @@ export default function ProductDetailPage() {
     return () => obs.disconnect();
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
-  if (!data) return <div className="pdContainer">Loading...</div>;
+  if (!data) return <div className="pdContainer">불러오는 중...</div>;
 
   return (
     <div className="pdPage">
@@ -147,7 +147,7 @@ export default function ProductDetailPage() {
               {activeImg ? (
                 <img src={activeImg} alt={data.name} />
               ) : (
-                <div className="pdImgPlaceholder">No Image</div>
+                <div className="pdImgPlaceholder">이미지 없음</div>
               )}
             </div>
 

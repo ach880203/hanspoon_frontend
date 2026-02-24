@@ -34,7 +34,7 @@ const AdminManagementPage = () => {
             <h3>공지사항 관리</h3>
             <AdminNoticeList />
             <hr style={{ margin: "40px 0" }} />
-            <h3>FAQ 관리</h3>
+            <h3>자주 묻는 질문 관리</h3>
             <AdminFaqList />
             <hr style={{ margin: "40px 0" }} />
             <h3>1:1 문의 관리</h3>

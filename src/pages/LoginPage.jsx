@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getBackendBaseUrl } from "../utils/backendUrl";
@@ -15,11 +15,7 @@ export default function LoginPage() {
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
 
   const checkCapsLock = (e) => {
-    if (e.getModifierState("CapsLock")) {
-      setIsCapsLockOn(true);
-    } else {
-      setIsCapsLockOn(false);
-    }
+    setIsCapsLockOn(e.getModifierState("CapsLock"));
   };
 
   const onSubmit = async (e) => {
@@ -28,10 +24,9 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email, password);
-      // nav("/", { replace: true });
-      window.location.href = "/"; // 페이지 새로고침을 통해 헤더 상태 강제 갱신
+      window.location.href = "/";
     } catch (e) {
-      setErr(e.message || "로그인 실패");
+      setErr(e.message || "로그인에 실패했습니다.");
     } finally {
       setBusy(false);
     }
@@ -40,8 +35,8 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Welcome Back</h1>
-        <p className="auth-subtitle">한스푼에 오신 것을 환영합니다. <br />당신만의 특별한 레시피를 만나보세요.</p>
+        <h1 className="auth-title">다시 만나서 반가워요</h1>
+        <p className="auth-subtitle">한스푼에 로그인하고 나만의 미식 생활을 시작해 보세요.</p>
 
         <form onSubmit={onSubmit} className="auth-form">
           <div className="form-group">
@@ -49,7 +44,7 @@ export default function LoginPage() {
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@hanspoon.com"
+              placeholder="이메일 주소를 입력해 주세요"
               autoComplete="email"
               required
             />
@@ -62,16 +57,12 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={checkCapsLock}
               onKeyUp={checkCapsLock}
-              placeholder="••••••••"
+              placeholder="비밀번호를 입력해 주세요"
               type="password"
               autoComplete="current-password"
               required
             />
-            {isCapsLockOn && (
-              <div className="caps-lock-warning">
-                Caps Lock이 켜져 있습니다.
-              </div>
-            )}
+            {isCapsLockOn && <div className="caps-lock-warning">대문자 입력 상태입니다.</div>}
           </div>
 
           {err && <div className="auth-error">{err}</div>}
@@ -93,11 +84,11 @@ export default function LoginPage() {
 
         <div className="social-grid">
           <a href={`${oauthBaseUrl}/oauth2/authorization/google`} className="btn-social btn-google">
-            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="social-icon" />
+            <img src="https://developers.google.com/identity/images/g-logo.png" alt="구글" className="social-icon" />
             구글 계정으로 시작하기
           </a>
           <a href={`${oauthBaseUrl}/oauth2/authorization/kakao`} className="btn-social btn-kakao">
-            <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png" alt="Kakao" className="social-icon" />
+            <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png" alt="카카오" className="social-icon" />
             카카오 계정으로 시작하기
           </a>
         </div>

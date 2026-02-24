@@ -41,7 +41,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (!data) return <div>Loading...</div>;
+  if (!data) return <div>불러오는 중...</div>;
 
   return (
     <div>
@@ -50,7 +50,7 @@ export default function ProductDetailPage() {
       <div className="detail">
         <div className="detailLeft">
           <div className="detailMainImg">
-            {activeImg ? <img src={activeImg} alt={data.name} /> : <div className="thumbPlaceholder">No Image</div>}
+            {activeImg ? <img src={activeImg} alt={data.name} /> : <div className="thumbPlaceholder">이미지 없음</div>}
           </div>
           <div className="detailStrip">
             {(data.images || []).map((img) => (

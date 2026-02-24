@@ -36,48 +36,48 @@ export default function OrderPage() {
     }
   };
 
-  if (!order) return <div>Loading...</div>;
+  if (!order) return <div>불러오는 중...</div>;
 
   const canRefundReason = order.status === "PAID";
 
   return (
     <div>
-      <h1>Order #{order.orderId}</h1>
+      <h1>주문 #{order.orderId}</h1>
       {err && <div className="error">{err}</div>}
 
       <div className="panel">
         <div className="row" style={{ justifyContent: "space-between" }}>
           <div>
             <div className="badge">{order.status}</div>
-            <div className="muted">total: {order.totalPrice.toLocaleString()}원</div>
+            <div className="muted">총 결제금액: {order.totalPrice.toLocaleString()}원</div>
           </div>
           <div className="muted">
-            created: {String(order.createdAt || "")}
+            생성일시: {String(order.createdAt || "")}
           </div>
         </div>
 
         <div className="grid2" style={{ marginTop: 12 }}>
           <div className="panelMini">
-            <div><b>Receiver</b></div>
+            <div><b>수령인 정보</b></div>
             <div>{order.receiverName} / {order.receiverPhone}</div>
             <div className="muted">{order.address1} {order.address2}</div>
           </div>
           <div className="panelMini">
-            <div><b>Timestamps</b></div>
-            <div className="muted">paidAt: {String(order.paidAt || "")}</div>
-            <div className="muted">shippedAt: {String(order.shippedAt || "")}</div>
-            <div className="muted">deliveredAt: {String(order.deliveredAt || "")}</div>
-            <div className="muted">refundedAt: {String(order.refundedAt || "")}</div>
-            {order.refundReason && <div className="muted">reason: {order.refundReason}</div>}
+            <div><b>처리 시각</b></div>
+            <div className="muted">결제 시각: {String(order.paidAt || "")}</div>
+            <div className="muted">출고 시각: {String(order.shippedAt || "")}</div>
+            <div className="muted">배송완료 시각: {String(order.deliveredAt || "")}</div>
+            <div className="muted">환불 시각: {String(order.refundedAt || "")}</div>
+            {order.refundReason && <div className="muted">환불 사유: {order.refundReason}</div>}
           </div>
         </div>
 
-        <h3 style={{ marginTop: 16 }}>Items</h3>
+        <h3 style={{ marginTop: 16 }}>주문 상품</h3>
         <div className="cartList">
           {order.items.map((it) => (
             <div key={it.orderItemId} className="cartItem">
               <div className="cartThumb">
-                {it.thumbnailUrl ? <img src={it.thumbnailUrl} alt={it.productName} /> : <div className="thumbPlaceholder">No</div>}
+                {it.thumbnailUrl ? <img src={it.thumbnailUrl} alt={it.productName} /> : <div className="thumbPlaceholder">이미지 없음</div>}
               </div>
               <div className="cartInfo">
                 <div className="title">{it.productName}</div>
@@ -91,7 +91,7 @@ export default function OrderPage() {
         </div>
 
         <div className="panel" style={{ marginTop: 12 }}>
-          <h3>Actions</h3>
+          <h3>주문 처리</h3>
           <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
             <button disabled={busy} onClick={() => nav("/payment", {
               state: {
@@ -99,33 +99,33 @@ export default function OrderPage() {
                 itemName: order.items[0]?.productName + (order.items.length > 1 ? ` 외 ${order.items.length - 1}건` : ""),
                 amount: order.totalPrice
               }
-            })}>PAY</button>
-            <button disabled={busy} onClick={() => action(() => shipOrder(order.orderId))}>SHIP</button>
-            <button disabled={busy} onClick={() => action(() => deliverOrder(order.orderId))}>DELIVER</button>
+            })}>결제하기</button>
+            <button disabled={busy} onClick={() => action(() => shipOrder(order.orderId))}>출고 처리</button>
+            <button disabled={busy} onClick={() => action(() => deliverOrder(order.orderId))}>배송 완료</button>
 
             {canRefundReason && (
               <>
                 <input
-                  placeholder="환불 사유 (PAID에서 필수)"
+                  placeholder="환불 사유 (결제완료 상태에서 필수)"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   style={{ minWidth: 240 }}
                 />
                 <button className="danger" disabled={busy} onClick={() => action(() => cancelOrder(order.orderId, reason))}>
-                  CANCEL(REFUND)
+                  취소(환불)
                 </button>
               </>
             )}
 
             {!canRefundReason && (
               <button className="danger" disabled={busy} onClick={() => action(() => cancelOrder(order.orderId, null))}>
-                CANCEL
+                주문 취소
               </button>
             )}
           </div>
 
           <div className="muted" style={{ marginTop: 8 }}>
-            정책: SHIPPED/DELIVERED 이후에는 cancel 불가(반품은 다음 단계)
+            정책: 출고/배송완료 이후에는 취소가 불가합니다. (반품은 다음 단계에서 처리)
           </div>
         </div>
       </div>

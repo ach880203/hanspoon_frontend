@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { paymentApi } from "../../api";
 import { formatPhoneNumber } from "../../utils/format";
@@ -7,7 +7,15 @@ import "./Payment.css";
 function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [loading, setLoading] = useState(false);
+  const [coupons, setCoupons] = useState([]);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [pointBalance, setPointBalance] = useState(0);
+  const [usedPoints, setUsedPoints] = useState(0);
+  const [portOneConfig, setPortOneConfig] = useState(null);
 
   const {
     itemName,
@@ -26,13 +34,6 @@ function Payment() {
     buyerEmail: initialBuyerEmail || "",
     buyerTel: initialBuyerTel ? formatPhoneNumber(initialBuyerTel) : "",
   });
-  const [loading, setLoading] = useState(false);
-  const [coupons, setCoupons] = useState([]);
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [pointBalance, setPointBalance] = useState(0);
-  const [usedPoints, setUsedPoints] = useState(0);
-  const [portOneConfig, setPortOneConfig] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,7 +59,7 @@ function Payment() {
           navigate("/login");
           return;
         }
-        alert(`결제 정보를 불러오는 중 오류가 발생했습니다: ${error.message || "Unknown error"}`);
+        alert(`결제 정보를 불러오는 중 오류가 발생했습니다: ${error.message || "알 수 없는 오류"}`);
       }
     };
 
@@ -67,8 +68,8 @@ function Payment() {
 
   useEffect(() => {
     const baseAmount = Number(formData.amount) || 0;
-    let couponDiscount = 0;
 
+    let couponDiscount = 0;
     if (selectedCoupon) {
       couponDiscount =
         selectedCoupon.discountType === "FIXED"
@@ -83,6 +84,10 @@ function Payment() {
       setUsedPoints(maxApplicablePoints);
     }
   }, [selectedCoupon, formData.amount, usedPoints]);
+
+  const finalAmount = useMemo(() => {
+    return Number(formData.amount) - discountAmount - usedPoints;
+  }, [formData.amount, discountAmount, usedPoints]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -108,12 +113,8 @@ function Payment() {
   };
 
   const resolvePaymentConfig = (config) => {
-    if (paymentMethod === "kakaopay") {
-      return { channelKey: config.channelKeyKakao, payMethodType: "EASY_PAY" };
-    }
-    if (paymentMethod === "tosspay") {
-      return { channelKey: config.channelKeyToss, payMethodType: "EASY_PAY" };
-    }
+    if (paymentMethod === "kakaopay") return { channelKey: config.channelKeyKakao, payMethodType: "EASY_PAY" };
+    if (paymentMethod === "tosspay") return { channelKey: config.channelKeyToss, payMethodType: "EASY_PAY" };
     return { channelKey: config.channelKeyTossPayments, payMethodType: "CARD" };
   };
 
@@ -127,7 +128,7 @@ function Payment() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.buyerEmail)) {
-      alert("올바른 이메일 형식을 입력해 주세요. (예: test@email.com)");
+      alert("올바른 이메일 형식을 입력해 주세요. (예: user@domain.com)");
       return;
     }
 
@@ -143,14 +144,13 @@ function Payment() {
       }
 
       const merchantUid = `PAY-${Date.now()}`;
-      const totalAmount = Number(formData.amount) - discountAmount - usedPoints;
 
       const response = await window.PortOne.requestPayment({
         storeId: config.storeId,
         channelKey,
         paymentId: merchantUid,
         orderName: formData.itemName,
-        totalAmount,
+        totalAmount: finalAmount,
         currency: "CURRENCY_KRW",
         payMethod: payMethodType,
         customer: {
@@ -190,8 +190,6 @@ function Payment() {
     }
   };
 
-  const finalAmount = Number(formData.amount) - discountAmount - usedPoints;
-
   return (
     <div className="payment-page">
       <div className="container">
@@ -221,7 +219,7 @@ function Payment() {
                     type="text"
                     name="buyerName"
                     className="form-input"
-                    placeholder="홍길동"
+                    placeholder="이름을 입력해 주세요"
                     value={formData.buyerName}
                     onChange={handleChange}
                     required
@@ -233,7 +231,7 @@ function Payment() {
                     type="email"
                     name="buyerEmail"
                     className="form-input"
-                    placeholder="example@email.com"
+                    placeholder="이메일 주소를 입력해 주세요"
                     value={formData.buyerEmail}
                     onChange={handleChange}
                     required
@@ -265,7 +263,7 @@ function Payment() {
                     }}
                     value={selectedCoupon?.userCouponId || ""}
                   >
-                    <option value="">적용할 쿠폰을 선택하세요</option>
+                    <option value="">적용할 쿠폰을 선택해 주세요</option>
                     {coupons.map((c) => (
                       <option key={c.userCouponId} value={c.userCouponId}>
                         {c.name} ({c.discountType === "FIXED" ? `${c.discountValue.toLocaleString()}원` : `${c.discountValue}%`} 할인)
@@ -304,6 +302,7 @@ function Payment() {
                     </div>
                     <span>신용/체크카드</span>
                   </label>
+
                   <label className="payment-method-option">
                     <input
                       type="radio"
@@ -315,12 +314,13 @@ function Payment() {
                     <div className="method-icon-wrapper">
                       <img
                         src="https://play-lh.googleusercontent.com/W43xj43ErMIs5BQgCdMKEa0NXCoUUW8DjQc5SxcDfLrC26H8sHDmoFIUWLYmsQahpo0"
-                        alt="Kakao Pay"
+                        alt="카카오페이"
                         className="payment-logo-img"
                       />
                     </div>
                     <span>카카오페이</span>
                   </label>
+
                   <label className="payment-method-option">
                     <input
                       type="radio"
@@ -332,7 +332,7 @@ function Payment() {
                     <div className="method-icon-wrapper">
                       <img
                         src="https://media.licdn.com/dms/image/v2/C560BAQE9411tskRlZQ/company-logo_200_200/company-logo_200_200/0/1662339512733/toss_payments_logo?e=2147483647&v=beta&t=zCKkS9mu5GlCHjEoleeEVpOM3H2IDWj9TZsri1wNQXM"
-                        alt="Toss Pay"
+                        alt="토스페이"
                         className="payment-logo-img"
                       />
                     </div>
@@ -361,12 +361,12 @@ function Payment() {
               </div>
 
               <button type="submit" className="btn btn-primary btn-full btn-large" disabled={loading}>
-                {loading ? "결제 진행 중.." : `${finalAmount.toLocaleString()}원 결제하기`}
+                {loading ? "결제 진행 중..." : `${finalAmount.toLocaleString()}원 결제하기`}
               </button>
             </form>
 
             <div className="payment-notice">
-              <p>* 결제 시 개인정보는 안전하게 보호됩니다.</p>
+              <p>* 결제 및 개인정보는 안전하게 보호됩니다.</p>
               <p>* 결제 후 7일 이내 환불 요청이 가능합니다.</p>
             </div>
           </div>

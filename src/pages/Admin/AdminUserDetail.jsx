@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminApi } from '../../api';
 import {
@@ -25,7 +25,6 @@ function AdminUserDetail() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            console.log(`회원 상세 데이터 조회 시작 (ID: ${id})`);
             await Promise.all([fetchUserDetail(), fetchUserHistory()]);
         } catch (error) {
             console.error('데이터 통합 조회 실패:', error);
@@ -37,7 +36,6 @@ function AdminUserDetail() {
     const fetchUserDetail = async () => {
         try {
             const response = await adminApi.getUserDetail(id);
-            console.log('회원 상세 정보 응답:', response);
             if (response && response.data) {
                 setUser(response.data);
             } else {
@@ -50,21 +48,14 @@ function AdminUserDetail() {
 
     const fetchUserHistory = async () => {
         try {
-            console.log(`[Debug] ${id}번 회원 활동 이력 요청 시작...`);
-            // adminApi.getUserHistory는 response.data를 반환함 (Axios Response 객체의 data 속성)
-            // 즉, 여기서 response는 백엔드가 보낸 ApiResponse 객체 { status, message, data: UserHistoryDto } 임
             const apiResponse = await adminApi.getUserHistory(id);
-            console.log('[Debug] 활동 이력 API Raw Response:', apiResponse);
 
             let payload = null;
             if (apiResponse && apiResponse.data) {
-                payload = apiResponse.data; // ApiResponse.data (UserHistoryDto)
+                payload = apiResponse.data;
             } else if (apiResponse && apiResponse.orders) {
-                // 혹시 ApiResponse 래퍼 없이 바로 왔을 경우를 대비
                 payload = apiResponse;
             }
-
-            console.log('[Debug] 추출된 히스토리 데이터 (UserHistoryDto):', payload);
 
             if (payload) {
                 setHistory({
@@ -72,17 +63,20 @@ function AdminUserDetail() {
                     reservations: payload.reservations || [],
                     payments: payload.payments || []
                 });
-                console.log(`[Debug] 상태 업데이트 완료: 주문(${payload.orders?.length || 0}), 예약(${payload.reservations?.length || 0}), 결제(${payload.payments?.length || 0})`);
-            } else {
-                console.warn('[Debug] API 응답에 데이터 페이로드가 없습니다.');
             }
         } catch (error) {
             console.error('회원 활동 이력 조회 실패:', error);
         }
     };
 
+    const statusLabelMap = {
+        ACTIVE: '활성',
+        SUSPENDED: '정지',
+        DELETED: '탈퇴'
+    };
+
     const handleStatusUpdate = async (newStatus) => {
-        if (!window.confirm(`계정 상태를 ${newStatus} (으)로 변경하시겠습니까?`)) return;
+        if (!window.confirm(`계정 상태를 '${statusLabelMap[newStatus] || newStatus}'로 변경하시겠습니까?`)) return;
 
         try {
             await adminApi.updateUserStatus(id, newStatus);
@@ -94,7 +88,7 @@ function AdminUserDetail() {
         }
     };
 
-    if (loading) return <div className="container mt-5"><p>로딩 중...</p></div>;
+    if (loading) return <div className="container mt-5"><p>불러오는 중...</p></div>;
     if (!user) return <div className="container mt-5"><p>사용자를 찾을 수 없습니다.</p></div>;
 
     return (
@@ -105,7 +99,6 @@ function AdminUserDetail() {
             </div>
 
             <div className="row">
-                {/* 기본 정보 카드 */}
                 <div className="col-md-4">
                     <div className="card shadow-sm mb-4">
                         <div className="card-header bg-primary text-white">기본 정보</div>
@@ -132,16 +125,15 @@ function AdminUserDetail() {
                                 <button className="btn btn-success" onClick={() => handleStatusUpdate('ACTIVE')}>정상 상태로 복구</button>
                             )}
                             {user.status !== 'SUSPENDED' && (
-                                <button className="btn btn-warning" onClick={() => handleStatusUpdate('SUSPENDED')}>계정 정지 (SUSPENDED)</button>
+                                <button className="btn btn-warning" onClick={() => handleStatusUpdate('SUSPENDED')}>계정 정지 처리</button>
                             )}
                             {user.status !== 'DELETED' && (
-                                <button className="btn btn-danger" onClick={() => handleStatusUpdate('DELETED')}>계정 탈퇴 처리 (DELETED)</button>
+                                <button className="btn btn-danger" onClick={() => handleStatusUpdate('DELETED')}>계정 탈퇴 처리</button>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* 이력 정보 (탭) */}
                 <div className="col-md-8">
                     <div className="card shadow-sm h-100">
                         <div className="card-header bg-light">
@@ -178,7 +170,7 @@ function AdminUserDetail() {
                                     <table className="table table-sm">
                                         <thead>
                                             <tr>
-                                                <th>ID</th>
+                                                <th>번호</th>
                                                 <th>주문일</th>
                                                 <th>금액</th>
                                                 <th>상태</th>
@@ -203,8 +195,8 @@ function AdminUserDetail() {
                                     <table className="table table-sm">
                                         <thead>
                                             <tr>
-                                                <th>ID</th>
-                                                <th>클래스/세션</th>
+                                                <th>번호</th>
+                                                <th>클래스 세션</th>
                                                 <th>예약일</th>
                                                 <th>상태</th>
                                             </tr>
@@ -228,7 +220,7 @@ function AdminUserDetail() {
                                     <table className="table table-sm">
                                         <thead>
                                             <tr>
-                                                <th>ID</th>
+                                                <th>번호</th>
                                                 <th>상품명</th>
                                                 <th>결제일</th>
                                                 <th>금액</th>

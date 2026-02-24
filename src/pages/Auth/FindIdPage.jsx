@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authApi } from '../../api/authApi';
 import { formatPhoneNumber } from '../../utils/format';
@@ -34,7 +34,7 @@ const FindIdPage = () => {
     return (
         <div className="auth-container">
             <div className="auth-card">
-                <h1 className="auth-title">Find ID</h1>
+                <h1 className="auth-title">아이디 찾기</h1>
                 <p className="auth-subtitle">가입 시 등록한 이름과 휴대폰 번호를 입력해 주세요.</p>
 
                 {!foundEmail ? (
@@ -45,7 +45,7 @@ const FindIdPage = () => {
                                 type="text"
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
-                                placeholder="이름을 입력하세요"
+                                placeholder="이름을 입력해 주세요"
                                 required
                             />
                         </div>
@@ -62,11 +62,7 @@ const FindIdPage = () => {
 
                         {error && <div className="auth-error">{error}</div>}
 
-                        <button
-                            type="submit"
-                            className="auth-button"
-                            disabled={loading}
-                        >
+                        <button type="submit" className="auth-button" disabled={loading}>
                             {loading ? '찾는 중...' : '아이디 찾기'}
                         </button>
                     </form>

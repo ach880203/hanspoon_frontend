@@ -292,7 +292,7 @@ const RecipePage = () => {
       
       <div className="recipe-container">
         <div className="header-area">
-          <div className="logo"><span>Han</span>spoon Recipe</div>
+          <div className="logo"><span>한</span>스푼 레시피</div>
           <button className="save-btn" onClick={handleSave}>{isEditMode ? "레시피 수정하기" : "레시피 저장하기"}</button>
         </div>
 

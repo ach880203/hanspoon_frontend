@@ -280,10 +280,10 @@ export default function HomePage() {
           <UseCaseCard
             icon="📢"
             title="고객지원"
-            description="공지사항과 FAQ를 확인하고 필요한 정보를 빠르게 찾아보세요."
+            description="공지사항과 자주 묻는 질문을 확인하고 필요한 정보를 빠르게 찾아보세요."
             links={[
               { to: "/notice", label: "공지사항" },
-              { to: "/faq", label: "FAQ" },
+              { to: "/faq", label: "자주 묻는 질문" },
             ]}
             sublinks={[]}
           />

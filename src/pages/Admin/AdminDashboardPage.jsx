@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../api';
 import './AdminDashboardPage.css';
 
@@ -24,7 +24,7 @@ const AdminDashboardPage = () => {
         }
     };
 
-    if (loading) return <div className="p-5">로딩 중...</div>;
+    if (loading) return <div className="p-5">불러오는 중...</div>;
     if (!summary) return <div className="p-5">데이터를 불러올 수 없습니다.</div>;
 
     const { sales, orders, reservations, cs } = summary;
@@ -57,7 +57,7 @@ const AdminDashboardPage = () => {
                 <DashboardCard
                     title="오늘 클래스 예약"
                     value={`${reservations.todayCount}건`}
-                    meta={`취소/환불 대기 ${reservations.pendingCancel}건 / 전체취소 ${reservations.totalCanceled}건`}
+                    meta={`취소/환불 대기 ${reservations.pendingCancel}건 / 전체 취소 ${reservations.totalCanceled}건`}
                 />
             </div>
 
@@ -66,16 +66,16 @@ const AdminDashboardPage = () => {
                 <div className="status-section">
                     <h3 className="section-title">주문 관리</h3>
                     <div className="status-list">
-                        <StatusItem label="결제 완료 (배송준비 전)" count={orders.paymentCompleted} isWarn={orders.paymentCompleted > 5} />
+                        <StatusItem label="결제 완료 (배송준비)" count={orders.paymentCompleted} isWarn={orders.paymentCompleted > 5} />
                         <StatusItem label="상품 준비중" count={orders.preparing} isActive />
                         <StatusItem label="배송중" count={orders.shipping} />
                         <StatusItem label="환불 요청" count={orders.refundRequested} isWarn={orders.refundRequested > 0} />
                     </div>
                 </div>
 
-                {/* CS 및 회원 현황 */}
+                {/* 고객 문의 및 회원 현황 */}
                 <div className="status-section">
-                    <h3 className="section-title">고객 대응 & 회원</h3>
+                    <h3 className="section-title">고객 지원 및 회원</h3>
                     <div className="status-list">
                         <StatusItem label="미답변 문의" count={cs.unreadInquiries} isWarn={cs.unreadInquiries > 0} />
                         <StatusItem label="오늘 신규 가입" count={cs.newUsersToday} isActive />

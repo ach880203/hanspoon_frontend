@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
 
@@ -24,8 +23,8 @@ function AdminFaqWrite() {
                 answer: faq.answer
             });
         } catch (error) {
-            console.error('FAQ 불러오기 실패:', error);
-            alert('FAQ를 불러오는데 실패했습니다.');
+            console.error('자주 묻는 질문 불러오기 실패:', error);
+            alert('자주 묻는 질문을 불러오는데 실패했습니다.');
             navigate('/admin/faq');
         }
     };
@@ -38,7 +37,7 @@ function AdminFaqWrite() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: value
         }));
@@ -63,7 +62,7 @@ function AdminFaqWrite() {
 
     return (
         <div className="container mt-5">
-            <h2>{isEdit ? 'FAQ 수정' : 'FAQ 등록'}</h2>
+            <h2>{isEdit ? '자주 묻는 질문 수정' : '자주 묻는 질문 등록'}</h2>
             <form onSubmit={handleSubmit} className="mt-4">
                 <div className="mb-3">
                     <label htmlFor="category" className="form-label">카테고리</label>
@@ -75,7 +74,7 @@ function AdminFaqWrite() {
                         onChange={handleChange}
                         required
                     >
-                        <option value="">선택하세요</option>
+                        <option value="">선택해 주세요</option>
                         <option value="PAYMENT">결제</option>
                         <option value="CLASS">클래스</option>
                         <option value="MEMBER">회원</option>
