@@ -185,7 +185,7 @@ const RecipePage = () => {
           name: '',
           sortOrder: 1, 
           ingredients: [
-            { id: nextId(), 
+            { id: nextId()+1, 
               name: '', 
               baseAmount: '', 
               unit: '', 
@@ -215,7 +215,7 @@ const RecipePage = () => {
           title: '', 
           sortOrder: recipe.instructionGroup.length,
           instructions: [
-            { id: nextId(), 
+            { id: nextId()+1, 
               content: '', 
               stepImg: '', 
               stepOrder: 1,

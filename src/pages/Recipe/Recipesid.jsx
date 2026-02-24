@@ -1,32 +1,58 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { deleteRecipe, getRecipeDetail } from '../../api/recipeApi';
+import { createwishes, deleteRecipe, getRecipeDetail } from '../../api/recipeApi'; // API 함수 임포트
 import { toBackendUrl } from '../../utils/backendUrl';
+
+// [치환 로직] @재료명 -> 실시간 수치 포함 텍스트로 변경
+  const renderInstruction = (content, currentRatio, recipe, getCalculatedAmount) => {
+    if (!content || !recipe) return content;
+    const regex = /@([가-힣a-zA-Z0-9\s]+?)(?=\s|$|[.,!])/g;
+
+    return content.replace(regex, (match, ingName) => {
+      const trimmedName = ingName.trim();
+      let foundIng = null;
+
+      const groups = recipe.ingredientGroups || recipe.ingredientGroup;
+      groups?.forEach(group => {
+        const ing = group.ingredients?.find(i => i.name.trim() === trimmedName);
+        if (ing) foundIng = ing;
+        console.log("----------------")
+      });
+
+      if (foundIng) {
+        const calcAmount = getCalculatedAmount(foundIng, currentRatio);
+        return `<strong style="color: #ff6b6b; font-weight: bold;">${trimmedName} ${calcAmount}${foundIng.unit}</strong>`;
+      }
+      console.log("-------로직변화------" , match);
+      return match;
+    });
+  };
 
 const Recipesid = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // ?곹깭 愿由?
+  // 상태 관리
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentServings, setCurrentServings] = useState(1);
   const [flavor, setFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
   const [baseFlavor, setBaseFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
   const [editingIng, setEditingIng] = useState({ id: null, value: ""});
+  const [isFavorite, setIsFavorite] = useState(false)
 
-  // ?쒕쾭濡쒕????곗씠??濡쒕뱶
+  // 서버로부터 데이터 로드
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
         setLoading(true);
         const response = await getRecipeDetail(id);
-        const data = response.data;
+        const data = response?.data?.data ?? response?.data;
 
-        console.log("?쒕쾭 ?먮낯 ?곗씠??", data);
+        console.log("서버 원본 데이터:", data);
         
         setRecipe(data);
-        // ?쒕쾭??湲곕낯 ?몃텇 ???ㅼ젙 (湲곕낯媛?1)
+        // 서버의 기본 인분 수 설정 (기본값 1)
         setCurrentServings(Number(data.baseServings) || 1);
 
         const initialFlavor = {
@@ -35,14 +61,14 @@ const Recipesid = () => {
           saltiness: data.saltiness ?? 3
         };
 
-        console.log("?뚯떛??珥덇린 留?", initialFlavor);
+        console.log("파싱된 초기 맛:", initialFlavor);
         
-        // 留??ㅼ젙 (?쒕쾭 ?곗씠???곗꽑, ?놁쑝硫?3)
+        // 맛 설정 (서버 데이터 우선, 없으면 3)
         setFlavor(initialFlavor);
         setBaseFlavor(initialFlavor)
       } catch (error) {
-        console.error("?덉떆??濡쒕뱶 以??먮윭 諛쒖깮:", error);
-        alert("?덉떆???곗씠?곕? 遺덈윭?????놁뒿?덈떎.");
+        console.error("레시피 로드 중 에러 발생:", error);
+        alert("레시피 데이터를 불러올 수 없습니다.");
         navigate(-1);
       } finally {
         setLoading(false);
@@ -52,7 +78,7 @@ const Recipesid = () => {
     if (id) fetchRecipe();
   }, [id, navigate]);
 
-  // [怨꾩궛 濡쒖쭅] ?몃텇 蹂寃쎌뿉 ?곕Ⅸ 諛곗쑉 怨꾩궛
+  // [계산 로직] 인분 변경에 따른 배율 계산
   const ratio = useMemo(() => {
     if (!recipe || !recipe.baseServings) return 1;
     const base = Number(recipe.baseServings);
@@ -70,7 +96,7 @@ const Recipesid = () => {
 
     let adjustedRatio = ratio;
 
-    if (recipe.category === 'KOREAN' || recipe.category === '?쒖떇') {
+    if (recipe.category === 'KOREAN' || recipe.category === '한식') {
       if(!ing.main) {
         if (ratio > 1) {
           adjustedRatio = 1 + (ratio - 1) * 0.5;
@@ -80,6 +106,7 @@ const Recipesid = () => {
       }
     }
     amount = amount * adjustedRatio;
+
 
     if (ing.tasteType === 'SPICY') amount *= getFlavorWeight('spiciness', flavor.spiciness);
     if (ing.tasteType === 'SWEET') amount *= getFlavorWeight('sweetness', flavor.sweetness);
@@ -104,70 +131,83 @@ const Recipesid = () => {
     setCurrentServings(Math.round(nextServings * 10) / 10);
   };
 
-  // [移섑솚 濡쒖쭅] @?щ즺紐?-> ?ㅼ떆媛??섏튂 ?ы븿 ?띿뒪?몃줈 蹂寃?
-  const renderInstruction = (content) => {
-    if (!content || !recipe) return content;
-    const regex = /@([가-힣a-zA-Z0-9\s]+?)(?=\s|$|[.,!])/g;
-
-    return content.replace(regex, (match, ingName) => {
-      const trimmedName = ingName.trim();
-      let foundIng = null;
-
-      const groups = recipe.ingredientGroups || recipe.ingredientGroup;
-      groups?.forEach(group => {
-        const ing = group.ingredients?.find(i => i.name.trim() === trimmedName);
-        if (ing) foundIng = ing;
-      });
-
-      if (foundIng) {
-        const calcAmount = getCalculatedAmount(foundIng);
-        return `<strong style="color: #ff6b6b; font-weight: bold;">${trimmedName} ${calcAmount}${foundIng.unit}</strong>`;
-      }
-      return match;
-    });
-  };
+  
 
   const handleDelete = async () => {
-    if (window.confirm("?뺣쭚濡????덉떆?쇰? ??젣?섏떆寃좎뒿?덇퉴?")) {
+    if (window.confirm("정말로 이 레시피를 삭제하시겠습니까?")) {
       try {
         await deleteRecipe(id);
-        alert("삭제했습니다.");
+        alert("삭제되었습니다");
         navigate("/recipes/list");
       } catch (error) {
-        console.error("??젣 ?ㅽ뙣:", error);
-        alert("??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎");
+        console.error("삭제 실패:", error);
+        alert("삭제 중 오류가 발생했습니다");
       }
     }
   };
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>?곗씠?곕? 遺덈윭?ㅻ뒗 以묒엯?덈떎...</div>;
-  if (!recipe) return <div style={{ padding: '100px', textAlign: 'center' }}>?덉떆???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.</div>;
+  const toggleFavorite = async () => {
+    console.log("레시피 id" , id);
+    try{
+
+      const response = await createwishes(id);
+
+      if (response.status === 200) {
+
+        setIsFavorite(!isFavorite);
+        alert(
+        !isFavorite? "관심 목록에 추가 되었습니다"
+        : "관심목록에서 제거 되었습니다");
+      }
+    }catch (error) {
+      console.error("관심등록 실패:" , error);
+      alert("로그인이 필요하거나 요청을 처리할 수 없습니다");
+    }
+      
+  };
+
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>데이터를 불러오는 중입니다...</div>;
+  if (!recipe) return <div style={{ padding: '100px', textAlign: 'center' }}>레시피 정보를 찾을 수 없습니다.</div>;
 
   return (
     <div style={bodyStyle}>
-      {/* ?고듃 諛??꾩씠肄?濡쒕뱶 */}
-      
+      {/* 폰트 및 아이콘 로드 */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       
       <header style={headerStyle}>
         <div style={containerStyle}>
           <div style={headerFlex}>
-            {/* ?쇱そ: 硫붿씤 ?대?吏 */}
+            {/* 왼쪽: 메인 이미지 */}
             <div style={imgWrapper}>
-              <img 
+             <img 
                 src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : 'https://via.placeholder.com/600x400?text=No+Image'} 
                 alt={recipe.title} 
                 style={mainImgStyle}
               />
             </div>
 
-            {/* ?ㅻⅨ履? ?뺣낫 移대뱶 */}
+            {/* 오른쪽: 정보 카드 */}
             <div style={infoCard}>
               <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px'}}>
                 <span style={categoryBadge}>{recipe.category}</span>
                 <h1 style={titleStyle}>{recipe.title}</h1>
+                <button
+                  onClick={toggleFavorite}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '24px',
+                    color: isFavorite ? '#ff6b6b' : '#ccc',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.2)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}>
+                    <i className={isFavorite ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                  </button>
               </div>
 
-              {/* ?몃텇 議곗젅 UI */}
+              {/* 인분 조절 UI */}
               <div style={servingsBox}>
                 <input 
                   type="number" 
@@ -176,16 +216,16 @@ const Recipesid = () => {
                   style={servingsInput}
                   step="0.5"
                 />
-                <span style={{fontWeight:'bold'}}>?몃텇 湲곗? (議곗젅 媛??</span>
+                <span style={{fontWeight:'bold'}}>인분 기준 (조절 가능)</span>
               </div>
 
-              {/* 留?議곗젅 UI */}
+              {/* 맛 조절 UI */}
               <div style={flavorDisplayBox}>
                 <div style={{fontSize:'12px', color:'#6366f1', fontWeight:'bold', marginBottom:'10px'}}>
-                  ?삄 ???낅쭧??留욊쾶 議곗젅?대낫湲?
+                  😋 내 입맛에 맞게 조절해보기
                 </div>
                 {['spiciness', 'sweetness', 'saltiness'].map((key, idx) => {
-                  const labels = ["매운맛", "단맛", "짠맛"];
+                  const labels = ['매운맛', '단맛', '짠맛'];
                   const colors = ['#ff6b6b', '#ffc107', '#6366f1'];
                   return (
                     <div key={key} style={flavorRow}>
@@ -201,16 +241,16 @@ const Recipesid = () => {
                         style={{flex:1, accentColor: colors[idx]}}
                       />
                       <span style={{...currentValueBadge, backgroundColor: colors[idx]}}>
-                        ?꾩옱: {flavor[key]}
+                        현재: {flavor[key]}
                       </span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* ?щ즺 紐⑸줉 */}
+              {/* 재료 목록 */}
               <h4 style={subTitleStyle}>
-                <i className="fa-solid fa-basket-shopping"></i> ?꾩슂???щ즺
+                <i className="fa-solid fa-basket-shopping"></i> 필요한 재료
               </h4>
 
               <div style={ingredientScrollArea}>
@@ -220,10 +260,10 @@ const Recipesid = () => {
                     {group.ingredients?.map((ing, iIdx) => (
                       <div key={iIdx} style={ingRow}>
                         
-                        {/* ?щ즺紐??곸뿭: ?대쫫 + 硫붿씤(Key) 諛곗? */}
+                        {/* 재료명 영역: 이름 + 메인(Key) 배지 */}
                         <span style={{ display: 'flex', alignItems: 'center' }}>
                           {ing.name}
-                          {/* 硫붿씤 ?щ즺??寃쎌슦 ?묒? 諛곗? ?몄텧 */}
+                          {/* 메인 재료인 경우 작은 배지 노출 */}
                           {ing.main && (
                             <span style={{ 
                               fontSize: '10px', backgroundColor: '#fff3cd', color: '#856404',
@@ -232,10 +272,10 @@ const Recipesid = () => {
                           )}
                         </span>
 
-                        {/* ?섎웾 諛?鍮꾩쑉 ?곸뿭 */}
+                        {/* 수량 및 비율 영역 */}
                         <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {/* 1. ?쒕뭇(BAKERY) 移댄뀒怨좊━?대㈃??鍮꾩쑉 ?곗씠?곌? ?덉쓣 ?뚮쭔 ?몄텧 */}
-                          {recipe.category === 'BAKERY' && ing.ratio != null && (
+                          {/* 1. 제빵(BAKERY) 카테고리이면서 비율 데이터가 있을 때만 노출 */}
+                          {recipe.category === 'BAKERY' && ing.ratio != undefined && ing.ratio != null && (
                             <span style={{ 
                               fontSize: '11px', color: '#888', backgroundColor: '#f5f5f5', 
                               padding: '0 6px', borderRadius: '4px', fontWeight: '500' 
@@ -244,7 +284,7 @@ const Recipesid = () => {
                             </span>
                           )}
                           
-                          {/* 2. 怨꾩궛???섎웾 ?쒖떆 */}
+                          {/* 2. 계산된 수량 표시 */}
                             <span style={{display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <input
                                 type="number"
@@ -279,16 +319,16 @@ const Recipesid = () => {
                 ))}
                  <button
                   onClick = {() => setCurrentServings(Number(recipe.baseServings))}
-                  style={{...navBtn, color: '#666'}}>?먮옒 ?섎웾?쇰줈</button>
+                  style={{...navBtn, color: '#666', cursor: 'pointer'}}>원래 수량으로</button>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* 議곕━ ?쒖꽌 ?뱀뀡 */}
+      {/* 조리 순서 섹션 */}
       <div style={{...containerStyle, marginTop:'40px', paddingBottom:'80px'}}>
-        <h3 style={sectionTitleStyle}><i className="fa-solid fa-fire-burner"></i> 議곕━ ?쒖꽌</h3>
+        <h3 style={sectionTitleStyle}><i className="fa-solid fa-fire-burner"></i> 조리 순서</h3>
         <div style={{maxWidth: '850px', margin: '0 auto'}}>
           {(recipe.instructionGroup || recipe.instructionGroup)?.map((group, gIdx) => (
             <div key={gIdx} style={{marginBottom: '40px'}}>
@@ -299,8 +339,14 @@ const Recipesid = () => {
                     <div style={stepNumberBadge}>{sIdx + 1}</div>
                     <div style={stepInfo}>
                       <p 
+                        key={`${sIdx}-${ratio}-${flavor.spiciness}-${flavor.sweetness}-${flavor.saltiness}`}
                         style={stepText}
-                        dangerouslySetInnerHTML={{ __html: renderInstruction(step.content) }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: renderInstruction(
+                            step.content, 
+                            ratio,
+                            recipe,
+                            getCalculatedAmount) }}
                       />
                     </div>
                     {step.stepImg && (
@@ -319,26 +365,26 @@ const Recipesid = () => {
           ))}
         </div>
 
-        {/* ?섎떒 ?ㅻ퉬寃뚯씠??*/}
+        {/* 하단 네비게이션 */}
         <div style={bottomNav}>
-          <button onClick={() => navigate(-1)} style={navBtn}>?댁쟾?쇰줈</button>
-          <Link to="/recipe/list" style={{...navBtn, backgroundColor:'#ff6b6b', color:'#fff', border:'none'}}>?꾩껜 ?덉떆??蹂닿린</Link>
+          <button onClick={() => navigate(-1)} style={navBtn}>이전으로</button>
+          <Link to="/recipe/list" style={{...navBtn, backgroundColor:'#ff6b6b', color:'#fff', border:'none'}}>전체 레시피 보기</Link>
           <button
             onClick={() => navigate(`/recipes/edit/${id}`)}
             style={{...navBtn, backgroundColor:'#4dabf7', color:'#fff', border:'none'}}
-            >?섏젙?섍린</button>
+            >수정하기</button>
 
            <button
             onClick={handleDelete}
             style={{...navBtn, backgroundColor:'#df1a1a', color:'#fff', border:'none'}}
-            >??젣?섍린</button>  
+            >삭제하기</button>  
         </div>
       </div>
     </div>
   );
 };
 
-// --- ?ㅽ????뺤쓽 (湲곗〈 ?ㅽ????좎? 諛?蹂댁셿) ---
+// --- 스타일 정의 (기존 스타일 유지 및 보완) ---
 const bodyStyle = { backgroundColor: '#f8f9fa', minHeight: '100vh', fontFamily: "'Pretendard', sans-serif" };
 const containerStyle = { maxWidth: '1000px', margin: '0 auto', padding: '0 20px' };
 const headerStyle = { background: '#fff', padding: '50px 0', borderBottom: '1px solid #eee' };
@@ -371,4 +417,3 @@ const bottomNav = { display: 'flex', justifyContent: 'center', gap: '15px', marg
 const navBtn = { padding: '12px 25px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'none', color: '#333' };
 
 export default Recipesid;
-
