@@ -18,8 +18,10 @@ const RecipeList = () => {
             try {
                 // API 호출 시 쿼리 파라미터 전달
                 const response = await getRecipeList({ keyword, category, page });
-                setRecipes(response.data.content || []);
-                setPageInfo(response.data); // 페이지 정보 저장
+                if (response.data && response.data.data) {
+                    console.log("3. 실제내용", response.data.data.content);
+                    setRecipes(response.data.data.content);
+                }
             } catch (error) {
                 console.error("레시피 목록 로드 실패:", error);
             }

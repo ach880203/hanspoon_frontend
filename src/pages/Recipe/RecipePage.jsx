@@ -21,7 +21,7 @@ const RecipePage = () => {
   };
 
   const [recipe, setRecipe] = useState({
-    id: 1001,
+    id: Date.now(),
     title: '',
     spiciness: 3,
     sweetness: 3,
@@ -32,11 +32,11 @@ const RecipePage = () => {
     recipeMainImgName: '', // 파일명 표시용
     recipeMainImgFile: null,
     ingredientGroup: [
-      { id: 1001, 
+      { id: 1, 
         name: '', 
         sortOrder: 1,
         ingredients: [
-          { id: 1001 + 1, 
+          { id: Date.now() + 1, 
             name: '', 
             baseAmount: '', 
             unit: '', 
@@ -44,11 +44,11 @@ const RecipePage = () => {
           ] 
         }],
     instructionGroup: [
-      { id: 1001 + 2, 
+      { id: 1 + 2, 
         title: '', 
         sortOrder: 1,
         instructions: [
-          { id: 1001 + 3, 
+          { id: 1 + 3, 
             content: '', 
             stepImg: '', 
             stepOrder: 1,
@@ -185,7 +185,7 @@ const RecipePage = () => {
           name: '',
           sortOrder: 1, 
           ingredients: [
-            { id: nextId(), 
+            { id: nextId()+1, 
               name: '', 
               baseAmount: '', 
               unit: '', 
@@ -198,7 +198,7 @@ const RecipePage = () => {
   const addIngredientRow = (gIdx) => {
     const newGroups = [...recipe.ingredientGroup];
     newGroups[gIdx].ingredients.push(
-      { id: nextId(), 
+      { id: Date.now(), 
         name: '', 
         baseAmount: '', 
         unit: '', 
@@ -215,7 +215,7 @@ const RecipePage = () => {
           title: '', 
           sortOrder: recipe.instructionGroup.length,
           instructions: [
-            { id: nextId(), 
+            { id: nextId()+1, 
               content: '', 
               stepImg: '', 
               stepOrder: 1,
