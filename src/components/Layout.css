@@ -123,6 +123,17 @@
   border-color: rgba(0, 0, 0, 0.06);
 }
 
+.hs-search-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.hs-search-btn:hover .hs-search-img {
+  transform: scale(1.15) rotate(-5deg);
+}
+
 .hs-pill {
   height: 40px;
   padding: 0 14px;
@@ -257,7 +268,8 @@
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
-  display: none; /* desktop hidden */
+  display: none;
+  /* desktop hidden */
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -272,11 +284,14 @@
   .hs-nav {
     display: none;
   }
+
   .hs-burger {
     display: inline-flex;
   }
+
   .hs-userLabel {
-    display: none; /* 모바일에서 텍스트 숨겨 깔끔하게 */
+    display: none;
+    /* 모바일에서 텍스트 숨겨 깔끔하게 */
   }
 }
 
@@ -431,14 +446,17 @@
   border-top: 1px solid var(--border-light);
   background-color: #fff;
   margin-top: 60px;
-  padding: 40px 0 40px; /* 좌우 padding은 inner에서 처리 */
+  padding: 40px 0 40px;
+  /* 좌우 padding은 inner에서 처리 */
   color: var(--text-muted);
   font-size: 14px;
 }
 
 .layout-footer-inner {
-  max-width: 1200px;   /* 헤더와 동일 */
+  max-width: 1200px;
+  /* 헤더와 동일 */
   margin: 0 auto;
-  padding: 0 24px;     /* 헤더와 동일 */
+  padding: 0 24px;
+  /* 헤더와 동일 */
   text-align: left;
 }

@@ -88,9 +88,22 @@
     background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.1));
 }
 
-.method-icon {
-    font-size: 32px;
+.method-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
     transition: transform 0.3s ease;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.payment-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .payment-summary {

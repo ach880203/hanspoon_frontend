@@ -1,8 +1,6 @@
 ﻿import axiosInstance from "./axios";
 import {loadAuth} from "../utils/authStorage.js";
 
-// 공통 axios 인스턴스를 그대로 사용합니다.
-// 이렇게 하면 인증 토큰/에러 처리/환경변수(baseURL) 정책이 전체 API에서 일관됩니다.
 const api = axiosInstance;
 
 //1. 목록 조회 (페이징/검색/카테고리 포함)

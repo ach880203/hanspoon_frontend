@@ -1,6 +1,7 @@
 ﻿import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import MyPageDropdown from "./Layout/MyPageDropdown";
 import "./Layout.css";
 
 export default function Layout() {
@@ -15,11 +16,9 @@ export default function Layout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const drawerRef = useRef(null);
   const searchRef = useRef(null);
-  const userMenuRef = useRef(null);
 
   // Accept both "ADMIN" and "ROLE_ADMIN" style role values.
   const isAdmin = !!user?.role?.includes("ADMIN");
@@ -52,7 +51,6 @@ export default function Layout() {
       if (e.key !== "Escape") return;
       setMobileOpen(false);
       setSearchOpen(false);
-      setUserMenuOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -68,7 +66,6 @@ export default function Layout() {
 
   useOnClickOutside(drawerRef, () => setMobileOpen(false), mobileOpen);
   useOnClickOutside(searchRef, () => setSearchOpen(false), searchOpen);
-  useOnClickOutside(userMenuRef, () => setUserMenuOpen(false), userMenuOpen);
 
   const openSearch = () => {
     setSearchOpen(true);
@@ -88,8 +85,9 @@ export default function Layout() {
     navigate(`/search?query=${encodeURIComponent(q)}`);
   };
 
+
   const onLogout = async () => {
-    setUserMenuOpen(false);
+    setMobileOpen(false);
     await logout();
     navigate("/");
   };
@@ -128,7 +126,11 @@ export default function Layout() {
             )}
 
             <button className="hs-iconBtn" onClick={openSearch} aria-label="Search">
-              <IconSearch />
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/861/861627.png"
+                alt="Search"
+                className="hs-search-img"
+              />
             </button>
 
             <Link to="/cart" className="hs-iconBtn" aria-label="Cart">
@@ -136,43 +138,7 @@ export default function Layout() {
             </Link>
 
             {user ? (
-              <div className="hs-user" ref={userMenuRef}>
-                <button
-                  className="hs-userBtn"
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  aria-haspopup="menu"
-                  aria-expanded={userMenuOpen}
-                >
-                  <span className="hs-avatar" aria-hidden="true">
-                    {(user.userName || user.email || "U").slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="hs-userLabel">
-                    {(user.userName || user.email || "User").toString()}
-                  </span>
-                  <span className="hs-chev" aria-hidden="true">
-                    <IconChevronDown />
-                  </span>
-                </button>
-
-                {userMenuOpen && (
-                  <div className="hs-userMenu" role="menu">
-                    <Link to="/mypage" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                      MyPage
-                    </Link>
-                    <Link to="/cart" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                      Cart
-                    </Link>
-                    {isAdmin && (
-                      <Link to="/admin" className="hs-userItem" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                        Admin
-                      </Link>
-                    )}
-                    <button className="hs-userItem hs-userItem--danger" role="menuitem" onClick={onLogout}>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+              <MyPageDropdown />
             ) : (
               <Link to="/login" className="hs-pill hs-pill--primary">
                 Login
@@ -361,7 +327,7 @@ function IconSearch() {
 }
 function IconCart() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M6 7h15l-1.5 9h-12L6 7Z"
         stroke="currentColor"

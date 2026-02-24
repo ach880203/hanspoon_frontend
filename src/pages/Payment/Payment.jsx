@@ -296,7 +296,12 @@ function Payment() {
                       checked={paymentMethod === "card"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                     />
-                    <span className="method-icon">CARD</span>
+                    <div className="method-icon-wrapper">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2c3e50" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
                     <span>신용/체크카드</span>
                   </label>
                   <label className="payment-method-option">
@@ -307,7 +312,13 @@ function Payment() {
                       checked={paymentMethod === "kakaopay"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                     />
-                    <span className="method-icon">K</span>
+                    <div className="method-icon-wrapper">
+                      <img
+                        src="https://play-lh.googleusercontent.com/W43xj43ErMIs5BQgCdMKEa0NXCoUUW8DjQc5SxcDfLrC26H8sHDmoFIUWLYmsQahpo0"
+                        alt="Kakao Pay"
+                        className="payment-logo-img"
+                      />
+                    </div>
                     <span>카카오페이</span>
                   </label>
                   <label className="payment-method-option">
@@ -318,7 +329,13 @@ function Payment() {
                       checked={paymentMethod === "tosspay"}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                     />
-                    <span className="method-icon">T</span>
+                    <div className="method-icon-wrapper">
+                      <img
+                        src="https://media.licdn.com/dms/image/v2/C560BAQE9411tskRlZQ/company-logo_200_200/company-logo_200_200/0/1662339512733/toss_payments_logo?e=2147483647&v=beta&t=zCKkS9mu5GlCHjEoleeEVpOM3H2IDWj9TZsri1wNQXM"
+                        alt="Toss Pay"
+                        className="payment-logo-img"
+                      />
+                    </div>
                     <span>토스페이</span>
                   </label>
                 </div>

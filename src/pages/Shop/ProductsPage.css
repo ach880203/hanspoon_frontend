@@ -1,0 +1,149 @@
+/* 헤더와 동일한 max-width로 맞추고 싶으면
+   헤더에서 쓰는 값/변수에 맞춰서 여기만 바꾸면 됨 */
+:root {
+  --layout-max-width: 1200px;
+}
+
+.productsPage {
+  width: 100%;
+}
+
+.productsContainer {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.productsHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.productsEyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  opacity: 0.65;
+  margin-bottom: 6px;
+}
+
+.productsTitle {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.productsSub {
+  margin: 8px 0 0;
+  opacity: 0.75;
+}
+
+.productsHeroRight {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.productsSort {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+}
+
+.productsToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 0 18px;
+}
+
+.productsTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.tab.active {
+  border-color: rgba(0,0,0,0.5);
+}
+
+.productsSearch {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.searchBtn {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.productsSearch input {
+  height: 38px;
+  width: 280px;
+  max-width: 50vw;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.productsError {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,0,0,0.06);
+  margin-bottom: 12px;
+}
+
+/* ✅ 4열 그리드 (요구사항) */
+.productsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* 반응형(원하면 유지, 싫으면 삭제 가능) */
+@media (max-width: 1024px) {
+  .productsGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+  .productsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .productsGrid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+
+.productsFooter {
+  padding-top: 18px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+}
+
+.productsLoading,
+.productsEnd {
+  opacity: 0.7;
+}
+
+.productsSentinel {
+  height: 1px;
+  width: 100%;
+}

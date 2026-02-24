@@ -153,7 +153,11 @@ const Recipesid = () => {
         console.error("삭제 실패:", error);
         alert("삭제 중 오류가 발생했습니다");
       }
+    }catch (error) {
+      console.error("관심등록 실패:" , error);
+      alert("로그인이 필요하거나 요청을 처리할 수 없습니다");
     }
+      
   };
 
   const toggleFavorite = async () => {
