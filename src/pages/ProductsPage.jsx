@@ -3,7 +3,6 @@ import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import { fetchProducts } from "../api/products";
 import { toErrorMessage } from "../api/http";
-import BannerSection, { marketBannerSlides } from "../components/BannerSection";
 
 const CATEGORIES = ["ALL", "INGREDIENT", "MEAL_KIT", "KITCHEN_SUPPLY"];
 const SORTS = ["LATEST", "PRICE_ASC", "PRICE_DESC"];
