@@ -51,7 +51,6 @@ export default function Layout() {
       if (e.key !== "Escape") return;
       setMobileOpen(false);
       setSearchOpen(false);
-      setUserMenuOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

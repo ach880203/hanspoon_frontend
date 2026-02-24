@@ -95,7 +95,7 @@ export default function ProductsPage() {
       alive = false;
     };
     // ✅ queryKey 포함: 필터 바뀌면 같은 page라도 새로 로딩
-  }, [queryKey, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [queryKey, page]);
 
   // ✅ 무한 스크롤 (초기 로딩 끝난 뒤에만 page 증가)
   useEffect(() => {

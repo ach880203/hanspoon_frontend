@@ -127,7 +127,6 @@ export default function BannerSection({
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlay, interval, len, isHover, pauseOnHover]);
 
   // 페이지 비활성화 시 자동 멈춤(UX)

@@ -57,7 +57,7 @@ export default function HomePage() {
         }));
 
         if (!ignore) setRecipeItems(mapped);
-      } catch (e) {
+      } catch {
         if (!ignore) setError((s) => ({ ...s, recipes: "레시피를 불러오지 못했습니다." }));
         if (!ignore) setRecipeItems([]);
       } finally {

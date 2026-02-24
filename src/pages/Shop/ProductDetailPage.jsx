@@ -128,7 +128,6 @@ export default function ProductDetailPage() {
     els.forEach((el) => obs.observe(el));
 
     return () => obs.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
   if (!data) return <div className="pdContainer">Loading...</div>;
