@@ -211,6 +211,8 @@ export default function HomePage() {
               ]}
               sublinks={[
                 { to: "/recipes/user", label: "내 레시피 관리" },
+                { to: "/recipes/recipewishes", label: "레시피 관심목록" },
+                { to: "/recipes/deletelist", label: "삭제된 레시피" },
               ]}
             />
             <UseCaseCard

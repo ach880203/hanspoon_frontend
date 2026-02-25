@@ -10,7 +10,7 @@ const RecipeDeleteList = () => {
     const loadData = async () => {
       try {
         const response = await deletelist(category);
-        const data = response.data.content || response.data;
+        const data = response.data.data.content || response.data.data;
         setRecipes(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("삭제 레시피 목록 로드 실패:", error);

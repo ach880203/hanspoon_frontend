@@ -40,21 +40,6 @@ export const deletereturn = (id) => {
     return api.post(`/api/recipe/deleteReturn/${id}`);
 };
 
-//8.관심등록
-export const createwishes = (id) => {
-
-    const authData = loadAuth();
-    const token = authData?.accessToken;
-
-    console.log("실제 전송되는 토큰:", token);
-
-    return api.post(`/api/recipe/createWishes/${id}`, {}, {
-        headers: {
-            Authorization: token ? `Bearer ${token}` : ""
-        }
-    });
-};
-
 //9.관심목록
 
 export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
@@ -70,7 +55,7 @@ export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
         Authorization: token ? `Bearer ${token}` : "",
       },
     });
-    return response.data.data;
+    return response.data;
 };
 
 export const toggleWish = async (id) => {
@@ -84,6 +69,10 @@ export const toggleWish = async (id) => {
     });
     return response.data;
 };
+
+export const deletewihses = async (id) => {
+   return await api.delete(`/api/recipe/deletewihses/${id}`);
+}
 
 // 로그인 사용자가 작성한 레시피 리뷰 목록 조회
 // 반환값은 백엔드 ApiResponse의 data 필드(List<MyRecipeReviewDto>)입니다.
