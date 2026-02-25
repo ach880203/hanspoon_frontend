@@ -5,7 +5,7 @@ import { mypageApi } from "../../api/mypage";
 import "./MyPageDropdown.css";
 
 export default function MyPageDropdown() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserBalance } = useAuth();
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +32,13 @@ export default function MyPageDropdown() {
         if (!alive) return;
 
         if (summaryRes.status === "fulfilled" && summaryRes.value?.success) {
-          setSummary(summaryRes.value.data);
+          const summaryData = summaryRes.value.data;
+          setSummary(summaryData);
+
+          // ✅ 가져온 최신 포인트 정보를 전역 AuthContext에 반영 (다른 페이지와 동기화)
+          if (summaryData && typeof summaryData.spoonBalance === "number") {
+            updateUserBalance(summaryData.spoonBalance);
+          }
         }
 
         if (couponRes.status === "fulfilled" && couponRes.value?.success) {
@@ -124,11 +130,11 @@ export default function MyPageDropdown() {
           <div className="dropdown-stats-grid">
             <Link to="/mypage/points" className="stat-box" onClick={() => setIsOpen(false)}>
               <div className="stat-icon-wrapper">
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-                  <circle cx="17" cy="17" r="16" fill="#8E44AD" />
-                  <path d="M12 17H22M17 12V22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                  <circle cx="23" cy="23" r="7" fill="#8E44AD" stroke="white" strokeWidth="1.5" />
-                  <text x="21" y="26" fill="white" fontSize="10" fontWeight="900" fontFamily="Arial">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <circle cx="20" cy="20" r="18" fill="var(--primary-light)" />
+                  <path d="M14 20H26M20 14V26" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="28" cy="28" r="8" fill="var(--primary)" stroke="white" strokeWidth="1.5" />
+                  <text x="26" y="31.5" fill="white" fontSize="11" fontWeight="900" fontFamily="Arial" textAnchor="middle">
                     P
                   </text>
                 </svg>
@@ -136,7 +142,7 @@ export default function MyPageDropdown() {
               <div className="stat-label">
                 <span className="label-text">포인트</span>
                 <span className="stat-value">
-                  {statsLoading ? "..." : (summary?.spoonBalance ?? 0).toLocaleString()}
+                  {statsLoading && !user?.spoonBalance ? "..." : (user?.spoonBalance ?? 0).toLocaleString()}
                 </span>
               </div>
             </Link>
@@ -147,18 +153,18 @@ export default function MyPageDropdown() {
               onClick={() => setIsOpen(false)}
             >
               <div className="stat-icon-wrapper">
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-                  <rect x="4" y="8" width="26" height="18" rx="3" fill="#9B59B6" />
-                  <circle cx="10" cy="17" r="2" fill="white" />
-                  <line x1="15" y1="10" x2="15" y2="24" stroke="white" strokeDasharray="3 3" />
-                  <text x="20" y="21" fill="white" fontSize="12" fontWeight="900" fontFamily="Arial">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <rect x="5" y="10" width="30" height="20" rx="4" fill="var(--primary)" />
+                  <circle cx="12" cy="20" r="2.5" fill="white" />
+                  <line x1="18" y1="12" x2="18" y2="28" stroke="white" strokeDasharray="2 2" />
+                  <text x="26" y="24" fill="white" fontSize="13" fontWeight="900" fontFamily="Arial" textAnchor="middle">
                     %
                   </text>
                 </svg>
               </div>
               <div className="stat-label">
                 <span className="label-text">쿠폰</span>
-                <span className="stat-value">{statsLoading ? "..." : couponCount ?? 0}</span>
+                <span className="stat-value">{statsLoading && couponCount === null ? "..." : couponCount ?? 0}</span>
               </div>
             </Link>
           </div>

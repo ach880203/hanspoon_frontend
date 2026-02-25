@@ -22,6 +22,7 @@ function parseSearchFilters(params) {
     sort: params.get("sort") || "startAtAsc",
     dateFrom: params.get("dateFrom") || "",
     dateTo: params.get("dateTo") || "",
+    keyword: params.get("keyword") || "",
     searched: params.get("searched") === "1",
   };
 }
@@ -57,6 +58,7 @@ export const OneDaySessionSearch = () => {
       if (source.instructorId) params.instructorId = Number(source.instructorId);
       if (source.sort) params.sort = source.sort;
       if (source.onlyAvailable) params.onlyAvailable = true;
+      if (source.keyword) params.keyword = source.keyword;
       if (source.dateFrom) params.dateFrom = `${source.dateFrom}T00:00:00`;
       if (source.dateTo) params.dateTo = `${source.dateTo}T23:59:59`;
 
@@ -98,6 +100,7 @@ export const OneDaySessionSearch = () => {
     if (filters.sort) next.set("sort", filters.sort);
     if (filters.dateFrom) next.set("dateFrom", filters.dateFrom);
     if (filters.dateTo) next.set("dateTo", filters.dateTo);
+    if (filters.keyword) next.set("keyword", filters.keyword);
 
     setSearchParams(next, { replace: false });
   };
@@ -176,6 +179,7 @@ export const OneDaySessionSearch = () => {
                 { value: "PM", label: "오후" },
               ]}
             />
+            <Input label="제목 검색" value={filters.keyword} onChange={(v) => setField("keyword", v)} placeholder="예: 클래스" />
           </div>
 
           <div style={grid4}>

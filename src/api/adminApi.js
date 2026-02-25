@@ -98,6 +98,11 @@ export const adminApi = {
         return response.data;
     },
 
+    // Inquiries (Shop Products)
+    getProductInquiriesAdmin: async (page = 0, size = 10) => {
+        const response = await axiosInstance.get('/api/admin/inquiries', {
+            params: { page, size }
+        });
     // OneDay Instructors
     getOneDayInstructors: async () => {
         const response = await axiosInstance.get('/api/admin/oneday/instructors');

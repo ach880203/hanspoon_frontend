@@ -56,6 +56,7 @@ import PaymentFail from "./pages/Payment/PaymentFail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RecipeDeleteList from "./pages/Recipe/RecipeDeleteList";
 import AddressTestPage from "./pages/AddressTestPage";
+import SearchPage from "./pages/SearchPage";
 
 
 export default function App() {
@@ -65,6 +66,7 @@ export default function App() {
         <Route index element={<HomePage />} />
 
         <Route path="address-test" element={<AddressTestPage />} />
+        <Route path="search" element={<SearchPage />} />
 
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailPage />} />
