@@ -73,6 +73,7 @@ const Recipesid = () => {
 
         setRecipe(data);
         setCurrentServings(Number(data.baseServings) || 1);
+        setIsFavorite(data.isWished);
 
         const initialFlavor = {
           spiciness: data.spiciness ?? 3,

@@ -1,26 +1,23 @@
 ﻿import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { fetchMyWishes, toggleWish } from "../../api/recipeApi.js";
+import { useNavigate} from "react-router-dom";
+import {deletewihses, fetchMyWishes} from "../../api/recipeApi.js";
 import { toErrorMessage } from "../../api/http.js";
+import { toBackendUrl } from "../../utils/backendUrl.js";
 
 export default function RecipeWishes() {
   const nav = useNavigate();
-  const [data, setData] = useState(null); // 백엔드 Page 객체
+  const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [page, setPage] = useState(0);
 
-  // 관심 목록 불러오기
   const load = async (p = page) => {
     setErr("");
     try {
       const response = await fetchMyWishes(p, 20);
-      // 서버 응답 구조가 { success: true, data: { content: [...] } } 인 경우 처리
       if (response && response.success) {
         setData(response.data);
         setPage(response.data?.number ?? p);
-      } else {
-        setData(null);
       }
     } catch (e) {
       setErr(toErrorMessage(e));
@@ -32,20 +29,29 @@ export default function RecipeWishes() {
     load(0);
   }, []);
 
-  // 관심 목록 해제
-  const unWish = async (recipeId) => {
+  const unWish = async (wishId) => {
     if (!window.confirm("관심 목록에서 제거하시겠습니까?")) return;
 
     setBusy(true);
-    setErr("");
     try {
-      const response = await toggleWish(recipeId);
-      if (response && response.success) {
-        // 현재 페이지의 데이터 재로드
-        await load(page);
+
+      const response = await deletewihses(wishId);
+      console.log("백엔드",response);
+      if (response && response.data.success) {
+        setData(prev => ({
+
+          ...prev,
+          content: prev.content.filter(item => item.wishId !== wishId)
+
+        }));
+        if (data.content.length <= 1) {
+          await load(page);
+        }
+        alert("삭제되었습니다");
       }
     } catch (e) {
       setErr(toErrorMessage(e));
+      alert("삭제 중 오류가 발생했습니다");
     } finally {
       setBusy(false);
     }
@@ -54,79 +60,150 @@ export default function RecipeWishes() {
   const list = data?.content || [];
 
   return (
-      <div className="recipe-wishes-page">
-        <h1>내 관심 레시피 목록</h1>
-        {err && <div className="error">{err}</div>}
+      <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '50px 20px' }}>
+        <h2 style={{ textAlign: 'center', fontWeight: '800', marginBottom: '40px' }}>내 관심 레시피 목록</h2>
 
-        <div className="panel">
-          {list.length === 0 ? (
-              <div className="muted">관심 목록이 비어 있습니다.</div>
-          ) : (
-              <div className="cartList">
-                {/* 🚩 rw로 매핑 시작 */}
-                {list.map((rw) => (
-                    <div key={rw.id} className="cartItem">
-                      <div className="cartThumb" onClick={() => nav(`/recipes/${rw.id}`)} style={{ cursor: "pointer" }}>
-                        {rw.mainImage ? (
-                            <img src={rw.mainImage} alt={rw.title} />
-                        ) : (
-                            <div className="thumbPlaceholder">이미지 없음</div>
-                        )}
-                      </div>
+        {err && <div style={{ color: 'red', textAlign: 'center', marginBottom: '20px' }}>{err}</div>}
 
-                      <div className="cartInfo">
-                        <div
-                            className="title"
-                            style={{ cursor: "pointer", fontWeight: "bold", fontSize: "1.1rem" }}
-                            onClick={() => nav(`/recipes/${rw.id}`)}
-                        >
-                          {rw.title}
-                        </div>
-
-                        {/* 레시피는 가격 대신 작성자나 카테고리를 넣을 수 있습니다 */}
-                        <div className="muted" style={{ marginTop: "4px" }}>맛있는 집밥 레시피</div>
-
-                        <div className="row" style={{ gap: 8, marginTop: 12 }}>
-                          <button className="ghost" onClick={() => nav(`/recipes/${rw.id}`)}>
-                            레시피 보기
-                          </button>
-                          <button
-                              className="danger"
-                              disabled={busy}
-                              onClick={() => unWish(rw.id)}
-                          >
-                            찜 해제
-                          </button>
-                        </div>
-                      </div>
+        {/* 레시피 그리드 영역: 3열 고정 */}
+        <div
+            className="recipe-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "30px",
+              marginTop: "20px"
+            }}
+        >
+          {list.length > 0 ? (
+              list.map((rw) => (
+                  <div key={rw.id} className="recipe-card" style={cardStyle}>
+                    {/* 이미지 영역: 200x200 정사각 */}
+                    <div style={{ cursor: "pointer" }} onClick={() => nav(`/recipes/${rw.id}`)}>
+                      {rw.mainImage ? (
+                          <img
+                              src={toBackendUrl(`/images/recipe/${rw.mainImage}`)}
+                              style={imageStyle}
+                              alt={rw.title}
+                          />
+                      ) : (
+                          <div style={placeholderStyle}>이미지 없음</div>
+                      )}
                     </div>
-                ))}
-              </div>
-          )}
 
-          {/* 페이징 처리 */}
-          {data && data.totalPages > 0 && (
-              <div className="row" style={{ gap: 15, marginTop: 20, justifyContent: "center", alignItems: "center" }}>
-                <button
-                    className="ghost"
-                    disabled={busy || data.number <= 0}
-                    onClick={() => load(data.number - 1)}
-                >
-                  이전
-                </button>
-                <div className="muted">
-                  <strong>{data.number + 1}</strong> / {data.totalPages} 페이지
-                </div>
-                <button
-                    className="ghost"
-                    disabled={busy || data.number + 1 >= data.totalPages}
-                    onClick={() => load(data.number + 1)}
-                >
-                  다음
-                </button>
+                    <div style={{ padding: '0 10px' }}>
+                      <h4
+                          className="text-truncate"
+                          style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '10px', cursor: 'pointer' }}
+                          onClick={() => nav(`/recipes/${rw.id}`)}
+                      >
+                        {rw.title}
+                      </h4>
+                      <p style={{ color: '#ff6b6b', fontSize: '0.9rem', fontWeight: '600', marginBottom: '15px' }}>
+                        맛있는 집밥 레시피
+                      </p>
+                    </div>
+
+                    {/* 버튼 영역 */}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                      <button
+                          style={viewBtnStyle}
+                          onClick={() => nav(`/recipes/${rw.id}`)}
+                      >
+                        보기
+                      </button>
+                      <button
+                          style={deleteBtnStyle}
+                          disabled={busy}
+                          onClick={() => unWish(rw.wishId)}
+                      >
+                        찜 해제
+                      </button>
+                    </div>
+                  </div>
+              ))
+          ) : (
+              <div style={{ textAlign: "center", gridColumn: "1/4", padding: "100px 0", color: '#999' }}>
+                관심 목록이 비어 있습니다.
               </div>
           )}
         </div>
+
+        {/* 페이지네이션 */}
+        {data && data.totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '50px' }}>
+              {[...Array(data.totalPages)].map((_, i) => (
+                  <button
+                      key={i}
+                      onClick={() => load(i)}
+                      style={{
+                        width: '35px', height: '35px', borderRadius: '50%', border: 'none',
+                        backgroundColor: data.number === i ? '#333' : '#f0f0f0',
+                        color: data.number === i ? '#fff' : '#333',
+                        cursor: 'pointer'
+                      }}
+                  >
+                    {i + 1}
+                  </button>
+              ))}
+            </div>
+        )}
       </div>
   );
 }
+
+// 재사용 스타일 객체
+const cardStyle = {
+  border: "1px solid #eee",
+  padding: "20px",
+  borderRadius: "15px",
+  textAlign: 'center',
+  boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+  background: '#fff',
+  display: 'flex',
+  flexDirection: 'column'
+};
+
+const imageStyle = {
+  width: "200px",
+  height: "200px",
+  objectFit: "cover",
+  borderRadius: "12px",
+  marginBottom: '15px'
+};
+
+const placeholderStyle = {
+  width: "200px",
+  height: "200px",
+  backgroundColor: "#f9f9f9",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  margin: "0 auto 15px",
+  color: "#ccc"
+};
+
+const viewBtnStyle = {
+  flex: 1,
+  padding: "10px",
+  backgroundColor: "#333",
+  color: "white",
+  border: "none",
+  borderRadius: "8px",
+  fontSize: '0.85rem',
+  fontWeight: 'bold',
+  cursor: "pointer"
+};
+
+const deleteBtnStyle = {
+  flex: 1,
+  padding: "10px",
+  backgroundColor: "#fff",
+  color: "#ff6b6b",
+  border: "1px solid #ff6b6b",
+  borderRadius: "8px",
+  fontSize: '0.85rem',
+  fontWeight: 'bold',
+  cursor: "pointer"
+};
