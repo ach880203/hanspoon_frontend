@@ -7,6 +7,7 @@ import AdminFaqList from "./AdminFaqList";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassManager from "./AdminOneDayClassManager";
 import AdminInquiryList from "./AdminInquiryList";
+import AdminOneDayInstructorManager from "./AdminOneDayInstructorManager";
 import "./AdminList.css";
 
 const AdminManagementPage = () => {
@@ -24,6 +25,8 @@ const AdminManagementPage = () => {
         // 핵심: 관리자 내부 전용 클래스 관리 화면
         // 기존처럼 공용 OneDay 페이지로 이동하지 않고, 현재 관리자 탭 안에서만 동작합니다.
         return <AdminOneDayClassManager />;
+      case "instructors":
+        return <AdminOneDayInstructorManager />;
       case "market":
         return <AdminInquiryList />; // 상품 관리 탭에서도 문의를 볼 수 있도록 하거나, 아래 CS 탭에서 통합 관리
       case "reservations":
@@ -60,6 +63,9 @@ const AdminManagementPage = () => {
         </button>
         <button className={`admin-tab-btn ${activeTab === "classes" ? "active" : ""}`} onClick={() => setActiveTab("classes")}>
           클래스 관리
+        </button>
+        <button className={`admin-tab-btn ${activeTab === "instructors" ? "active" : ""}`} onClick={() => setActiveTab("instructors")}>
+          강사 관리
         </button>
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리

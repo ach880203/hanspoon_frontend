@@ -78,6 +78,9 @@ export const OneDayCoupons = () => {
                   <span style={{ color: "#6b7280", fontSize: 13 }}>
                     발급: {fmtDate(c.issueAt)} / 만료: {fmtDate(c.expiresAt)}
                   </span>
+                  <span style={{ color: "#6b7280", fontSize: 13 }}>
+                    유효기간: 발급일로부터 6개월 (만료일 {fmtDate(c.expiresAt)})
+                  </span>
                 </div>
               ))}
             </div>

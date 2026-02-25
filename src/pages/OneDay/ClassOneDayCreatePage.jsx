@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createOneDayClass, isOneDayAdmin } from "../../api/onedayApi";
 import { OneDayTopTabs } from "./OneDayTopTabs";
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export const ClassOneDayCreatePage = () => {
   const navigate = useNavigate();
@@ -68,11 +68,11 @@ export const ClassOneDayCreatePage = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("이미지 파일만 업로드할 수 있습니다.");
+      setError("?대?吏 ?뚯씪留??낅줈?쒗븷 ???덉뒿?덈떎.");
       return;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      setError("이미지는 2MB 이하로 업로드해 주세요.");
+      setError("이미지는 50MB 이하로 업로드해 주세요.");
       return;
     }
 
@@ -81,21 +81,21 @@ export const ClassOneDayCreatePage = () => {
   };
 
   const validate = () => {
-    if (!admin) return "관리자만 원데이 클래스를 등록할 수 있습니다.";
-    if (!payload.title) return "클래스 제목을 입력해 주세요.";
-    if (!payload.description) return "클래스 요약 설명을 입력해 주세요.";
-    if (!payload.detailDescription) return "상세 설명을 입력해 주세요.";
-    if (!payload.instructorId) return "강사 ID를 입력해 주세요.";
+    if (!admin) return "愿由ъ옄留??먮뜲???대옒?ㅻ? ?깅줉?????덉뒿?덈떎.";
+    if (!payload.title) return "?대옒???쒕ぉ???낅젰??二쇱꽭??";
+    if (!payload.description) return "?대옒???붿빟 ?ㅻ챸???낅젰??二쇱꽭??";
+    if (!payload.detailDescription) return "?곸꽭 ?ㅻ챸???낅젰??二쇱꽭??";
+    if (!payload.instructorId) return "媛뺤궗 ID瑜??낅젰??二쇱꽭??";
     if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) {
-      return "세션은 최소 1개 이상 필요합니다.";
+      return "?몄뀡? 理쒖냼 1媛??댁긽 ?꾩슂?⑸땲??";
     }
     for (let i = 0; i < payload.sessions.length; i += 1) {
       const row = payload.sessions[i];
-      const prefix = `세션 ${i + 1}`;
-      if (!row.startAt) return `${prefix} 시작일시를 입력해 주세요.`;
-      if (!row.slot) return `${prefix} 시간대를 선택해 주세요.`;
-      if (!Number.isInteger(row.capacity) || row.capacity <= 0) return `${prefix} 정원은 1 이상이어야 합니다.`;
-      if (!Number.isInteger(row.price) || row.price < 0) return `${prefix} 가격은 0 이상이어야 합니다.`;
+      const prefix = `?몄뀡 ${i + 1}`;
+      if (!row.startAt) return `${prefix} ?쒖옉?쇱떆瑜??낅젰??二쇱꽭??`;
+      if (!row.slot) return `${prefix} ?쒓컙?瑜??좏깮??二쇱꽭??`;
+      if (!Number.isInteger(row.capacity) || row.capacity <= 0) return `${prefix} ?뺤썝? 1 ?댁긽?댁뼱???⑸땲??`;
+      if (!Number.isInteger(row.price) || row.price < 0) return `${prefix} 媛寃⑹? 0 ?댁긽?댁뼱???⑸땲??`;
     }
     return "";
   };
@@ -114,12 +114,12 @@ export const ClassOneDayCreatePage = () => {
     setSubmitting(true);
     try {
       const result = await createOneDayClass(payload);
-      setMessage(`클래스가 등록되었습니다. (ID: ${result?.classId ?? "-"})`);
+      setMessage(`?대옒?ㅺ? ?깅줉?섏뿀?듬땲?? (ID: ${result?.classId ?? "-"})`);
       if (result?.classId) {
         navigate(`/classes/oneday/classes/${result.classId}`);
       }
     } catch (e) {
-      setError(e?.message ?? "클래스 등록 중 오류가 발생했습니다.");
+      setError(e?.message ?? "?대옒???깅줉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.");
     } finally {
       setSubmitting(false);
     }
@@ -130,120 +130,120 @@ export const ClassOneDayCreatePage = () => {
       <OneDayTopTabs />
 
       <div style={{ padding: 20, maxWidth: 1040, margin: "0 auto", display: "grid", gap: 14 }}>
-        <h1 style={{ margin: 0, fontSize: 28 }}>원데이 클래스 등록</h1>
+        <h1 style={{ margin: 0, fontSize: 28 }}>?먮뜲???대옒???깅줉</h1>
         <p style={{ margin: 0, color: "#4b5563" }}>
-          클래스 기본 정보, 상세 설명, 세션 정보를 입력해 등록할 수 있습니다.
+          ?대옒??湲곕낯 ?뺣낫, ?곸꽭 ?ㅻ챸, ?몄뀡 ?뺣낫瑜??낅젰???깅줉?????덉뒿?덈떎.
         </p>
 
-        {!admin ? <div style={warnBox}>현재 계정은 관리자 권한이 아닙니다. 등록 시 서버에서 거부됩니다.</div> : null}
+        {!admin ? <div style={warnBox}>?꾩옱 怨꾩젙? 愿由ъ옄 沅뚰븳???꾨떃?덈떎. ?깅줉 ???쒕쾭?먯꽌 嫄곕??⑸땲??</div> : null}
         {error ? <div style={errorBox}>{error}</div> : null}
         {message ? <div style={okBox}>{message}</div> : null}
 
         <form style={panel} onSubmit={submit}>
-          <h2 style={sectionTitle}>기본 정보</h2>
+          <h2 style={sectionTitle}>湲곕낯 ?뺣낫</h2>
 
           <div style={grid2}>
-            <Field label="클래스 제목">
+            <Field label="?대옒???쒕ぉ">
               <input
                 style={input}
                 value={form.title}
                 maxLength={80}
                 onChange={(e) => setField("title", e.target.value)}
-                placeholder="예: 주말 브런치 클래스"
+                placeholder="?? 二쇰쭚 釉뚮윴移??대옒??
               />
             </Field>
 
-            <Field label="강사 ID">
+            <Field label="媛뺤궗 ID">
               <input
                 style={input}
                 type="number"
                 min="1"
                 value={form.instructorId}
                 onChange={(e) => setField("instructorId", e.target.value)}
-                placeholder="예: 1"
+                placeholder="?? 1"
               />
             </Field>
           </div>
 
-          <Field label="요약 설명">
+          <Field label="?붿빟 ?ㅻ챸">
             <textarea
               style={textarea}
               value={form.description}
               onChange={(e) => setField("description", e.target.value)}
-              placeholder="클래스 카드에 보여줄 요약 설명을 입력하세요."
+              placeholder="?대옒??移대뱶??蹂댁뿬以??붿빟 ?ㅻ챸???낅젰?섏꽭??"
             />
           </Field>
 
-          <Field label="상세 설명">
+          <Field label="?곸꽭 ?ㅻ챸">
             <textarea
               style={{ ...textarea, minHeight: 180 }}
               value={form.detailDescription}
               onChange={(e) => setField("detailDescription", e.target.value)}
-              placeholder="상세 페이지에서 세션 아래에 보여줄 설명을 입력하세요."
+              placeholder="?곸꽭 ?섏씠吏?먯꽌 ?몄뀡 ?꾨옒??蹂댁뿬以??ㅻ챸???낅젰?섏꽭??"
             />
           </Field>
 
-          <Field label="상세 이미지">
+          <Field label="?곸꽭 ?대?吏">
             <div style={{ display: "grid", gap: 10 }}>
               <input type="file" accept="image/*" onChange={handleImageFile} />
               {form.detailImageData ? (
                 <div style={{ display: "grid", gap: 8 }}>
                   <img
                     src={form.detailImageData}
-                    alt="상세 이미지 미리보기"
+                    alt="?곸꽭 ?대?吏 誘몃━蹂닿린"
                     style={{ width: "100%", maxHeight: 360, objectFit: "cover", borderRadius: 12, border: "1px solid #e5e7eb" }}
                   />
                   <button type="button" style={btnGhost} onClick={() => setField("detailImageData", "")}>
-                    이미지 제거
+                    ?대?吏 ?쒓굅
                   </button>
                 </div>
               ) : (
-                <span style={{ color: "#6b7280", fontSize: 13 }}>이미지를 선택하면 상세 페이지 상단에 표시됩니다.</span>
+                <span style={{ color: "#6b7280", fontSize: 13 }}>?대?吏瑜??좏깮?섎㈃ ?곸꽭 ?섏씠吏 ?곷떒???쒖떆?⑸땲??</span>
               )}
             </div>
           </Field>
 
           <div style={grid3}>
-            <Field label="난이도">
+            <Field label="?쒖씠??>
               <select style={input} value={form.level} onChange={(e) => setField("level", e.target.value)}>
-                <option value="BEGINNER">입문</option>
-                <option value="INTERMEDIATE">중급</option>
-                <option value="ADVANCED">고급</option>
+                <option value="BEGINNER">?낅Ц</option>
+                <option value="INTERMEDIATE">以묎툒</option>
+                <option value="ADVANCED">怨좉툒</option>
               </select>
             </Field>
 
-            <Field label="운영 유형">
+            <Field label="?댁쁺 ?좏삎">
               <select style={input} value={form.runType} onChange={(e) => setField("runType", e.target.value)}>
-                <option value="ALWAYS">상시</option>
-                <option value="EVENT">이벤트</option>
+                <option value="ALWAYS">?곸떆</option>
+                <option value="EVENT">?대깽??/option>
               </select>
             </Field>
 
-            <Field label="카테고리">
+            <Field label="移댄뀒怨좊━">
               <select style={input} value={form.category} onChange={(e) => setField("category", e.target.value)}>
-                <option value="KOREAN">한식</option>
-                <option value="BAKERY">베이커리</option>
+                <option value="KOREAN">?쒖떇</option>
+                <option value="BAKERY">踰좎씠而ㅻ━</option>
               </select>
             </Field>
           </div>
 
-          <h2 style={sectionTitle}>세션 정보</h2>
+          <h2 style={sectionTitle}>?몄뀡 ?뺣낫</h2>
           {sessions.map((session, index) => (
             <div key={`session-${index}`} style={sessionCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong>세션 {index + 1}</strong>
+                <strong>?몄뀡 {index + 1}</strong>
                 <button
                   type="button"
                   style={btnDanger}
                   disabled={sessions.length <= 1 || submitting}
                   onClick={() => removeSession(index)}
                 >
-                  삭제
+                  ??젣
                 </button>
               </div>
 
               <div style={grid4}>
-                <Field label="시작일시">
+                <Field label="?쒖옉?쇱떆">
                   <input
                     style={input}
                     type="datetime-local"
@@ -252,14 +252,14 @@ export const ClassOneDayCreatePage = () => {
                   />
                 </Field>
 
-                <Field label="시간대">
+                <Field label="?쒓컙?">
                   <select style={input} value={session.slot} onChange={(e) => setSessionField(index, "slot", e.target.value)}>
-                    <option value="AM">오전</option>
-                    <option value="PM">오후</option>
+                    <option value="AM">?ㅼ쟾</option>
+                    <option value="PM">?ㅽ썑</option>
                   </select>
                 </Field>
 
-                <Field label="정원">
+                <Field label="?뺤썝">
                   <input
                     style={input}
                     type="number"
@@ -269,7 +269,7 @@ export const ClassOneDayCreatePage = () => {
                   />
                 </Field>
 
-                <Field label="가격(원)">
+                <Field label="媛寃???">
                   <input
                     style={input}
                     type="number"
@@ -285,10 +285,10 @@ export const ClassOneDayCreatePage = () => {
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" style={btnGhost} onClick={addSession} disabled={submitting}>
-              세션 추가
+              ?몄뀡 異붽?
             </button>
             <button type="submit" style={btnPrimary} disabled={submitting}>
-              {submitting ? "등록 중..." : "클래스 등록"}
+              {submitting ? "?깅줉 以?.." : "?대옒???깅줉"}
             </button>
           </div>
         </form>
@@ -315,7 +315,7 @@ function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("이미지 읽기에 실패했습니다."));
+    reader.onerror = () => reject(new Error("?대?吏 ?쎄린???ㅽ뙣?덉뒿?덈떎."));
     reader.readAsDataURL(file);
   });
 }
@@ -441,3 +441,5 @@ const okBox = {
   borderRadius: 10,
   padding: 10,
 };
+
+
