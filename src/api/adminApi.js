@@ -96,5 +96,13 @@ export const adminApi = {
     rejectCancelRequest: async (id) => {
         const response = await axiosInstance.post(`/api/admin/reservations/${id}/reject-cancel`);
         return response.data;
+    },
+
+    // Inquiries (Shop Products)
+    getProductInquiriesAdmin: async (page = 0, size = 10) => {
+        const response = await axiosInstance.get('/api/admin/inquiries', {
+            params: { page, size }
+        });
+        return response.data;
     }
 };

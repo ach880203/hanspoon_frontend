@@ -205,11 +205,27 @@ function Payment() {
                 <h3 className="section-title">상품 정보</h3>
                 <div className="form-group">
                   <label className="form-label">상품명</label>
-                  <input type="text" name="itemName" className="form-input" value={formData.itemName} readOnly />
+                  <input
+                    type="text"
+                    name="itemName"
+                    className="form-input"
+                    value={formData.itemName}
+                    onChange={handleChange}
+                    readOnly={!!itemName}
+                    placeholder="상품명을 입력해 주세요"
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">결제 금액</label>
-                  <input type="number" name="amount" className="form-input" value={formData.amount} readOnly />
+                  <input
+                    type="number"
+                    name="amount"
+                    className="form-input"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    readOnly={!!amount}
+                    placeholder="0"
+                  />
                 </div>
               </div>
 

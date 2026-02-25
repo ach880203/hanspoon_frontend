@@ -4,9 +4,9 @@ import AdminPaymentList from "./AdminPaymentList";
 import AdminDashboardPage from "./AdminDashboardPage";
 import AdminNoticeList from "./AdminNoticeList";
 import AdminFaqList from "./AdminFaqList";
-import PlaceholderPage from "../PlaceholderPage";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassManager from "./AdminOneDayClassManager";
+import AdminInquiryList from "./AdminInquiryList";
 import "./AdminList.css";
 
 const AdminManagementPage = () => {
@@ -25,7 +25,7 @@ const AdminManagementPage = () => {
         // 기존처럼 공용 OneDay 페이지로 이동하지 않고, 현재 관리자 탭 안에서만 동작합니다.
         return <AdminOneDayClassManager />;
       case "market":
-        return <PlaceholderPage title="마켓 관리(상품 목록)" />;
+        return <AdminInquiryList />; // 상품 관리 탭에서도 문의를 볼 수 있도록 하거나, 아래 CS 탭에서 통합 관리
       case "reservations":
         return <AdminReservationList />;
       case "cs":
@@ -38,7 +38,7 @@ const AdminManagementPage = () => {
             <AdminFaqList />
             <hr style={{ margin: "40px 0" }} />
             <h3>1:1 문의 관리</h3>
-            <PlaceholderPage title="1:1 문의 목록" />
+            <AdminInquiryList />
           </div>
         );
       default:
