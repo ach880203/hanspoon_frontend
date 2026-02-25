@@ -1,0 +1,328 @@
+/* src/components/InquirySection.css */
+/* 리뷰 섹션 톤(라운드/보더/연한 그레이)과 동일 계열 */
+
+.iqWrap {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+}
+
+.iqHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.iqTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.iqDesc {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  opacity: 0.75;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.iqPrimaryBtn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+}
+
+.iqError {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,0,0,0.06);
+}
+
+/* 작성 폼 */
+.iqForm {
+  margin-top: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(0,0,0,0.02);
+  display: grid;
+  gap: 10px;
+}
+
+.iqTextarea {
+  width: 100%;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  outline: none;
+  line-height: 1.6;
+  min-height: 96px;
+}
+
+.iqTextarea:focus {
+  border-color: rgba(0,0,0,0.35);
+}
+
+.iqFormBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.iqCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.iqFormRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iqHint {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.iqSubmitBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.iqSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 테이블 */
+.iqTableWrap {
+  margin-top: 14px;
+}
+
+.iqTableTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.iqCount {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.iqTable {
+  border-top: 1px solid rgba(0,0,0,0.18);
+}
+
+.iqTr {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 110px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.iqTh {
+  font-weight: 500;
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.iqTd {
+  font-size: 13px;
+}
+
+.iqTd.iqColTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.iqTitleText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.iqLock {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.iqTrBtn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+
+  font: inherit;          /* ✅ 전역 button 글꼴/크기/굵기 무시 */
+  font-weight: 400;       /* 필요 시 */
+  color: inherit;
+}
+
+.iqTrBtn:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.iqTrBtn.open {
+  background: rgba(0,0,0,0.02);
+}
+
+.iqStatus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  font-size: 12px;
+}
+
+.iqStatus.wait {
+  opacity: 0.75;
+}
+
+.iqStatus.done {
+  border-color: rgba(0,0,0,0.35);
+}
+
+.iqEmpty {
+  padding: 18px 12px;
+  border: 1px dashed rgba(0,0,0,0.12);
+  border-radius: 14px;
+  margin-top: 12px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+/* 펼침(Q/A) */
+.iqDetail {
+  padding: 0 10px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.iqQA {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  background: rgba(0,0,0,0.02);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.iqQ, .iqA {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.iqQLabel, .iqALabel {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(0,0,0,0.12);
+  font-weight: 800;
+  font-size: 12px;
+  background: #fff;
+}
+
+.iqQText, .iqAText {
+  line-height: 1.7;
+  opacity: 0.92;
+  word-break: break-word;
+}
+
+.iqMuted {
+  opacity: 0.65;
+}
+
+.iqAnsweredAt {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+/* 페이징 */
+.iqPager {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.iqGhost {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.iqGhost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.iqPageText {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* 반응형 */
+@media (max-width: 820px) {
+  .iqTr {
+    grid-template-columns: 1fr 90px 90px 90px;
+  }
+}
+@media (max-width: 520px) {
+  .iqTr {
+    grid-template-columns: 1fr 80px;
+    grid-auto-rows: auto;
+  }
+  .iqTd.date, .iqTd.status {
+    display: none;
+  }
+}
+
+/* ✅ 전역 button 스타일을 확실히 덮어쓰기 (맨 아래에 두세요) */
+.iqTable button.iqTrBtn.iqTr {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+/* 제목 텍스트도 동일하게 고정 */
+.iqTable button.iqTrBtn.iqTr .iqTitleText {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}

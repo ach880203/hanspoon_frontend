@@ -1,7 +1,31 @@
 // src/api/http.js
 import { getAccessToken, clearAuth } from "../utils/authStorage";
 
-async function request(path, { method = "GET", body, headers } = {}) {
+function buildUrl(path, params) {
+  if (!params) return path;
+
+  // path가 "/api/products" 같은 상대경로라고 가정 (브라우저 환경)
+  const url = new URL(path, window.location.origin);
+
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+
+    if (Array.isArray(v)) {
+      url.searchParams.delete(k);
+      v.forEach((vv) => {
+        if (vv === undefined || vv === null || vv === "") return;
+        url.searchParams.append(k, String(vv));
+      });
+      return;
+    }
+
+    url.searchParams.set(k, String(v));
+  });
+
+  return url.pathname + url.search + url.hash;
+}
+
+async function request(path, { method = "GET", params, body, headers } = {}) {
   const token = getAccessToken();
 
   const h = new Headers(headers || {});
@@ -14,7 +38,10 @@ async function request(path, { method = "GET", body, headers } = {}) {
     h.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(path, {
+  // ✅ params를 URL에 붙임
+  const url = buildUrl(path, params);
+
+  const res = await fetch(url, {
     method,
     headers: h,
     body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
@@ -28,13 +55,15 @@ async function request(path, { method = "GET", body, headers } = {}) {
   const contentType = res.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
 
-  const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null);
+  const payload = isJson
+    ? await res.json().catch(() => null)
+    : await res.text().catch(() => null);
 
-  // ApiResponse 래퍼면 data만 꺼내기 (백엔드가 ApiResponse 쓰고 있음)
-  // success 응답: ApiResponse.success(message, data)
-  // error 응답: ApiResponse.error(message)
-  const data = payload && typeof payload === "object" && "data" in payload ? payload.data : payload;
-  const message = payload && typeof payload === "object" && "message" in payload ? payload.message : null;
+  // ApiResponse 래퍼면 data만 꺼내기
+  const data =
+    payload && typeof payload === "object" && "data" in payload ? payload.data : payload;
+  const message =
+    payload && typeof payload === "object" && "message" in payload ? payload.message : null;
 
   if (!res.ok) {
     const err = new Error(message || "API Error");
@@ -50,20 +79,16 @@ export function toErrorMessage(err) {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
   if (err.message) return err.message;
-
-  // fetch에서 res.json() 파싱한 에러 형태 대비
   if (err.error) return err.error;
   if (err.errors && Array.isArray(err.errors)) return err.errors.join(", ");
-
   return JSON.stringify(err);
 }
 
 export const http = {
-  get: (path) => request(path),
+  // ✅ opt 받도록 수정
+  get: (path, opt) => request(path, opt),
   post: (path, body, opt) => request(path, { method: "POST", body, ...opt }),
   put: (path, body, opt) => request(path, { method: "PUT", body, ...opt }),
-  patch: (path, body, opt) => request(path, { method: "PATCH", body, ...opt }), // ✅ 추가
+  patch: (path, body, opt) => request(path, { method: "PATCH", body, ...opt }),
   del: (path, opt) => request(path, { method: "DELETE", ...opt }),
 };
-
-
