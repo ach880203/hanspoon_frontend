@@ -60,7 +60,7 @@ export const createwishes = (id) => {
 export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
     const authData = loadAuth();
     const token = authData?.accessToken;
-    const response = await api.get(`/api/recipe/ResipeWishes`, {
+    const response = await api.get(`/api/recipe/RecipeWishes`, {
       params: {
         page,
         size,
@@ -70,7 +70,7 @@ export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
         Authorization: token ? `Bearer ${token}` : "",
       },
     });
-    return response.data;
+    return response.data.data;
 };
 
 export const toggleWish = async (id) => {
@@ -83,4 +83,11 @@ export const toggleWish = async (id) => {
         }
     });
     return response.data;
+};
+
+// 로그인 사용자가 작성한 레시피 리뷰 목록 조회
+// 반환값은 백엔드 ApiResponse의 data 필드(List<MyRecipeReviewDto>)입니다.
+export const fetchMyRecipeReviews = async () => {
+    const response = await api.get(`/api/recipe/reviews/me`);
+    return response?.data?.data ?? [];
 };

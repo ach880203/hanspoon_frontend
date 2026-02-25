@@ -126,6 +126,11 @@ export const deleteOneDayReview = (reviewId, config = {}) =>
 export const getOneDayClassReviews = (classId, config = {}) =>
   unwrap(api.get(`/api/oneday/reviews/classes/${classId}`, config));
 
+// 로그인 사용자가 작성한 원데이 리뷰 목록을 조회합니다.
+// 마이페이지 통합 "내 리뷰" 탭에서 source=원데이 데이터로 사용합니다.
+export const getMyOneDayReviews = (config = {}) =>
+  unwrap(api.get("/api/oneday/reviews/me", config));
+
 // 리뷰 답글 등록은 관리자만 가능합니다.
 export const answerOneDayReview = (reviewId, payload, config = {}) =>
   unwrap(api.post(`/api/oneday/reviews/${reviewId}/answer`, payload, config));
@@ -137,6 +142,11 @@ export const createOneDayInquiry = (payload, config = {}) =>
 // 서버가 공개글/비밀글 노출 권한을 판단해 마스킹된 데이터를 반환합니다.
 export const getOneDayInquiries = (config = {}) =>
   unwrap(api.get("/api/oneday/inquiries", config));
+
+// 로그인 사용자가 작성한 원데이 문의 목록을 조회합니다.
+// 마이페이지 통합 "문의 내역" 탭에서 source=원데이 데이터로 사용합니다.
+export const getMyOneDayInquiries = (config = {}) =>
+  unwrap(api.get("/api/oneday/inquiries/me", config));
 
 // 문의 답글 등록 API입니다.
 // 서버에서 "작성자 or 관리자" 권한을 다시 검증합니다.

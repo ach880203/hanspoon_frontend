@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import MyPageDropdown from "./Layout/MyPageDropdown";
+import CartBadge from "./CartBadge";
+import CartToast from "./CartToast";
 import "./Layout.css";
 
 export default function Layout() {
@@ -133,9 +135,11 @@ export default function Layout() {
               />
             </button>
 
-            <Link to="/cart" className="hs-iconBtn" aria-label="장바구니">
-              <IconCart />
-            </Link>
+            <CartBadge>
+              <Link to="/cart" className="hs-iconBtn" aria-label="장바구니">
+                <IconCart />
+              </Link>
+            </CartBadge>
 
             {user ? (
               <MyPageDropdown />
@@ -240,6 +244,9 @@ export default function Layout() {
             </aside>
           </div>
         )}
+
+        <CartToast />
+        
       </header>
 
       <main className="layout-mainContainer">

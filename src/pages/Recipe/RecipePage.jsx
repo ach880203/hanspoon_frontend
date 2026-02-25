@@ -39,8 +39,9 @@ const RecipePage = () => {
           { id: Date.now() + 1, 
             name: '', 
             baseAmount: '', 
-            unit: '', 
-            taste: 'NONE' }
+            unit: '',
+            // 백엔드 IngredientDto(tasteType)와 키를 통일합니다.
+            tasteType: 'NONE' }
           ] 
         }],
     instructionGroup: [
@@ -188,8 +189,9 @@ const RecipePage = () => {
             { id: nextId()+1, 
               name: '', 
               baseAmount: '', 
-              unit: '', 
-              taste: 'NONE' }
+              unit: '',
+              // 백엔드 IngredientDto(tasteType)와 키를 통일합니다.
+              tasteType: 'NONE' }
             ] 
           }]
     });
@@ -201,8 +203,9 @@ const RecipePage = () => {
       { id: Date.now(), 
         name: '', 
         baseAmount: '', 
-        unit: '', 
-        taste: 'NONE' }
+        unit: '',
+        // 백엔드 IngredientDto(tasteType)와 키를 통일합니다.
+        tasteType: 'NONE' }
       );
     setRecipe({ ...recipe, ingredientGroup: newGroups });
   };
@@ -368,9 +371,10 @@ const RecipePage = () => {
                     newGroups[gIdx].ingredients[rIdx].unit = e.target.value;
                     setRecipe({...recipe, ingredientGroup: newGroups});
                   }} />
-                  <select className="custom-input ing-taste" value={ing.taste} onChange={(e) => {
+                  <select className="custom-input ing-taste" value={ing.tasteType || 'NONE'} onChange={(e) => {
                     const newGroups = [...recipe.ingredientGroup];
-                    newGroups[gIdx].ingredients[rIdx].taste = e.target.value;
+                    // 백엔드 저장 키(tasteType)로 직접 매핑합니다.
+                    newGroups[gIdx].ingredients[rIdx].tasteType = e.target.value;
                     setRecipe({...recipe, ingredientGroup: newGroups});
                   }}>
                     <option value="NONE">맛 영향 없음</option>
