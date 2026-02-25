@@ -134,6 +134,14 @@ export const OneDayClassDetail = () => {
     [myCompletedReservations, reviewedReservationIds]
   );
 
+  const detailImageList = useMemo(() => {
+    if (!detail) return [];
+    if (Array.isArray(detail.detailImageDataList) && detail.detailImageDataList.length > 0) {
+      return detail.detailImageDataList.filter((src) => typeof src === "string" && src.length > 0);
+    }
+    return detail.detailImageData ? [detail.detailImageData] : [];
+  }, [detail]);
+
   useEffect(() => {
     if (!selectedReservationId && reviewableReservations.length > 0) {
       setSelectedReservationId(String(reviewableReservations[0].reservationId));
@@ -415,8 +423,17 @@ export const OneDayClassDetail = () => {
 
       <section className="od-panel">
         <h2>클래스 상세 설명</h2>
-        {detail?.detailImageData ? (
-          <img className="od-detail-image" src={detail.detailImageData} alt={`${detail?.title || "클래스"} 상세 이미지`} />
+        {detailImageList.length > 0 ? (
+          <div style={{ display: "grid", gap: 12 }}>
+            {detailImageList.map((src, index) => (
+              <img
+                key={`detail-image-${index}`}
+                className="od-detail-image"
+                src={src}
+                alt={`${detail?.title || "클래스"} 상세 이미지 ${index + 1}`}
+              />
+            ))}
+          </div>
         ) : null}
         <p className="od-detail-description">
           {detail?.detailDescription || detail?.description || "상세 설명이 아직 등록되지 않았습니다."}

@@ -19,7 +19,7 @@ const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
 
   if (ing.tasteType === "SPICY") amount *= getWeight("spiciness");
   if (ing.tasteType === "SWEET") amount *= getWeight("sweetness");
-  if (ing.tasteType === "SALTY") amount *= getWeight("saltiness");
+  if (ing.tasteType === "SALT") amount *= getWeight("saltiness");
   if (Number.isNaN(amount)) return "0";
 
   return amount.toFixed(1).replace(/\.0$/, "");
