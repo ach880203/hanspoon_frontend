@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createOneDayClass,
   deleteOneDayClass,
@@ -10,13 +10,14 @@ import {
 import "./AdminOneDayClassManager.css";
 
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_COUNT = 10;
 
 const EMPTY_FORM = {
   id: null,
   title: "",
   description: "",
   detailDescription: "",
-  detailImageData: "",
+  detailImageDataList: [],
   level: "BEGINNER",
   runType: "ALWAYS",
   category: "KOREAN",
@@ -24,15 +25,8 @@ const EMPTY_FORM = {
   sessions: [{ startAt: "", slot: "AM", capacity: "10", price: "50000" }],
 };
 
-/**
- * 관리자 전용 원데이 클래스 관리 컴포넌트
- *
- * 초보자 참고:
- * - 목록/등록/수정을 한 화면 안에서 처리해 라우팅 이동 없이 관리가 가능하도록 만들었습니다.
- * - `mode` 상태 하나로 화면 전환을 제어하면, 뷰 흐름을 읽기 쉬워집니다.
- */
 export default function AdminOneDayClassManager() {
-  const [mode, setMode] = useState("list"); // "list" | "create" | "edit"
+  const [mode, setMode] = useState("list"); // list | create | edit
   const [form, setForm] = useState(EMPTY_FORM);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,11 +36,15 @@ export default function AdminOneDayClassManager() {
 
   const payload = useMemo(() => {
     const instructorId = Number(form.instructorId);
+    const detailImageDataList = Array.isArray(form.detailImageDataList) ? form.detailImageDataList : [];
+
     return {
       title: form.title.trim(),
       description: form.description.trim(),
       detailDescription: form.detailDescription.trim(),
-      detailImageData: form.detailImageData || "",
+      // 백엔드 하위 호환용 단일 필드 + 신규 다중 필드를 함께 전달합니다.
+      detailImageData: detailImageDataList[0] || "",
+      detailImageDataList,
       level: form.level,
       runType: form.runType,
       category: form.category,
@@ -76,7 +74,6 @@ export default function AdminOneDayClassManager() {
   }, []);
 
   useEffect(() => {
-    // 최초 1회 목록 로드
     loadClasses();
   }, [loadClasses]);
 
@@ -104,12 +101,18 @@ export default function AdminOneDayClassManager() {
         price: String(session.price ?? 0),
       }));
 
+      const detailImages = Array.isArray(detail?.detailImageDataList)
+        ? detail.detailImageDataList.filter((x) => typeof x === "string" && x.length > 0)
+        : detail?.detailImageData
+        ? [detail.detailImageData]
+        : [];
+
       setForm({
         id: detail?.id ?? classId,
         title: detail?.title ?? "",
         description: detail?.description ?? "",
         detailDescription: detail?.detailDescription ?? "",
-        detailImageData: detail?.detailImageData ?? "",
+        detailImageDataList: detailImages,
         level: detail?.level ?? "BEGINNER",
         runType: detail?.runType ?? "ALWAYS",
         category: detail?.category ?? "KOREAN",
@@ -130,6 +133,8 @@ export default function AdminOneDayClassManager() {
     if (!payload.detailDescription) return "상세 설명을 입력해 주세요.";
     if (!payload.instructorId) return "강사 ID를 입력해 주세요.";
     if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) return "세션은 최소 1개가 필요합니다.";
+    if ((payload.detailImageDataList?.length ?? 0) > MAX_IMAGE_COUNT) return `상세 이미지는 최대 ${MAX_IMAGE_COUNT}장까지 등록할 수 있습니다.`;
+
     for (let i = 0; i < payload.sessions.length; i += 1) {
       const row = payload.sessions[i];
       const prefix = `세션 ${i + 1}`;
@@ -166,7 +171,7 @@ export default function AdminOneDayClassManager() {
       setMode("list");
       setForm(EMPTY_FORM);
     } catch (e) {
-      setError(e?.message ?? "저장 처리에 실패했습니다.");
+      setError(e?.message ?? "요청 처리에 실패했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -204,28 +209,45 @@ export default function AdminOneDayClassManager() {
   const removeSession = (index) => {
     setForm((prev) => ({
       ...prev,
-      sessions:
-        prev.sessions.length <= 1
-          ? prev.sessions
-          : prev.sessions.filter((_, i) => i !== index),
+      sessions: prev.sessions.length <= 1 ? prev.sessions : prev.sessions.filter((_, i) => i !== index),
     }));
   };
 
-  const handleImageFile = async (event) => {
+  const handleImageFiles = async (event) => {
     setError("");
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("이미지 파일만 업로드할 수 있습니다.");
-      return;
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      setError("이미지 파일은 2MB 이하만 업로드할 수 있습니다.");
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    const remain = MAX_IMAGE_COUNT - form.detailImageDataList.length;
+    if (remain <= 0) {
+      setError(`상세 이미지는 최대 ${MAX_IMAGE_COUNT}장까지 등록할 수 있습니다.`);
       return;
     }
 
-    const dataUrl = await readFileAsDataUrl(file);
-    setField("detailImageData", dataUrl);
+    const limited = files.slice(0, remain);
+    const nextImages = [];
+
+    for (const file of limited) {
+      if (!file.type.startsWith("image/")) {
+        setError("이미지 파일만 업로드할 수 있습니다.");
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        setError("이미지 파일은 2MB 이하만 업로드할 수 있습니다.");
+        return;
+      }
+      nextImages.push(await readFileAsDataUrl(file));
+    }
+
+    setField("detailImageDataList", [...form.detailImageDataList, ...nextImages]);
+    event.target.value = "";
+  };
+
+  const removeDetailImage = (index) => {
+    setField(
+      "detailImageDataList",
+      form.detailImageDataList.filter((_, i) => i !== index)
+    );
   };
 
   return (
@@ -281,9 +303,9 @@ export default function AdminOneDayClassManager() {
         </section>
 
         <section className="admin-oneday-panel">
-          <h3>{mode === "create" ? "클래스 등록" : mode === "edit" ? `클래스 수정 #${form.id}` : "편집 대기"}</h3>
+          <h3>{mode === "create" ? "클래스 등록" : mode === "edit" ? `클래스 수정 #${form.id}` : "입력 대기"}</h3>
           {mode === "list" ? (
-            <div className="muted">왼쪽 목록에서 수정할 클래스를 선택하거나, "클래스 등록" 버튼을 눌러 주세요.</div>
+            <div className="muted">왼쪽 목록에서 수정할 클래스를 선택하거나 "클래스 등록" 버튼을 눌러 주세요.</div>
           ) : (
             <form className="class-form" onSubmit={submit}>
               <label>
@@ -306,15 +328,25 @@ export default function AdminOneDayClassManager() {
               </label>
 
               <label>
-                <span>상세 이미지</span>
-                <input type="file" accept="image/*" onChange={handleImageFile} />
+                <span>상세 이미지 (여러 장)</span>
+                <input type="file" accept="image/*" multiple onChange={handleImageFiles} />
               </label>
-              {form.detailImageData ? (
+              {form.detailImageDataList.length > 0 ? (
                 <div className="preview-wrap">
-                  <img src={form.detailImageData} alt="상세 이미지 미리보기" />
-                  <button type="button" className="btn-ghost" onClick={() => setField("detailImageData", "")}>
-                    이미지 제거
-                  </button>
+                  <div className="preview-grid">
+                    {form.detailImageDataList.map((img, index) => (
+                      <div key={`detail-img-${index}`} className="preview-item">
+                        <img src={img} alt={`상세 이미지 ${index + 1}`} />
+                        <button
+                          type="button"
+                          className="btn-danger"
+                          onClick={() => removeDetailImage(index)}
+                        >
+                          이미지 삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
 
@@ -330,7 +362,7 @@ export default function AdminOneDayClassManager() {
                 </label>
 
                 <label>
-                  <span>난이도</span>
+                  <span>레벨</span>
                   <select value={form.level} onChange={(e) => setField("level", e.target.value)}>
                     <option value="BEGINNER">입문</option>
                     <option value="INTERMEDIATE">중급</option>
@@ -418,7 +450,7 @@ export default function AdminOneDayClassManager() {
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "저장 중..." : mode === "create" ? "등록하기" : "수정 저장"}
+                  {submitting ? "처리 중..." : mode === "create" ? "등록하기" : "수정 저장"}
                 </button>
                 <button
                   type="button"

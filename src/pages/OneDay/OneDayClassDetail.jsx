@@ -134,6 +134,14 @@ export const OneDayClassDetail = () => {
     [myCompletedReservations, reviewedReservationIds]
   );
 
+  const detailImageList = useMemo(() => {
+    if (!detail) return [];
+    if (Array.isArray(detail.detailImageDataList) && detail.detailImageDataList.length > 0) {
+      return detail.detailImageDataList.filter((src) => typeof src === "string" && src.length > 0);
+    }
+    return detail.detailImageData ? [detail.detailImageData] : [];
+  }, [detail]);
+
   useEffect(() => {
     if (!selectedReservationId && reviewableReservations.length > 0) {
       setSelectedReservationId(String(reviewableReservations[0].reservationId));
@@ -149,7 +157,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) throw new Error("예약 ID를 받지 못했습니다.");
-      navigate(`/classes/oneday/reservations?status=HOLD&selectedId=${reservationId}`);
+      // 상태 필터를 강제하지 않고 selectedId만 전달해야 전체 예약 목록에서 현재 예약을 함께 확인할 수 있습니다.
+      navigate(`/classes/oneday/reservations?selectedId=${reservationId}`);
     } catch (e) {
       setError(e?.message ?? "예약 홀딩에 실패했습니다.");
     } finally {
@@ -415,8 +424,17 @@ export const OneDayClassDetail = () => {
 
       <section className="od-panel">
         <h2>클래스 상세 설명</h2>
-        {detail?.detailImageData ? (
-          <img className="od-detail-image" src={detail.detailImageData} alt={`${detail?.title || "클래스"} 상세 이미지`} />
+        {detailImageList.length > 0 ? (
+          <div style={{ display: "grid", gap: 12 }}>
+            {detailImageList.map((src, index) => (
+              <img
+                key={`detail-image-${index}`}
+                className="od-detail-image"
+                src={src}
+                alt={`${detail?.title || "클래스"} 상세 이미지 ${index + 1}`}
+              />
+            ))}
+          </div>
         ) : null}
         <p className="od-detail-description">
           {detail?.detailDescription || detail?.description || "상세 설명이 아직 등록되지 않았습니다."}
