@@ -60,7 +60,7 @@ export const createwishes = (id) => {
 export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
     const authData = loadAuth();
     const token = authData?.accessToken;
-    const response = await api.get(`/api/recipe/ResipeWishes`, {
+    const response = await api.get(`/api/recipe/RecipeWishes`, {
       params: {
         page,
         size,
@@ -70,7 +70,7 @@ export const fetchMyWishes = async (page = 0, size = 12, category = "") => {
         Authorization: token ? `Bearer ${token}` : "",
       },
     });
-    return response.data;
+    return response.data.data;
 };
 
 export const toggleWish = async (id) => {

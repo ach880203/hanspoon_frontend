@@ -47,6 +47,7 @@ import RecipePage from "./pages/Recipe/RecipePage";
 import Recipesid from "./pages/Recipe/Recipesid";
 import Recipesuser from "./pages/Recipe/Recipesuser";
 import RecipeList from "./pages/Recipe/RecipeList";
+import RecipeWishes from "./pages/Recipe/RecipeWishes.jsx";
 
 import Payment from "./pages/Payment/Payment";
 import PaymentSuccess from "./pages/Payment/PaymentSuccess";
@@ -98,6 +99,7 @@ export default function App() {
         <Route path="oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
         <Route path="recipes" element={<RecipePage title="레시피 등록" />} />
+        <Route path="recipes/recipewishes" element={<RecipeWishes title="레시피 관심목록" />} />
         <Route path="recipes/user" element={<Recipesuser title="내 레시피" />} />
         <Route path="recipes/:id" element={<Recipesid title="레시피 상세" />} />
         <Route path="recipes/list" element={<RecipeList title="레시피 목록" />} />

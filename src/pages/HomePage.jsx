@@ -242,7 +242,7 @@ export default function HomePage() {
             ]}
             sublinks={[
               { to: "/reviews", label: "리뷰" },
-              { to: "/wishlist", label: "관심 목록" },
+              { to: "recipes/recipewishes", label: "관심 목록" },
             ]}
           />
 

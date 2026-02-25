@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import {useParams, useNavigate, Link, replace} from "react-router-dom";
 import { deleteRecipe, getRecipeDetail, toggleWish } from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
 
@@ -19,7 +19,7 @@ const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
 
   if (ing.tasteType === "SPICY") amount *= getWeight("spiciness");
   if (ing.tasteType === "SWEET") amount *= getWeight("sweetness");
-  if (ing.tasteType === "SALTY") amount *= getWeight("saltiness");
+  if (ing.tasteType === "SALT") amount *= getWeight("saltiness");
   if (Number.isNaN(amount)) return "0";
 
   return amount.toFixed(1).replace(/\.0$/, "");
@@ -128,7 +128,8 @@ const Recipesid = () => {
   const handleToggleFavorite = async () => {
     try {
       const response = await toggleWish(id);
-      if (response?.status === 200) {
+
+      if (response && response.success === true) {
         const next = !isFavorite;
         setIsFavorite(next);
         alert(next ? "관심 목록에 추가되었습니다." : "관심 목록에서 제거되었습니다.");
