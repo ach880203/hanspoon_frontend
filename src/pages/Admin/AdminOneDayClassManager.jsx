@@ -12,7 +12,8 @@ import "./AdminOneDayClassManager.css";
 
 const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_IMAGE_COUNT = 10;
-const ALWAYS_MAX_DAYS = 90;
+const ALWAYS_MIN_DAYS = 30;
+const ALWAYS_MAX_DAYS = 60;
 
 const EMPTY_FORM = {
   id: null,
@@ -24,9 +25,11 @@ const EMPTY_FORM = {
   runType: "ALWAYS",
   category: "KOREAN",
   instructorId: "",
-  alwaysStartDate: todayDateString(),
   alwaysDays: "30",
-  sessions: [{ startAt: "", slot: "AM", capacity: "10", price: "50000" }],
+  sessions: [
+    { startAt: "10:00", slot: "AM", capacity: "10", price: "50000" },
+    { startAt: "15:00", slot: "PM", capacity: "10", price: "50000" },
+  ],
 };
 
 export default function AdminOneDayClassManager() {
@@ -73,7 +76,10 @@ export default function AdminOneDayClassManager() {
 
   const openCreate = () => {
     setMode("create");
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      sessions: buildAlwaysTemplateRows([]),
+    });
     setDetailImageNames([]);
     setError("");
     setMessage("");
@@ -109,7 +115,6 @@ export default function AdminOneDayClassManager() {
         runType: detail?.runType ?? "ALWAYS",
         category: detail?.category ?? "KOREAN",
         instructorId: String(detail?.instructorId ?? ""),
-        alwaysStartDate: todayDateString(),
         alwaysDays: "30",
         sessions: normalizedSessions.length > 0 ? normalizedSessions : EMPTY_FORM.sessions,
       });
@@ -128,6 +133,40 @@ export default function AdminOneDayClassManager() {
   };
 
   const setField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
+
+  const handleRunTypeChange = (nextRunType) => {
+    if (mode !== "create") {
+      setField("runType", nextRunType);
+      return;
+    }
+
+    if (nextRunType === "ALWAYS") {
+      setForm((prev) => ({
+        ...prev,
+        runType: "ALWAYS",
+        sessions: buildAlwaysTemplateRows(prev.sessions),
+      }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      runType: nextRunType,
+      sessions: prev.sessions.map((row) => ({
+        ...row,
+        startAt: toDatetimeLocalFromTime(extractTimeOrFallback(row?.startAt, row?.slot === "AM" ? "10:00" : "15:00")),
+      })),
+    }));
+  };
+
+  const setAlwaysSessionField = (slot, name, value) => {
+    setForm((prev) => {
+      const templateRows = buildAlwaysTemplateRows(prev.sessions).map((row) =>
+        row.slot === slot ? { ...row, [name]: value } : row
+      );
+      return { ...prev, sessions: templateRows };
+    });
+  };
 
   const setSessionField = (index, name, value) => {
     setForm((prev) => ({
@@ -155,7 +194,7 @@ export default function AdminOneDayClassManager() {
     const detailImageDataList = Array.isArray(form.detailImageDataList) ? form.detailImageDataList : [];
     const sessions =
       mode === "create" && form.runType === "ALWAYS"
-        ? buildAlwaysSessions(form.sessions, form.alwaysStartDate, Number(form.alwaysDays))
+        ? buildAlwaysSessions(buildAlwaysTemplateRows(form.sessions), todayDateString(), Number(form.alwaysDays))
         : form.sessions.map((row) => ({
             startAt: toIsoWithSeconds(row.startAt),
             slot: row.slot,
@@ -184,9 +223,12 @@ export default function AdminOneDayClassManager() {
     if (!payload.instructorId) return "강사를 선택해 주세요.";
     if (mode === "create" && form.runType === "ALWAYS") {
       const days = Number(form.alwaysDays);
-      if (!form.alwaysStartDate) return "상시 시작일을 입력해 주세요.";
-      if (!Number.isInteger(days) || days <= 0 || days > ALWAYS_MAX_DAYS) {
-        return `상시 운영일수는 1~${ALWAYS_MAX_DAYS}일 사이로 입력해 주세요.`;
+      if (!Number.isInteger(days) || days < ALWAYS_MIN_DAYS || days > ALWAYS_MAX_DAYS) {
+        return `상시 운영일수는 ${ALWAYS_MIN_DAYS}~${ALWAYS_MAX_DAYS}일 사이로 입력해 주세요.`;
+      }
+      const alwaysRows = buildAlwaysTemplateRows(form.sessions);
+      if (!alwaysRows.every((row) => isTimeString(row.startAt))) {
+        return "상시 클래스는 오전/오후 시간을 HH:MM 형식으로 입력해 주세요.";
       }
     }
     if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) return "세션은 최소 1개가 필요합니다.";
@@ -229,7 +271,10 @@ export default function AdminOneDayClassManager() {
 
       await loadClasses();
       setMode("list");
-      setForm(EMPTY_FORM);
+      setForm({
+        ...EMPTY_FORM,
+        sessions: buildAlwaysTemplateRows([]),
+      });
       setDetailImageNames([]);
     } catch (e) {
       setError(e?.message ?? "요청 처리에 실패했습니다.");
@@ -443,7 +488,7 @@ export default function AdminOneDayClassManager() {
 
                 <label>
                   <span>운영 유형</span>
-                  <select value={form.runType} onChange={(e) => setField("runType", e.target.value)}>
+                  <select value={form.runType} onChange={(e) => handleRunTypeChange(e.target.value)}>
                     <option value="ALWAYS">상시</option>
                     <option value="EVENT">이벤트</option>
                   </select>
@@ -463,88 +508,123 @@ export default function AdminOneDayClassManager() {
                   <strong>상시 운영 자동 생성</strong>
                   <div className="class-form-grid">
                     <label>
-                      <span>상시 시작일</span>
-                      <input
-                        type="date"
-                        value={form.alwaysStartDate}
-                        onChange={(e) => setField("alwaysStartDate", e.target.value)}
-                      />
-                    </label>
-                    <label>
                       <span>운영일수</span>
                       <input
                         type="number"
-                        min="1"
+                        min={ALWAYS_MIN_DAYS}
                         max={ALWAYS_MAX_DAYS}
                         value={form.alwaysDays}
                         onChange={(e) => setField("alwaysDays", e.target.value)}
                       />
                     </label>
                   </div>
-                  <p className="muted">상시 클래스는 입력한 세션 시간대를 기준으로 시작일부터 매일 자동 생성됩니다.</p>
+                  <p className="muted">상시 클래스는 오늘 기준으로 입력한 오전/오후 시간에 맞춰 자동 생성됩니다.</p>
                 </div>
               ) : null}
 
-              <div className="session-head">
-                <strong>세션 목록</strong>
-                <button type="button" className="btn-ghost" onClick={addSession}>
-                  세션 추가
-                </button>
-              </div>
+              {mode === "create" && form.runType === "ALWAYS" ? (
+                <div className="session-list">
+                  {buildAlwaysTemplateRows(form.sessions).map((session, index) => (
+                    <article key={`always-session-${session.slot}`} className="session-row">
+                      <div className="session-row-head">
+                        <strong>{session.slot === "AM" ? "오전 세션" : "오후 세션"}</strong>
+                      </div>
+                      <div className="session-grid">
+                        <label>
+                          <span>시간</span>
+                          <input
+                            type="time"
+                            value={session.startAt}
+                            onChange={(e) => setAlwaysSessionField(session.slot, "startAt", e.target.value)}
+                          />
+                        </label>
+                        <label>
+                          <span>정원</span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={session.capacity}
+                            onChange={(e) => setAlwaysSessionField(session.slot, "capacity", e.target.value)}
+                          />
+                        </label>
+                        <label>
+                          <span>가격</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            value={session.price}
+                            onChange={(e) => setAlwaysSessionField(session.slot, "price", e.target.value)}
+                          />
+                        </label>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="session-head">
+                    <strong>세션 목록</strong>
+                    <button type="button" className="btn-ghost" onClick={addSession}>
+                      세션 추가
+                    </button>
+                  </div>
 
-              <div className="session-list">
-                {form.sessions.map((session, index) => (
-                  <article key={`session-${index}`} className="session-row">
-                    <div className="session-row-head">
-                      <strong>세션 {index + 1}</strong>
-                      <button
-                        type="button"
-                        className="btn-danger"
-                        onClick={() => removeSession(index)}
-                        disabled={form.sessions.length <= 1}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                    <div className="session-grid">
-                      <label>
-                        <span>시작일시</span>
-                        <input
-                          type="datetime-local"
-                          value={session.startAt}
-                          onChange={(e) => setSessionField(index, "startAt", e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>시간대</span>
-                        <select value={session.slot} onChange={(e) => setSessionField(index, "slot", e.target.value)}>
-                          <option value="AM">오전</option>
-                          <option value="PM">오후</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>정원</span>
-                        <input
-                          type="number"
-                          min="1"
-                          value={session.capacity}
-                          onChange={(e) => setSessionField(index, "capacity", e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>가격</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1000"
-                          value={session.price}
-                          onChange={(e) => setSessionField(index, "price", e.target.value)}
-                        />
-                      </label>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                  <div className="session-list">
+                    {form.sessions.map((session, index) => (
+                      <article key={`session-${index}`} className="session-row">
+                        <div className="session-row-head">
+                          <strong>세션 {index + 1}</strong>
+                          <button
+                            type="button"
+                            className="btn-danger"
+                            onClick={() => removeSession(index)}
+                            disabled={form.sessions.length <= 1}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                        <div className="session-grid">
+                          <label>
+                            <span>시작일시</span>
+                            <input
+                              type="datetime-local"
+                              value={session.startAt}
+                              onChange={(e) => setSessionField(index, "startAt", e.target.value)}
+                            />
+                          </label>
+                          <label>
+                            <span>시간대</span>
+                            <select value={session.slot} onChange={(e) => setSessionField(index, "slot", e.target.value)}>
+                              <option value="AM">오전</option>
+                              <option value="PM">오후</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span>정원</span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={session.capacity}
+                              onChange={(e) => setSessionField(index, "capacity", e.target.value)}
+                            />
+                          </label>
+                          <label>
+                            <span>가격</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={session.price}
+                              onChange={(e) => setSessionField(index, "price", e.target.value)}
+                            />
+                          </label>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="form-actions">
                 <button type="submit" className="btn-primary" disabled={submitting}>
@@ -596,11 +676,11 @@ function buildAlwaysSessions(templateRows, startDate, days) {
 
     rows.forEach((row) => {
       if (!row?.startAt) return;
-      const templateDate = new Date(row.startAt);
-      if (Number.isNaN(templateDate.getTime())) return;
+      const time = toTimeParts(row.startAt);
+      if (!time) return;
 
       const sessionDate = new Date(date);
-      sessionDate.setHours(templateDate.getHours(), templateDate.getMinutes(), 0, 0);
+      sessionDate.setHours(time.hour, time.minute, 0, 0);
       if (sessionDate < now) return;
 
       const year = sessionDate.getFullYear();
@@ -621,6 +701,53 @@ function buildAlwaysSessions(templateRows, startDate, days) {
   return result;
 }
 
+function buildAlwaysTemplateRows(sourceRows) {
+  const rows = Array.isArray(sourceRows) ? sourceRows : [];
+  const amSource = rows.find((row) => row?.slot === "AM");
+  const pmSource = rows.find((row) => row?.slot === "PM");
+  return [
+    {
+      slot: "AM",
+      startAt: extractTimeOrFallback(amSource?.startAt, "10:00"),
+      capacity: String(amSource?.capacity ?? "10"),
+      price: String(amSource?.price ?? "50000"),
+    },
+    {
+      slot: "PM",
+      startAt: extractTimeOrFallback(pmSource?.startAt, "15:00"),
+      capacity: String(pmSource?.capacity ?? "10"),
+      price: String(pmSource?.price ?? "50000"),
+    },
+  ];
+}
+
+function extractTimeOrFallback(value, fallback) {
+  const time = toTimeParts(value);
+  if (!time) return fallback;
+  return `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+}
+
+function toTimeParts(value) {
+  if (!value) return null;
+  const timeMatch = String(value).match(/^(\d{2}):(\d{2})$/);
+  if (timeMatch) {
+    const hour = Number(timeMatch[1]);
+    const minute = Number(timeMatch[2]);
+    if (Number.isInteger(hour) && Number.isInteger(minute) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+      return { hour, minute };
+    }
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return { hour: parsed.getHours(), minute: parsed.getMinutes() };
+}
+
+function isTimeString(value) {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value || ""));
+}
+
 function toIsoWithSeconds(value) {
   if (!value) return "";
   return value.length === 16 ? `${value}:00` : value;
@@ -635,6 +762,18 @@ function toDatetimeLocal(value) {
   const day = String(date.getDate()).padStart(2, "0");
   const hour = String(date.getHours()).padStart(2, "0");
   const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+function toDatetimeLocalFromTime(timeValue) {
+  const time = toTimeParts(timeValue);
+  if (!time) return "";
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const hour = String(time.hour).padStart(2, "0");
+  const minute = String(time.minute).padStart(2, "0");
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
