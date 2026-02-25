@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import {useParams, useNavigate, Link, replace} from "react-router-dom";
 import { deleteRecipe, getRecipeDetail, toggleWish } from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
 
@@ -128,7 +128,8 @@ const Recipesid = () => {
   const handleToggleFavorite = async () => {
     try {
       const response = await toggleWish(id);
-      if (response?.status === 200) {
+
+      if (response && response.success === true) {
         const next = !isFavorite;
         setIsFavorite(next);
         alert(next ? "관심 목록에 추가되었습니다." : "관심 목록에서 제거되었습니다.");
