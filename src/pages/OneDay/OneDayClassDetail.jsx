@@ -157,7 +157,8 @@ export const OneDayClassDetail = () => {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
       if (!reservationId) throw new Error("예약 ID를 받지 못했습니다.");
-      navigate(`/classes/oneday/reservations?status=HOLD&selectedId=${reservationId}`);
+      // 상태 필터를 강제하지 않고 selectedId만 전달해야 전체 예약 목록에서 현재 예약을 함께 확인할 수 있습니다.
+      navigate(`/classes/oneday/reservations?selectedId=${reservationId}`);
     } catch (e) {
       setError(e?.message ?? "예약 홀딩에 실패했습니다.");
     } finally {
