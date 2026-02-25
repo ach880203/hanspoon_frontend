@@ -170,6 +170,11 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
+              <Link to="/mypage/reservations" onClick={() => setIsOpen(false)}>
+                클래스 예약 내역
+              </Link>
+            </li>
+            <li>
               <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
                 나의 리뷰
               </Link>

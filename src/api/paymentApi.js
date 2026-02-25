@@ -38,7 +38,12 @@ export const paymentApi = {
      * @param {Object} params - { page, size, ... }
      * @returns {Promise<Object>}
      */
-    getPaymentHistory: (params) => unwrap(axiosInstance.get('/api/payment/history', { params })),
+    // 결제 내역 조회: 서버가 `{ success, message, data }` 형태로 반환하되
+    // `data`가 null일 수 있으므로 빈 페이지 구조로 안전하게 대체합니다.
+    getPaymentHistory: (params) =>
+        unwrap(axiosInstance.get('/api/payment/history', { params })).then((data) =>
+            data ?? { content: [], totalPages: 0 }
+        ),
 
     /**
      * 포트원 설정 정보 조회

@@ -22,14 +22,15 @@ function Payment() {
     amount,
     reservationId,
     classId,
+    orderId, // ✅ 상품 주문 시 전달받은 ID
     buyerName: initialBuyerName,
     buyerEmail: initialBuyerEmail,
     buyerTel: initialBuyerTel,
   } = location.state || {};
 
   const [formData, setFormData] = useState({
-    itemName: itemName || "원데이 클래스",
-    amount: amount || 50000,
+    itemName: itemName || "상품 결제",
+    amount: amount || 0,
     buyerName: initialBuyerName || "",
     buyerEmail: initialBuyerEmail || "",
     buyerTel: initialBuyerTel ? formatPhoneNumber(initialBuyerTel) : "",
@@ -143,7 +144,8 @@ function Payment() {
         return;
       }
 
-      const merchantUid = `PAY-${Date.now()}`;
+      // ✅ 상품 주문 번호가 있으면 그것을 결제 고유 ID로 사용, 없으면 새로 생성 (클래스 등)
+      const merchantUid = orderId ? String(orderId) : `PAY-${Date.now()}`;
 
       const response = await window.PortOne.requestPayment({
         storeId: config.storeId,
@@ -167,7 +169,7 @@ function Payment() {
 
       const verifyResult = await paymentApi.verifyPayment({
         paymentId: response.paymentId,
-        orderId: merchantUid,
+        orderId: merchantUid, // 서버에서 조회 시 사용
         amount: Number(formData.amount),
         productId: null,
         classId: classId ? Number(classId) : null,
