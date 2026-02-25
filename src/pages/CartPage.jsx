@@ -172,8 +172,20 @@ export default function CartPage() {
       const payload = { cartId, ...checkout };
       const created = await createOrder(payload);
 
-      await load();
-      nav(`/orders/${created.orderId}`);
+      // ✅ 주문 생성 성공 후 결제 페이지로 이동
+      // created 객체에 orderId와 totalPrice가 포함되어 있다고 가정
+      nav("/payment", {
+        state: {
+          orderId: created.orderId,
+          itemName: created.items.length > 1
+            ? `${created.items[0].productName} 외 ${created.items.length - 1}건`
+            : created.items[0].productName,
+          amount: created.totalPrice,
+          buyerName: checkout.receiverName,
+          buyerTel: checkout.receiverPhone,
+          // 주소 정보 등은 이미 checkout에 있으므로 필요 시 추가 전달 가능
+        }
+      });
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {

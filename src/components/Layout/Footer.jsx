@@ -1,4 +1,5 @@
-﻿import './Footer.css';
+﻿import { Link } from 'react-router-dom';
+import './Footer.css';
 
 function Footer() {
   return (
@@ -15,9 +16,9 @@ function Footer() {
           <div className="footer-section">
             <h4 className="footer-subtitle">바로가기</h4>
             <ul className="footer-links">
-              <li><a href="/notice">공지사항</a></li>
-              <li><a href="/faq">자주 묻는 질문</a></li>
-              <li><a href="/payment">결제</a></li>
+              <li><Link to="/notice">공지사항</Link></li>
+              <li><Link to="/faq">자주 묻는 질문</Link></li>
+              <li><Link to="/payment">결제</Link></li>
             </ul>
           </div>
 

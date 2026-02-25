@@ -17,13 +17,29 @@ const MyPaymentPage = () => {
     const fetchPaymentHistory = async (pageIdx) => {
         setLoading(true);
         try {
-            const response = await paymentApi.getPaymentHistory({ page: pageIdx, size: 10 });
-            if (response && response.data) {
-                setPayments(response.data.content || []);
-                setTotalPages(response.data.totalPages || 0);
+            const data = await paymentApi.getPaymentHistory({ page: pageIdx, size: 10 });
+            if (data) {
+                setPayments(data.content || []);
+                setTotalPages(data.totalPages || 0);
             }
         } catch (err) {
-            setError(toErrorMessage(err));
+            // 개발용 디버깅: 전체 에러를 콘솔에 출력
+            console.error("getPaymentHistory error:", err);
+
+            // http.toErrorMessage는 err.message를 우선 사용하므로
+            // 서버 응답 전체를 화면에 보려면 payload/response 정보를 추가합니다.
+            let msg = toErrorMessage(err);
+            if (err && err.data) {
+                try {
+                    msg += ` - 서버응답: ${JSON.stringify(err.data)}`;
+                } catch { /* ignore */ }
+            } else if (err && err.payload) {
+                try {
+                    msg += ` - 서버응답: ${JSON.stringify(err.payload)}`;
+                } catch { /* ignore */ }
+            }
+
+            setError(msg);
         } finally {
             setLoading(false);
         }
