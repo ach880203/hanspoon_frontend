@@ -1,4 +1,3 @@
-
 import axiosInstance from './axios';
 
 export const adminApi = {
@@ -103,6 +102,8 @@ export const adminApi = {
         const response = await axiosInstance.get('/api/admin/inquiries', {
             params: { page, size }
         });
+        return response.data;
+    },
     // OneDay Instructors
     getOneDayInstructors: async () => {
         const response = await axiosInstance.get('/api/admin/oneday/instructors');
