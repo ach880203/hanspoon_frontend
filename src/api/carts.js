@@ -19,6 +19,16 @@ export async function fetchMyCart() {
   }
 }
 
+export async function fetchMyCartCount() {
+  try {
+    const { data } = await http.get("/api/carts/me/count");
+    return data?.count ?? data ?? 0;
+  } catch (e) {
+    if (e?.status === 401 || e?.status === 404) return 0; // 미로그인/장바구니없음
+    throw e;
+  }
+}
+
 /**
  * ???λ컮援щ땲 ?뺣낫(?놁쑝硫??앹꽦)
  * POST /api/carts/me -> { cartId }
