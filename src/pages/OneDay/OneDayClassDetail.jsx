@@ -1,9 +1,11 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { loadAuth } from "../../utils/authStorage";
 import {
+  answerOneDayInquiry,
   answerOneDayReview,
   createOneDayHold,
+  createOneDayInquiry,
   createOneDayReview,
   deleteOneDayReview,
   getMyOneDayReservations,
@@ -11,18 +13,22 @@ import {
   getOneDayClassDetail,
   getOneDayClassReviews,
   getOneDayClassSessions,
+  getOneDayInquiries,
   isOneDayAdmin,
   isSessionCompleted,
   resolveOneDayUserId,
   toggleOneDayWish,
 } from "../../api/onedayApi";
-
 import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./onedayLabels";
+import "./OneDayClassDetail.css";
+
+const INQUIRY_CATEGORIES = ["예약", "결제", "클래스", "기타"];
 
 export const OneDayClassDetail = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const inquirySectionRef = useRef(null);
 
   const currentUserId = Number(resolveOneDayUserId() ?? 0);
   const admin = isOneDayAdmin();
@@ -30,25 +36,37 @@ export const OneDayClassDetail = () => {
   const [detail, setDetail] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [inquiries, setInquiries] = useState([]);
   const [myCompletedReservations, setMyCompletedReservations] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  const [isWished, setIsWished] = useState(false);
   const [reservingSessionId, setReservingSessionId] = useState(null);
-  // 같은 세션에서 어떤 동작(홀딩/바로결제)을 실행 중인지 UI에 표시하기 위한 상태입니다.
-  // 예: 홀딩 버튼 클릭 시 "홀딩중...", 바로결제 클릭 시 "결제 이동중..."으로 문구를 분리합니다.
   const [reservingAction, setReservingAction] = useState(null); // "hold" | "pay" | null
+
+  const [selectedReservationId, setSelectedReservationId] = useState("");
+  const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState(null);
   const [answeringReviewId, setAnsweringReviewId] = useState(null);
-  const [answerDraftByReviewId, setAnswerDraftByReviewId] = useState({});
   const [openAnswerReviewId, setOpenAnswerReviewId] = useState(null);
-  const [selectedReservationId, setSelectedReservationId] = useState("");
-  const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
-  const [isWished, setIsWished] = useState(false);
+  const [answerDraftByReviewId, setAnswerDraftByReviewId] = useState({});
+
+  const [inquiryForm, setInquiryForm] = useState({
+    category: INQUIRY_CATEGORIES[0],
+    title: "",
+    content: "",
+    secret: false,
+  });
+  const [submittingInquiry, setSubmittingInquiry] = useState(false);
+  const [answeringInquiryId, setAnsweringInquiryId] = useState(null);
+  const [openAnswerInquiryId, setOpenAnswerInquiryId] = useState(null);
+  const [answerDraftByInquiryId, setAnswerDraftByInquiryId] = useState({});
+
   const buildBuyerState = () => {
-    // 결제 페이지 입력칸 자동 채움을 위해 로그인 사용자 스냅샷을 state로 전달합니다.
-    // phone은 저장 구조가 환경마다 다를 수 있어 후보 키를 함께 확인합니다.
     const auth = loadAuth() || {};
     return {
       buyerName: String(auth.userName || ""),
@@ -57,48 +75,52 @@ export const OneDayClassDetail = () => {
     };
   };
 
-  const loadPage = useCallback(async () => {
+  const loadClassData = useCallback(async () => {
     setLoading(true);
     setError("");
-
     try {
-      const [detailData, sessionsData, reviewData, myCompletedData, myWishData] = await Promise.all([
+      const [detailData, sessionsData, reviewData, myCompletedData, myWishData, inquiryData] = await Promise.all([
         getOneDayClassDetail(classId),
         getOneDayClassSessions(classId),
         getOneDayClassReviews(classId),
         getMyOneDayReservations({ status: "COMPLETED", page: 0, size: 200 }),
         getMyOneDayWishes().catch(() => []),
+        getOneDayInquiries(),
       ]);
 
       const completedList = Array.isArray(myCompletedData?.content) ? myCompletedData.content : [];
-      const completedForThisClass = completedList.filter((x) => Number(x.classId) === Number(classId));
+      const completedForThisClass = completedList.filter((item) => Number(item.classId) === Number(classId));
+      const wishes = Array.isArray(myWishData) ? myWishData : [];
+      const allInquiries = Array.isArray(inquiryData) ? inquiryData : [];
+      const classInquiries = allInquiries.filter((item) => Number(item.classProductId) === Number(classId));
 
       setDetail(detailData);
       setSessions(Array.isArray(sessionsData) ? sessionsData : []);
       setReviews(Array.isArray(reviewData) ? reviewData : []);
+      setInquiries(classInquiries);
       setMyCompletedReservations(completedForThisClass);
-      const wishes = Array.isArray(myWishData) ? myWishData : [];
       setIsWished(wishes.some((wish) => Number(wish.classProductId) === Number(classId)));
 
       const preferredReservationId = location.state?.fromReservationId;
       if (
         preferredReservationId &&
-        completedForThisClass.some((x) => Number(x.reservationId) === Number(preferredReservationId))
+        completedForThisClass.some((item) => Number(item.reservationId) === Number(preferredReservationId))
       ) {
         setSelectedReservationId(String(preferredReservationId));
       } else if (completedForThisClass.length > 0) {
         setSelectedReservationId((prev) => prev || String(completedForThisClass[0].reservationId));
       }
     } catch (e) {
-      setError(e?.message ?? "상세 데이터를 불러오지 못했습니다.");
+      setError(e?.message ?? "상세 정보를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
   }, [classId, location.state]);
 
   useEffect(() => {
-    loadPage();
-  }, [loadPage]);
+    loadClassData();
+  }, [loadClassData]);
+
   const reviewedReservationIds = useMemo(
     () => new Set(reviews.map((review) => Number(review.reservationId)).filter(Boolean)),
     [reviews]
@@ -113,7 +135,7 @@ export const OneDayClassDetail = () => {
   );
 
   useEffect(() => {
-    if (reviewableReservations.length > 0 && !selectedReservationId) {
+    if (!selectedReservationId && reviewableReservations.length > 0) {
       setSelectedReservationId(String(reviewableReservations[0].reservationId));
     }
   }, [reviewableReservations, selectedReservationId]);
@@ -126,17 +148,10 @@ export const OneDayClassDetail = () => {
     try {
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
-      if (!reservationId) {
-        setError("예약 ID를 받지 못했습니다.");
-        return;
-      }
-
-      // 핵심 요구사항:
-      // "예약 홀딩" 버튼은 결제 화면으로 가지 않고, HOLD 상태 예약만 만든 뒤
-      // 사용자가 바로 확인할 수 있도록 내 예약 페이지(선택된 예약 강조)로 이동합니다.
+      if (!reservationId) throw new Error("예약 ID를 받지 못했습니다.");
       navigate(`/classes/oneday/reservations?status=HOLD&selectedId=${reservationId}`);
     } catch (e) {
-      setError(e?.message ?? "예약 홀딩 실패");
+      setError(e?.message ?? "예약 홀딩에 실패했습니다.");
     } finally {
       setReservingSessionId(null);
       setReservingAction(null);
@@ -149,30 +164,21 @@ export const OneDayClassDetail = () => {
     setReservingSessionId(sessionId);
     setReservingAction("pay");
     try {
-
-      // 핵심 요구사항:
-      // "바로 결제" 버튼은 기존과 동일하게 HOLD를 먼저 생성한 다음 결제 페이지로 이동합니다.
-      // HOLD 선점 없이 결제부터 진행하면 동시성 상황에서 좌석 보장이 어렵기 때문입니다.
-      // 1. 홀드 생성 (예약 선점)
       const hold = await createOneDayHold(sessionId);
       const reservationId = Number(hold?.id);
-      if (!reservationId) {
-        setError("예약 ID를 받지 못했습니다.");
-        return;
-      }
+      if (!reservationId) throw new Error("예약 ID를 받지 못했습니다.");
 
-      // 2. 결제 화면으로 이동
       navigate("/payment", {
         state: {
           reservationId,
-          classId: Number(sessionId), // 백엔드 검증을 위해 세션 ID 전달
-          itemName: detail.title || "원데이 클래스",
+          classId: Number(sessionId),
+          itemName: detail?.title || "원데이 클래스",
           amount: sessionPrice,
           ...buildBuyerState(),
         },
       });
     } catch (e) {
-      setError(e?.message ?? "예약 처리 실패");
+      setError(e?.message ?? "바로 결제 처리 중 오류가 발생했습니다.");
     } finally {
       setReservingSessionId(null);
       setReservingAction(null);
@@ -186,7 +192,7 @@ export const OneDayClassDetail = () => {
       const data = await toggleOneDayWish(Number(classId));
       const wished = Boolean(data?.wished);
       setIsWished(wished);
-      setMessage(wished ? "찜에 추가했습니다." : "찜에서 제거했습니다.");
+      setMessage(wished ? "찜 목록에 추가했습니다." : "찜 목록에서 제거했습니다.");
     } catch (e) {
       setError(e?.message ?? "찜 처리에 실패했습니다.");
     }
@@ -197,29 +203,19 @@ export const OneDayClassDetail = () => {
     setError("");
     setMessage("");
     setSubmittingReview(true);
-
     try {
       const reservationId = Number(selectedReservationId);
       const rating = Number(reviewForm.rating);
       const content = reviewForm.content.trim();
 
-      if (!reservationId) {
-        setError("완료된 예약을 선택해 주세요.");
-        return;
-      }
-      if (!rating || rating < 1 || rating > 5) {
-        setError("별점은 1점~5점 사이여야 합니다.");
-        return;
-      }
-      if (!content) {
-        setError("리뷰 내용을 입력해 주세요.");
-        return;
-      }
+      if (!reservationId) throw new Error("완료된 예약을 선택해 주세요.");
+      if (!rating || rating < 1 || rating > 5) throw new Error("별점은 1~5점 사이여야 합니다.");
+      if (!content) throw new Error("리뷰 내용을 입력해 주세요.");
 
       await createOneDayReview({ reservationId, rating, content });
       setReviewForm({ rating: 5, content: "" });
       setMessage("리뷰가 등록되었습니다.");
-      await loadPage();
+      await loadClassData();
     } catch (e) {
       setError(e?.message ?? "리뷰 등록에 실패했습니다.");
     } finally {
@@ -228,21 +224,14 @@ export const OneDayClassDetail = () => {
   };
 
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("리뷰를 삭제하시겠습니까?")) {
-      return;
-    }
-
+    if (!window.confirm("리뷰를 삭제하시겠습니까?")) return;
     setError("");
     setMessage("");
     setDeletingReviewId(reviewId);
-
     try {
-      // 초보자 참고:
-      // 이 API는 실제 행을 지우지 않고 delFlag=true + deletedAt=현재시각으로 갱신합니다.
-      // 즉, 화면에서는 사라지지만 DB에는 삭제 이력이 남아서 감사/복구 분석이 가능합니다.
       await deleteOneDayReview(reviewId);
       setMessage("리뷰가 삭제되었습니다.");
-      await loadPage();
+      await loadClassData();
     } catch (e) {
       setError(e?.message ?? "리뷰 삭제에 실패했습니다.");
     } finally {
@@ -253,23 +242,19 @@ export const OneDayClassDetail = () => {
   const handleAnswerReview = async (reviewId) => {
     setError("");
     setMessage("");
-
-    // 초보자 참고:
-    // 답글 입력값은 reviewId별로 따로 저장합니다.
-    // 여러 리뷰 카드가 동시에 있어도 입력이 섞이지 않게 하기 위함입니다.
     const answerContent = String(answerDraftByReviewId[reviewId] || "").trim();
     if (!answerContent) {
-      setError("답글 내용을 입력해 주세요.");
+      setError("리뷰 답글 내용을 입력해 주세요.");
       return;
     }
 
     setAnsweringReviewId(reviewId);
     try {
       await answerOneDayReview(reviewId, { answerContent });
-      setMessage("리뷰 답글이 등록되었습니다.");
       setAnswerDraftByReviewId((prev) => ({ ...prev, [reviewId]: "" }));
       setOpenAnswerReviewId(null);
-      await loadPage();
+      setMessage("리뷰 답글이 등록되었습니다.");
+      await loadClassData();
     } catch (e) {
       setError(e?.message ?? "리뷰 답글 등록에 실패했습니다.");
     } finally {
@@ -277,63 +262,103 @@ export const OneDayClassDetail = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: 20 }}>불러오는 중...</div>;
-  if (error && !detail) return <div style={{ padding: 20, color: "#b91c1c" }}>{error}</div>;
+  const handleCreateInquiry = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setSubmittingInquiry(true);
+
+    try {
+      const title = inquiryForm.title.trim();
+      const content = inquiryForm.content.trim();
+      if (!title) throw new Error("문의 제목을 입력해 주세요.");
+      if (!content) throw new Error("문의 내용을 입력해 주세요.");
+
+      await createOneDayInquiry({
+        classProductId: Number(classId),
+        category: inquiryForm.category,
+        title,
+        content,
+        secret: Boolean(inquiryForm.secret),
+        hasAttachment: false,
+      });
+
+      setInquiryForm((prev) => ({ ...prev, title: "", content: "", secret: false }));
+      setMessage("문의가 등록되었습니다.");
+      await loadClassData();
+    } catch (e) {
+      setError(e?.message ?? "문의 등록에 실패했습니다.");
+    } finally {
+      setSubmittingInquiry(false);
+    }
+  };
+
+  const handleAnswerInquiry = async (inquiryId) => {
+    setError("");
+    setMessage("");
+    const answerContent = String(answerDraftByInquiryId[inquiryId] || "").trim();
+    if (!answerContent) {
+      setError("문의 답글 내용을 입력해 주세요.");
+      return;
+    }
+
+    setAnsweringInquiryId(inquiryId);
+    try {
+      await answerOneDayInquiry(inquiryId, { answerContent });
+      setAnswerDraftByInquiryId((prev) => ({ ...prev, [inquiryId]: "" }));
+      setOpenAnswerInquiryId(null);
+      setMessage("문의 답글이 등록되었습니다.");
+      await loadClassData();
+    } catch (e) {
+      setError(e?.message ?? "문의 답글 등록에 실패했습니다.");
+    } finally {
+      setAnsweringInquiryId(null);
+    }
+  };
+
+  if (loading) return <div className="od-detail-page">불러오는 중...</div>;
+  if (error && !detail) return <div className="od-detail-page od-error-box">{error}</div>;
 
   return (
-    <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto", display: "grid", gap: 14 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <Link to="/classes/oneday/classes" style={btnGhost}>
+    <div className="od-detail-page">
+      <div className="od-detail-topbar">
+        <Link to="/classes/oneday/classes" className="od-btn od-btn-ghost">
           목록으로
         </Link>
         <button
-          style={btnGhostButton}
-          onClick={() => navigate(`/classes/oneday/inquiry?classId=${Number(classId) || ""}`)}
+          type="button"
+          className="od-btn od-btn-ghost"
+          onClick={() => inquirySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
         >
-          문의하기
+          문의 영역으로 이동
         </button>
       </div>
 
-      {error && <div style={errorBox}>{error}</div>}
-      {message && <div style={okBox}>{message}</div>}
+      {error ? <div className="od-error-box">{error}</div> : null}
+      {message ? <div className="od-ok-box">{message}</div> : null}
 
-      <section style={panel}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-          <h1 style={{ margin: 0, fontSize: 28 }}>{detail?.title}</h1>
-          <button
-            type="button"
-            style={heartBtn}
-            onClick={handleWishToggle}
-            aria-label="찜 토글"
-            title={isWished ? "찜 해제" : "찜 추가"}
-          >
-            {isWished ? "♥" : "♡"}
-          </button>
+      <section className="od-hero-card">
+        <div className="od-hero-main">
+          <h1>{detail?.title}</h1>
+          <p>{detail?.description || "요약 설명이 없습니다."}</p>
+          <div className="od-chip-wrap">
+            <span className="od-chip">{detail?.levelLabel ?? toLevelLabel(detail?.level)}</span>
+            <span className="od-chip">{detail?.categoryLabel ?? toCategoryLabel(detail?.category)}</span>
+            <span className="od-chip">{detail?.runTypeLabel ?? toRunTypeLabel(detail?.runType)}</span>
+            <span className="od-chip">강사 #{detail?.instructorId ?? "-"}</span>
+          </div>
         </div>
-        <p style={{ color: "#4b5563" }}>{detail?.description || "설명이 없습니다."}</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <span style={chip}>{detail?.levelLabel ?? toLevelLabel(detail?.level)}</span>
-          <span style={chip}>{detail?.categoryLabel ?? toCategoryLabel(detail?.category)}</span>
-          <span style={chip}>{detail?.runTypeLabel ?? toRunTypeLabel(detail?.runType)}</span>
-          <span style={chip}>강사 #{detail?.instructorId ?? "-"}</span>
-        </div>
+        <button type="button" className="od-heart-btn" onClick={handleWishToggle} title={isWished ? "찜 해제" : "찜 추가"}>
+          {isWished ? "♥" : "♡"}
+        </button>
       </section>
 
-      <section style={panel}>
-        <h2 style={{ margin: "0 0 10px", fontSize: 18 }}>세션</h2>
-
+      <section className="od-panel">
+        <h2>세션 선택</h2>
         {sessions.length === 0 ? (
-          <div style={{ color: "#6b7280" }}>조건에 맞는 세션이 없습니다.</div>
+          <div className="od-muted">등록된 세션이 없습니다.</div>
         ) : (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className="od-session-grid">
             {sessions.map((session) => {
               const startAt = session.startAt;
               const remainingSeats =
@@ -343,173 +368,277 @@ export const OneDayClassDetail = () => {
               const full = Boolean(session.full) || remainingSeats <= 0;
 
               return (
-                <div key={sessionId} style={card}>
-                  <div style={{ display: "grid", gap: 4 }}>
+                <article key={sessionId} className="od-session-card">
+                  <div className="od-session-text">
                     <strong>
                       {fmtDate(startAt)} ({session.slotLabel ?? toSlotLabel(session.slot)})
                     </strong>
-                    <span style={{ color: "#4b5563", fontSize: 13 }}>
-                      정원 {session.capacity} / 예약 {session.reservedCount} / 잔여 {remainingSeats}
-                    </span>
+                    <span>정원 {session.capacity} / 예약 {session.reservedCount} / 잔여 {remainingSeats}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={chip}>{Number(session.price ?? 0).toLocaleString("ko-KR")}원</span>
-                    {completed ? <span style={doneBadge}>종료</span> : null}
-                    {!completed && full ? <span style={closedBadge}>정원 마감</span> : null}
+                  <div className="od-session-actions">
+                    <span className="od-chip od-price-chip">{Number(session.price ?? 0).toLocaleString("ko-KR")}원</span>
+                    {completed ? <span className="od-badge od-badge-done">종료</span> : null}
+                    {!completed && full ? <span className="od-badge od-badge-closed">정원 마감</span> : null}
                     <button
-                      style={btnGhostButton}
+                      className="od-btn od-btn-ghost"
                       onClick={() => handleHoldOnly(sessionId)}
                       disabled={reservingSessionId === sessionId || completed || full}
                     >
                       {reservingSessionId === sessionId && reservingAction === "hold"
-                        ? "홀딩중..."
+                        ? "홀딩 중..."
                         : completed
                         ? "종료"
                         : full
-                        ? "정원 마감"
+                        ? "마감"
                         : "예약 홀딩"}
                     </button>
                     <button
-                      style={btnPrimary}
+                      className="od-btn od-btn-primary"
                       onClick={() => handleDirectPayment(sessionId, session.price)}
                       disabled={reservingSessionId === sessionId || completed || full}
                     >
                       {reservingSessionId === sessionId && reservingAction === "pay"
-                        ? "결제 이동중..."
+                        ? "결제 이동 중..."
                         : completed
                         ? "종료"
                         : full
-                        ? "정원 마감"
+                        ? "마감"
                         : "바로 결제"}
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
         )}
       </section>
 
-      <section style={panel}>
-        <h2 style={{ margin: "0 0 10px", fontSize: 18 }}>리뷰 작성</h2>
-        <form style={{ display: "grid", gap: 8 }} onSubmit={handleCreateReview}>
-          <select style={input} value={selectedReservationId} onChange={(e) => setSelectedReservationId(e.target.value)}>
-            <option value="">완료된 내 예약 선택</option>
-            {reviewableReservations.map((reservation) => (
-              <option key={reservation.reservationId} value={reservation.reservationId}>
-                예약 #{reservation.reservationId} / {fmtDate(reservation.startAt)}
-              </option>
-            ))}
-          </select>
+      <section className="od-panel">
+        <h2>클래스 상세 설명</h2>
+        {detail?.detailImageData ? (
+          <img className="od-detail-image" src={detail.detailImageData} alt={`${detail?.title || "클래스"} 상세 이미지`} />
+        ) : null}
+        <p className="od-detail-description">
+          {detail?.detailDescription || detail?.description || "상세 설명이 아직 등록되지 않았습니다."}
+        </p>
+      </section>
 
-          {/*
-            초보자 참고:
-            별점 UI를 버튼으로 만든 이유는 사용자가 직관적으로 점수를 선택할 수 있기 때문입니다.
-            선택된 별 개수를 reviewForm.rating(1~5)으로 저장하고, 서버로는 숫자 값만 전송합니다.
-          */}
-          <StarRatingInput
-            rating={reviewForm.rating}
-            onChange={(next) => setReviewForm((prev) => ({ ...prev, rating: next }))}
-          />
+      <section className="od-panel" ref={inquirySectionRef}>
+        <h2>문의하기</h2>
+        <form className="od-form-grid" onSubmit={handleCreateInquiry}>
+          <div className="od-form-row">
+            <label>
+              <span>문의 분류</span>
+              <select
+                value={inquiryForm.category}
+                onChange={(e) => setInquiryForm((prev) => ({ ...prev, category: e.target.value }))}
+              >
+                {INQUIRY_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>비밀글</span>
+              <input
+                type="checkbox"
+                checked={inquiryForm.secret}
+                onChange={(e) => setInquiryForm((prev) => ({ ...prev, secret: e.target.checked }))}
+              />
+            </label>
+          </div>
+          <label>
+            <span>문의 제목</span>
+            <input
+              value={inquiryForm.title}
+              maxLength={150}
+              onChange={(e) => setInquiryForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="제목을 입력해 주세요."
+            />
+          </label>
+          <label>
+            <span>문의 내용</span>
+            <textarea
+              value={inquiryForm.content}
+              maxLength={4000}
+              onChange={(e) => setInquiryForm((prev) => ({ ...prev, content: e.target.value }))}
+              placeholder="문의 내용을 입력해 주세요."
+            />
+          </label>
+          <button className="od-btn od-btn-primary" type="submit" disabled={submittingInquiry}>
+            {submittingInquiry ? "등록 중..." : "문의 등록"}
+          </button>
+        </form>
 
-          <textarea
-            style={{ ...input, minHeight: 90, padding: 10 }}
-            placeholder="리뷰 내용을 입력해 주세요."
-            value={reviewForm.content}
-            onChange={(e) => setReviewForm((prev) => ({ ...prev, content: e.target.value }))}
-          />
+        {inquiries.length === 0 ? (
+          <div className="od-muted">이 클래스에 등록된 문의가 없습니다.</div>
+        ) : (
+          <div className="od-list-grid">
+            {inquiries.map((item) => {
+              const fallbackCanAnswer = admin || Number(item.userId) === currentUserId;
+              const canAnswer = Boolean(item.canAnswer ?? fallbackCanAnswer);
 
-          <button type="submit" style={btnPrimary} disabled={submittingReview || !selectedReservationId}>
-            {submittingReview ? "등록중..." : "리뷰 등록"}
+              return (
+                <article key={item.inquiryId} className="od-item-card">
+                  <div className="od-item-head">
+                    <strong>#{item.inquiryId} {item.title}</strong>
+                    <div className="od-chip-wrap">
+                      <span className="od-chip">{item.category}</span>
+                      <span className="od-chip">{String(item.visibility) === "PRIVATE" ? "비밀글" : "공개글"}</span>
+                      <span className="od-chip">{item.answered ? "답변완료" : "답변대기"}</span>
+                    </div>
+                  </div>
+                  <p>{item.content}</p>
+                  <span className="od-meta">작성자: {item.writerName || "이름 없음"} / {fmtDate(item.createdAt)}</span>
+
+                  {item.answered ? (
+                    <div className="od-answer-box">
+                      <strong>답글</strong>
+                      <p>{item.answerContent || "(답글 내용 없음)"}</p>
+                      <span className="od-meta">답글 시각: {fmtDate(item.answeredAt)}</span>
+                    </div>
+                  ) : null}
+
+                  {canAnswer ? (
+                    <div className="od-inline-actions">
+                      <button
+                        type="button"
+                        className="od-btn od-btn-ghost"
+                        onClick={() => setOpenAnswerInquiryId((prev) => (prev === item.inquiryId ? null : item.inquiryId))}
+                      >
+                        답글 작성
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {canAnswer && openAnswerInquiryId === item.inquiryId ? (
+                    <div className="od-answer-form">
+                      <textarea
+                        value={answerDraftByInquiryId[item.inquiryId] || ""}
+                        onChange={(e) =>
+                          setAnswerDraftByInquiryId((prev) => ({ ...prev, [item.inquiryId]: e.target.value }))
+                        }
+                        placeholder="답글을 입력해 주세요."
+                      />
+                      <button
+                        type="button"
+                        className="od-btn od-btn-primary"
+                        onClick={() => handleAnswerInquiry(item.inquiryId)}
+                        disabled={answeringInquiryId === item.inquiryId}
+                      >
+                        {answeringInquiryId === item.inquiryId ? "등록 중..." : "답글 등록"}
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="od-panel">
+        <h2>리뷰 작성</h2>
+        <form className="od-form-grid" onSubmit={handleCreateReview}>
+          <label>
+            <span>완료된 예약 선택</span>
+            <select value={selectedReservationId} onChange={(e) => setSelectedReservationId(e.target.value)}>
+              <option value="">완료된 예약을 선택해 주세요</option>
+              {reviewableReservations.map((reservation) => (
+                <option key={reservation.reservationId} value={reservation.reservationId}>
+                  예약 #{reservation.reservationId} / {fmtDate(reservation.startAt)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <StarRatingInput rating={reviewForm.rating} onChange={(next) => setReviewForm((prev) => ({ ...prev, rating: next }))} />
+
+          <label>
+            <span>리뷰 내용</span>
+            <textarea
+              value={reviewForm.content}
+              onChange={(e) => setReviewForm((prev) => ({ ...prev, content: e.target.value }))}
+              placeholder="리뷰 내용을 입력해 주세요."
+            />
+          </label>
+
+          <button className="od-btn od-btn-primary" type="submit" disabled={submittingReview || !selectedReservationId}>
+            {submittingReview ? "등록 중..." : "리뷰 등록"}
           </button>
         </form>
       </section>
 
-      <section style={panel}>
-        <h2 style={{ margin: "0 0 10px", fontSize: 18 }}>리뷰 목록</h2>
+      <section className="od-panel">
+        <h2>리뷰 목록</h2>
         {reviews.length === 0 ? (
-          <div style={{ color: "#6b7280" }}>리뷰가 없습니다.</div>
+          <div className="od-muted">아직 등록된 리뷰가 없습니다.</div>
         ) : (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className="od-list-grid">
             {reviews.map((review) => {
               const mine = Number(review.userId) === currentUserId;
-              // 서버 권한값(canAnswer)을 우선 사용하고, 없을 때만 기존 관리자 판별값을 fallback으로 사용합니다.
               const canReply = Boolean(review?.canAnswer ?? admin);
               return (
-                <div key={review.reviewId} style={card}>
-                  <div style={{ display: "grid", gap: 4 }}>
-                    <strong>
-                      {renderStars(Number(review.rating))} ({review.rating}점) / 작성자 {review.reviewerName || "이름 없음"}
-                    </strong>
-                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
-                      <div style={{ flex: 1, minWidth: 220 }}>{review.content}</div>
-                      {canReply ? (
-                        <button
-                          type="button"
-                          style={btnComment}
-                          onClick={() =>
-                            setOpenAnswerReviewId((prev) => (prev === review.reviewId ? null : review.reviewId))
-                          }
-                        >
-                          답글
-                        </button>
-                      ) : null}
+                <article key={review.reviewId} className="od-item-card">
+                  <div className="od-item-head">
+                    <strong>{renderStars(Number(review.rating))} ({review.rating}점)</strong>
+                    <span className="od-meta">작성자: {review.reviewerName || "이름 없음"}</span>
+                  </div>
+                  <p>{review.content}</p>
+                  <span className="od-meta">{fmtDate(review.createdAt)}</span>
+
+                  {review.answerContent ? (
+                    <div className="od-answer-box">
+                      <strong>관리자 답글</strong>
+                      <p>{review.answerContent}</p>
+                      <span className="od-meta">{fmtDate(review.answeredAt)}</span>
                     </div>
-                    <span style={{ color: "#6b7280", fontSize: 13 }}>{fmtDate(review.createdAt)}</span>
+                  ) : null}
 
-                    {review.answerContent ? (
-                      <div style={answerBox}>
-                        <strong style={{ fontSize: 13 }}>
-                          관리자 답글{review.answeredByName ? ` (${review.answeredByName})` : ""}
-                        </strong>
-                        <div>{review.answerContent}</div>
-                        <span style={{ color: "#6b7280", fontSize: 12 }}>
-                          {fmtDate(review.answeredAt)}
-                        </span>
-                      </div>
+                  <div className="od-inline-actions">
+                    {canReply ? (
+                      <button
+                        type="button"
+                        className="od-btn od-btn-ghost"
+                        onClick={() => setOpenAnswerReviewId((prev) => (prev === review.reviewId ? null : review.reviewId))}
+                      >
+                        답글 작성
+                      </button>
                     ) : null}
-
-                    {canReply && openAnswerReviewId === review.reviewId ? (
-                      <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
-                        {/* 
-                          초보자 참고:
-                          "답글" 버튼을 눌렀을 때만 입력창을 보여주는 토글 방식입니다.
-                          등록이 끝나면 입력창을 자동으로 닫아 대댓글 구조가 깔끔하게 유지됩니다.
-                        */}
-                        <textarea
-                          style={{ ...input, minHeight: 84, padding: 10, resize: "vertical" }}
-                          placeholder="관리자 답글을 입력해 주세요."
-                          value={answerDraftByReviewId[review.reviewId] ?? ""}
-                          onChange={(e) =>
-                            setAnswerDraftByReviewId((prev) => ({
-                              ...prev,
-                              [review.reviewId]: e.target.value,
-                            }))
-                          }
-                        />
-                        <button
-                          type="button"
-                          style={btnPrimary}
-                          onClick={() => handleAnswerReview(review.reviewId)}
-                          disabled={answeringReviewId === review.reviewId}
-                        >
-                          {answeringReviewId === review.reviewId ? "답글 등록중..." : "답글 등록"}
-                        </button>
-                      </div>
+                    {mine ? (
+                      <button
+                        type="button"
+                        className="od-btn od-btn-danger"
+                        onClick={() => handleDeleteReview(review.reviewId)}
+                        disabled={deletingReviewId === review.reviewId}
+                      >
+                        {deletingReviewId === review.reviewId ? "삭제 중..." : "삭제"}
+                      </button>
                     ) : null}
                   </div>
 
-                  {mine ? (
-                    <button
-                      type="button"
-                      style={btnDanger}
-                      onClick={() => handleDeleteReview(review.reviewId)}
-                      disabled={deletingReviewId === review.reviewId}
-                    >
-                      {deletingReviewId === review.reviewId ? "삭제중..." : "삭제"}
-                    </button>
+                  {canReply && openAnswerReviewId === review.reviewId ? (
+                    <div className="od-answer-form">
+                      <textarea
+                        value={answerDraftByReviewId[review.reviewId] || ""}
+                        onChange={(e) =>
+                          setAnswerDraftByReviewId((prev) => ({ ...prev, [review.reviewId]: e.target.value }))
+                        }
+                        placeholder="리뷰 답글을 입력해 주세요."
+                      />
+                      <button
+                        type="button"
+                        className="od-btn od-btn-primary"
+                        onClick={() => handleAnswerReview(review.reviewId)}
+                        disabled={answeringReviewId === review.reviewId}
+                      >
+                        {answeringReviewId === review.reviewId ? "등록 중..." : "답글 등록"}
+                      </button>
+                    </div>
                   ) : null}
-                </div>
+                </article>
               );
             })}
           </div>
@@ -521,7 +650,7 @@ export const OneDayClassDetail = () => {
 
 function StarRatingInput({ rating, onChange }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <div className="od-star-row">
       {[1, 2, 3, 4, 5].map((value) => {
         const selected = rating >= value;
         return (
@@ -529,22 +658,14 @@ function StarRatingInput({ rating, onChange }) {
             key={value}
             type="button"
             onClick={() => onChange(value)}
-            style={{
-              border: "none",
-              background: "transparent",
-              padding: 0,
-              cursor: "pointer",
-              fontSize: 28,
-              lineHeight: 1,
-              color: selected ? "#f59e0b" : "#d1d5db",
-            }}
+            className={`od-star-btn ${selected ? "is-active" : ""}`}
             aria-label={`${value}점`}
           >
             ★
           </button>
         );
       })}
-      <span style={{ color: "#4b5563", fontSize: 14 }}>{rating}점</span>
+      <span>{rating}점</span>
     </div>
   );
 }
@@ -559,154 +680,3 @@ function fmtDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("ko-KR");
 }
-
-const panel = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
-  padding: 14,
-  background: "#fff",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-};
-
-const input = {
-  height: 38,
-  border: "1px solid #d1d5db",
-  borderRadius: 10,
-  padding: "0 10px",
-  minWidth: 160,
-};
-
-const chip = {
-  fontSize: 12,
-  padding: "4px 8px",
-  borderRadius: 999,
-  border: "1px solid #e5e7eb",
-  background: "#f9fafb",
-};
-
-const card = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 10,
-  padding: 10,
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 10,
-  flexWrap: "wrap",
-};
-
-const answerBox = {
-  border: "1px solid #bfdbfe",
-  background: "#eff6ff",
-  color: "#1e3a8a",
-  borderRadius: 8,
-  padding: 8,
-  display: "grid",
-  gap: 4,
-};
-
-const doneBadge = {
-  fontSize: 12,
-  padding: "4px 8px",
-  borderRadius: 999,
-  border: "1px solid #86efac",
-  background: "#f0fdf4",
-  color: "#166534",
-  fontWeight: 700,
-};
-
-const closedBadge = {
-  fontSize: 12,
-  padding: "4px 8px",
-  borderRadius: 999,
-  border: "1px solid #fca5a5",
-  background: "#fff1f2",
-  color: "#991b1b",
-  fontWeight: 700,
-};
-
-const btnPrimary = {
-  height: 38,
-  padding: "0 12px",
-  borderRadius: 10,
-  border: "1px solid #111827",
-  background: "#111827",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const btnComment = {
-  height: 30,
-  padding: "0 10px",
-  borderRadius: 8,
-  border: "1px solid #d1d5db",
-  background: "white",
-  color: "#111827",
-  fontWeight: 700,
-  fontSize: 12,
-  cursor: "pointer",
-  width: "fit-content",
-};
-
-const btnDanger = {
-  height: 38,
-  padding: "0 12px",
-  borderRadius: 10,
-  border: "1px solid #991b1b",
-  background: "#991b1b",
-  color: "white",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const btnGhost = {
-  height: 38,
-  padding: "0 12px",
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  background: "white",
-  color: "#111827",
-  fontWeight: 700,
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-};
-
-const btnGhostButton = {
-  ...btnGhost,
-  cursor: "pointer",
-};
-
-const heartBtn = {
-  width: 40,
-  height: 40,
-  borderRadius: 999,
-  border: "1px solid #fca5a5",
-  background: "#fff1f2",
-  color: "#e11d48",
-  fontSize: 22,
-  lineHeight: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-};
-
-const errorBox = {
-  border: "1px solid #fecaca",
-  background: "#fff1f2",
-  color: "#991b1b",
-  borderRadius: 10,
-  padding: 10,
-};
-
-const okBox = {
-  border: "1px solid #bbf7d0",
-  background: "#f0fdf4",
-  color: "#166534",
-  borderRadius: 10,
-  padding: 10,
-};
-
-

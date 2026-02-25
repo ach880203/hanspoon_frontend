@@ -78,7 +78,7 @@ export default function MyReviewsPage() {
 
   return (
     <div>
-      <h1>My Reviews</h1>
+      <h1>내 리뷰</h1>
       {err && <div className="error">{err}</div>}
 
       <div className="panel">
@@ -143,7 +143,7 @@ export default function MyReviewsPage() {
         {data && (
           <div className="row" style={{ gap: 8, marginTop: 12 }}>
             <button className="ghost" disabled={busy || (data.number ?? 0) <= 0} onClick={() => load((data.number ?? 0) - 1)}>이전</button>
-            <div className="muted">page {(data.number ?? 0) + 1} / {data.totalPages ?? 1}</div>
+            <div className="muted">페이지 {(data.number ?? 0) + 1} / {data.totalPages ?? 1}</div>
             <button className="ghost" disabled={busy || (data.number ?? 0) + 1 >= (data.totalPages ?? 1)} onClick={() => load((data.number ?? 0) + 1)}>다음</button>
           </div>
         )}

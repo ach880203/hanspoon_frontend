@@ -8,7 +8,6 @@ const TABS = [
   { to: "/classes/oneday/reservations", label: "내 예약" },
   { to: "/classes/oneday/wishes", label: "찜" },
   { to: "/classes/oneday/coupons", label: "쿠폰" },
-  { to: "/classes/oneday/inquiry", label: "문의하기" },
 ];
 
 export function OneDayTopTabs() {

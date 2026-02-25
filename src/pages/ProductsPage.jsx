@@ -49,7 +49,7 @@ export default function ProductsPage() {
       
       
     
-      <h1>Products</h1>
+      <h1>상품 목록</h1>
 
       <div className="toolbar">
         <div className="tabs">
@@ -67,7 +67,7 @@ export default function ProductsPage() {
         <div className="filters">
           <input
             value={keyword}
-            placeholder="검색(상품명)"
+            placeholder="검색할 상품명을 입력하세요"
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") setPage(0); }}
           />
@@ -87,3 +87,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

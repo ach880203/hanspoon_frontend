@@ -1,48 +1,89 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { deleteRecipe, getRecipeDetail } from '../../api/recipeApi';
-import { toBackendUrl } from '../../utils/backendUrl';
+﻿import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { deleteRecipe, getRecipeDetail, toggleWish } from "../../api/recipeApi";
+import { toBackendUrl } from "../../utils/backendUrl";
+
+const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
+  let amount = Number(ing.baseAmount);
+  let adjustedRatio = ratio;
+
+  // 한식은 메인 재료가 아닌 경우 증량 기울기를 완만하게 적용한다.
+  if (recipeData.category === "KOREAN" || recipeData.category === "한식") {
+    if (!ing.main && ratio > 1) {
+      adjustedRatio = 1 + (ratio - 1) * 0.5;
+    }
+  }
+
+  amount *= adjustedRatio;
+  const getWeight = (key) => 1 + (flavor[key] - (recipeData[key] || 3)) * 0.1;
+
+  if (ing.tasteType === "SPICY") amount *= getWeight("spiciness");
+  if (ing.tasteType === "SWEET") amount *= getWeight("sweetness");
+  if (ing.tasteType === "SALTY") amount *= getWeight("saltiness");
+  if (Number.isNaN(amount)) return "0";
+
+  return amount.toFixed(1).replace(/\.0$/, "");
+};
+
+// 정규식 안전 치환을 위해 재료명을 escape 처리한다.
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// 조리 단계의 "@재료명" 토큰을 실제 계산된 중량 문자열로 치환한다.
+const renderInstruction = (content, ratio, recipe, flavor) => {
+  if (!content || !recipe) return content;
+
+  // 공백이 있는 재료명도 정확히 치환되도록 전체 재료를 평탄화 후 길이순으로 처리한다.
+  const ingredients = (recipe.ingredientGroup || [])
+    .flatMap((group) => group.ingredients || [])
+    .filter((ing) => typeof ing?.name === "string" && ing.name.trim().length > 0)
+    .sort((a, b) => b.name.trim().length - a.name.trim().length);
+
+  let converted = content;
+  ingredients.forEach((ing) => {
+    const name = ing.name.trim();
+    const amount = getCalculatedAmount(ing, ratio, recipe, flavor);
+    const tokenRegex = new RegExp(`@${escapeRegExp(name)}(?![\\w\\uAC00-\\uD7A3_])`, "g");
+    converted = converted.replace(
+      tokenRegex,
+      `<strong style="color: #ff6b6b; font-weight: bold;">${name} ${amount}${ing.unit}</strong>`
+    );
+  });
+
+  return converted;
+};
 
 const Recipesid = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  // ?곹깭 愿由?
+
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentServings, setCurrentServings] = useState(1);
   const [flavor, setFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
   const [baseFlavor, setBaseFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
-  const [editingIng, setEditingIng] = useState({ id: null, value: ""});
+  const [editingIng, setEditingIng] = useState({ id: null, value: "" });
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  // ?쒕쾭濡쒕????곗씠??濡쒕뱶
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
         setLoading(true);
         const response = await getRecipeDetail(id);
-        const data = response.data;
+        const data = response.data.data;
 
-        console.log("?쒕쾭 ?먮낯 ?곗씠??", data);
-        
         setRecipe(data);
-        // ?쒕쾭??湲곕낯 ?몃텇 ???ㅼ젙 (湲곕낯媛?1)
         setCurrentServings(Number(data.baseServings) || 1);
 
         const initialFlavor = {
           spiciness: data.spiciness ?? 3,
           sweetness: data.sweetness ?? 3,
-          saltiness: data.saltiness ?? 3
+          saltiness: data.saltiness ?? 3,
         };
-
-        console.log("?뚯떛??珥덇린 留?", initialFlavor);
-        
-        // 留??ㅼ젙 (?쒕쾭 ?곗씠???곗꽑, ?놁쑝硫?3)
         setFlavor(initialFlavor);
-        setBaseFlavor(initialFlavor)
+        setBaseFlavor(initialFlavor);
       } catch (error) {
-        console.error("?덉떆??濡쒕뱶 以??먮윭 諛쒖깮:", error);
-        alert("?덉떆???곗씠?곕? 遺덈윭?????놁뒿?덈떎.");
+        console.error("레시피 로드 실패:", error);
+        alert("레시피 정보를 불러오지 못했습니다.");
         navigate(-1);
       } finally {
         setLoading(false);
@@ -52,47 +93,15 @@ const Recipesid = () => {
     if (id) fetchRecipe();
   }, [id, navigate]);
 
-  // [怨꾩궛 濡쒖쭅] ?몃텇 蹂寃쎌뿉 ?곕Ⅸ 諛곗쑉 怨꾩궛
   const ratio = useMemo(() => {
     if (!recipe || !recipe.baseServings) return 1;
     const base = Number(recipe.baseServings);
     return base > 0 ? currentServings / base : 1;
   }, [currentServings, recipe]);
 
-  const getFlavorWeight = (key, currentVal) => {
-    if (!baseFlavor || baseFlavor[key] === undefined) return 1;
-    const baseVal = baseFlavor[key];
-    return 1+ (currentVal - baseVal) * 0.1;
-  };
-
-  const getCalculatedAmount = (ing) =>{
-    let amount = Number(ing.baseAmount);
-
-    let adjustedRatio = ratio;
-
-    if (recipe.category === 'KOREAN' || recipe.category === '?쒖떇') {
-      if(!ing.main) {
-        if (ratio > 1) {
-          adjustedRatio = 1 + (ratio - 1) * 0.5;
-        } else if (ratio < 1) {
-          adjustedRatio = ratio;
-        }
-      }
-    }
-    amount = amount * adjustedRatio;
-
-    if (ing.tasteType === 'SPICY') amount *= getFlavorWeight('spiciness', flavor.spiciness);
-    if (ing.tasteType === 'SWEET') amount *= getFlavorWeight('sweetness', flavor.sweetness);
-    if (ing.tasteType === 'SALTY') amount *= getFlavorWeight('saltiness', flavor.saltiness);
-    if (isNaN(amount)) return "0";
-
-    return amount.toFixed(1).replace(/\.0$/,'');
-  };
-
   const handleIngAmountChange = (ingId, ingBaseAmount, inputValue) => {
-
-    setEditingIng({ id: ingId, value: inputValue});
-    if (inputValue === "" || isNaN(parseFloat(inputValue))) {
+    setEditingIng({ id: ingId, value: inputValue });
+    if (inputValue === "" || Number.isNaN(parseFloat(inputValue))) {
       setCurrentServings(0);
       return;
     }
@@ -100,216 +109,224 @@ const Recipesid = () => {
     const newAmount = parseFloat(inputValue);
     const baseServings = Number(recipe.baseServings) || 1;
     const nextServings = (newAmount / Number(ingBaseAmount)) * baseServings;
-
     setCurrentServings(Math.round(nextServings * 10) / 10);
   };
 
-  // [移섑솚 濡쒖쭅] @?щ즺紐?-> ?ㅼ떆媛??섏튂 ?ы븿 ?띿뒪?몃줈 蹂寃?
-  const renderInstruction = (content) => {
-    if (!content || !recipe) return content;
-    const regex = /@([가-힣a-zA-Z0-9\s]+?)(?=\s|$|[.,!])/g;
-
-    return content.replace(regex, (match, ingName) => {
-      const trimmedName = ingName.trim();
-      let foundIng = null;
-
-      const groups = recipe.ingredientGroups || recipe.ingredientGroup;
-      groups?.forEach(group => {
-        const ing = group.ingredients?.find(i => i.name.trim() === trimmedName);
-        if (ing) foundIng = ing;
-      });
-
-      if (foundIng) {
-        const calcAmount = getCalculatedAmount(foundIng);
-        return `<strong style="color: #ff6b6b; font-weight: bold;">${trimmedName} ${calcAmount}${foundIng.unit}</strong>`;
-      }
-      return match;
-    });
-  };
-
   const handleDelete = async () => {
-    if (window.confirm("?뺣쭚濡????덉떆?쇰? ??젣?섏떆寃좎뒿?덇퉴?")) {
-      try {
-        await deleteRecipe(id);
-        alert("삭제했습니다.");
-        navigate("/recipes/list");
-      } catch (error) {
-        console.error("??젣 ?ㅽ뙣:", error);
-        alert("??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎");
-      }
+    if (!window.confirm("정말로 이 레시피를 삭제하시겠습니까?")) return;
+
+    try {
+      await deleteRecipe(id);
+      alert("레시피가 삭제되었습니다.");
+      navigate("/recipes/list");
+    } catch (error) {
+      console.error("레시피 삭제 실패:", error);
+      alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>?곗씠?곕? 遺덈윭?ㅻ뒗 以묒엯?덈떎...</div>;
-  if (!recipe) return <div style={{ padding: '100px', textAlign: 'center' }}>?덉떆???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.</div>;
+  const handleToggleFavorite = async () => {
+    try {
+      const response = await toggleWish(id);
+      if (response?.status === 200) {
+        const next = !isFavorite;
+        setIsFavorite(next);
+        alert(next ? "관심 목록에 추가되었습니다." : "관심 목록에서 제거되었습니다.");
+      }
+    } catch (error) {
+      console.error("관심 등록/해제 실패:", error);
+      alert("로그인이 필요하거나 요청을 처리할 수 없습니다.");
+    }
+  };
+
+  if (loading) return <div style={{ padding: "100px", textAlign: "center" }}>데이터를 불러오는 중입니다...</div>;
+  if (!recipe) return <div style={{ padding: "100px", textAlign: "center" }}>레시피 정보를 찾을 수 없습니다.</div>;
 
   return (
     <div style={bodyStyle}>
-      {/* ?고듃 諛??꾩씠肄?濡쒕뱶 */}
-      
-      
+      {/* 하트 아이콘 로드 */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
       <header style={headerStyle}>
         <div style={containerStyle}>
           <div style={headerFlex}>
-            {/* ?쇱そ: 硫붿씤 ?대?吏 */}
+            {/* 왼쪽: 메인 이미지 */}
             <div style={imgWrapper}>
-              <img 
-                src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : 'https://via.placeholder.com/600x400?text=No+Image'} 
-                alt={recipe.title} 
+              <img
+                src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : "https://via.placeholder.com/600x400?text=%EC%9D%B4%EB%AF%B8%EC%A7%80%20%EC%97%86%EC%9D%8C"}
+                alt={recipe.title}
                 style={mainImgStyle}
               />
             </div>
 
-            {/* ?ㅻⅨ履? ?뺣낫 移대뱶 */}
+            {/* 오른쪽: 레시피 정보 카드 */}
             <div style={infoCard}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px'}}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                 <span style={categoryBadge}>{recipe.category}</span>
                 <h1 style={titleStyle}>{recipe.title}</h1>
+                <button
+                  onClick={handleToggleFavorite}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "24px",
+                    color: isFavorite ? "#ff6b6b" : "#ccc",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = "scale(1.2)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = "scale(1)";
+                  }}
+                >
+                  <i className={isFavorite ? "fa-solid fa-heart" : "fa-regular fa-heart"} />
+                </button>
               </div>
 
-              {/* ?몃텇 議곗젅 UI */}
+              {/* 인분 조절 UI */}
               <div style={servingsBox}>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={currentServings}
                   onChange={(e) => setCurrentServings(Math.max(0.1, Number(e.target.value)))}
                   style={servingsInput}
                   step="0.5"
                 />
-                <span style={{fontWeight:'bold'}}>?몃텇 湲곗? (議곗젅 媛??</span>
+                <span style={{ fontWeight: "bold" }}>인분 기준 (직접 조절 가능)</span>
               </div>
 
-              {/* 留?議곗젅 UI */}
+              {/* 맛 조절 UI */}
               <div style={flavorDisplayBox}>
-                <div style={{fontSize:'12px', color:'#6366f1', fontWeight:'bold', marginBottom:'10px'}}>
-                  ?삄 ???낅쭧??留욊쾶 議곗젅?대낫湲?
-                </div>
-                {['spiciness', 'sweetness', 'saltiness'].map((key, idx) => {
+                <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: "bold", marginBottom: "10px" }}>내 입맛에 맞게 맛을 조절해보세요</div>
+                {["spiciness", "sweetness", "saltiness"].map((key, idx) => {
                   const labels = ["매운맛", "단맛", "짠맛"];
-                  const colors = ['#ff6b6b', '#ffc107', '#6366f1'];
+                  const colors = ["#ff6b6b", "#ffc107", "#6366f1"];
                   return (
                     <div key={key} style={flavorRow}>
-                      <span style={{width:'50px', fontSize:'12px'}}>{labels[idx]}
-                        {flavor[key] === baseFlavor[key]
-                          ? ''
-                          : `${flavor[key] > baseFlavor[key] ? '+' : ''}${(flavor[key] - baseFlavor[key]) * 10}%`}
+                      <span style={{ width: "50px", fontSize: "12px" }}>
+                        {labels[idx]}
+                        {flavor[key] === baseFlavor[key] ? "" : `${flavor[key] > baseFlavor[key] ? "+" : ""}${(flavor[key] - baseFlavor[key]) * 10}%`}
                       </span>
-                      <input 
-                        type="range" min="0" max="5" 
-                        value={flavor[key]} 
-                        onChange={(e) => setFlavor({...flavor, [key]: parseInt(e.target.value)})}
-                        style={{flex:1, accentColor: colors[idx]}}
+                      <input
+                        type="range"
+                        min="0"
+                        max="5"
+                        value={flavor[key]}
+                        onChange={(e) => setFlavor({ ...flavor, [key]: parseInt(e.target.value, 10) })}
+                        style={{ flex: 1, accentColor: colors[idx] }}
                       />
-                      <span style={{...currentValueBadge, backgroundColor: colors[idx]}}>
-                        ?꾩옱: {flavor[key]}
-                      </span>
+                      <span style={{ ...currentValueBadge, backgroundColor: colors[idx] }}>현재: {flavor[key]}</span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* ?щ즺 紐⑸줉 */}
+              {/* 재료 목록 */}
               <h4 style={subTitleStyle}>
-                <i className="fa-solid fa-basket-shopping"></i> ?꾩슂???щ즺
+                <i className="fa-solid fa-basket-shopping" /> 필요 재료
               </h4>
 
               <div style={ingredientScrollArea}>
-                {(recipe.ingredientGroups || recipe.ingredientGroup)?.map((group, gIdx) => (
-                  <div key={gIdx} style={{ marginBottom: '15px' }}>
+                {(recipe.ingredientGroup || []).map((group, gIdx) => (
+                  <div key={gIdx} style={{ marginBottom: "15px" }}>
                     <div style={ingGroupTitle}>{group.groupName || group.name}</div>
                     {group.ingredients?.map((ing, iIdx) => (
                       <div key={iIdx} style={ingRow}>
-                        
-                        {/* ?щ즺紐??곸뿭: ?대쫫 + 硫붿씤(Key) 諛곗? */}
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ display: "flex", alignItems: "center" }}>
                           {ing.name}
-                          {/* 硫붿씤 ?щ즺??寃쎌슦 ?묒? 諛곗? ?몄텧 */}
                           {ing.main && (
-                            <span style={{ 
-                              fontSize: '10px', backgroundColor: '#fff3cd', color: '#856404',
-                              padding: '1px 4px', borderRadius: '3px', marginLeft: '6px', fontWeight: 'bold' 
-                            }}>Key</span>
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                backgroundColor: "#fff3cd",
+                                color: "#856404",
+                                padding: "1px 4px",
+                                borderRadius: "3px",
+                                marginLeft: "6px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              핵심
+                            </span>
                           )}
                         </span>
 
-                        {/* ?섎웾 諛?鍮꾩쑉 ?곸뿭 */}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {/* 1. ?쒕뭇(BAKERY) 移댄뀒怨좊━?대㈃??鍮꾩쑉 ?곗씠?곌? ?덉쓣 ?뚮쭔 ?몄텧 */}
-                          {recipe.category === 'BAKERY' && ing.ratio != null && (
-                            <span style={{ 
-                              fontSize: '11px', color: '#888', backgroundColor: '#f5f5f5', 
-                              padding: '0 6px', borderRadius: '4px', fontWeight: '500' 
-                            }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          {recipe.category === "BAKERY" && ing.ratio !== undefined && ing.ratio !== null && (
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#888",
+                                backgroundColor: "#f5f5f5",
+                                padding: "0 6px",
+                                borderRadius: "4px",
+                                fontWeight: "500",
+                              }}
+                            >
                               {Number(ing.ratio).toFixed(1)}%
                             </span>
                           )}
-                          
-                          {/* 2. 怨꾩궛???섎웾 ?쒖떆 */}
-                            <span style={{display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <input
-                                type="number"
-                                value={
-                                  editingIng.id === `${gIdx}-${iIdx}`
-                                  ? editingIng.value
-                                  : (currentServings === 0 
-                                    ? "" 
-                                    : getCalculatedAmount(ing)
-                                        )}
-                                step="0.1"
-                                onChange={(e) => handleIngAmountChange(
-                                  `${gIdx}-${iIdx}`, ing.baseAmount, e.target.value)}
-                                style={{
-                                  width: '60px',
-                                  padding: '2px 5px',
-                                  border: '1px solid #ddd',
-                                  borderRadius: '4px',
-                                  textAlign: 'right',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  color: '#333'
-                                }}
-                                />
-                              <span style={unitText}>{ing.unit}</span>
-                            </span>
-                           
+
+                          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                            <input
+                              type="number"
+                              value={editingIng.id === `${gIdx}-${iIdx}` ? editingIng.value : currentServings === 0 ? "" : getCalculatedAmount(ing, ratio, recipe, flavor)}
+                              step="0.1"
+                              onChange={(e) => handleIngAmountChange(`${gIdx}-${iIdx}`, ing.baseAmount, e.target.value)}
+                              style={{
+                                width: "60px",
+                                padding: "2px 5px",
+                                border: "1px solid #ddd",
+                                borderRadius: "4px",
+                                textAlign: "right",
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                color: "#333",
+                              }}
+                            />
+                            <span style={unitText}>{ing.unit}</span>
                           </span>
+                        </span>
                       </div>
                     ))}
                   </div>
                 ))}
-                 <button
-                  onClick = {() => setCurrentServings(Number(recipe.baseServings))}
-                  style={{...navBtn, color: '#666'}}>?먮옒 ?섎웾?쇰줈</button>
+                <button onClick={() => setCurrentServings(Number(recipe.baseServings))} style={{ ...navBtn, color: "#666", cursor: "pointer" }}>
+                  원래 인분으로
+                </button>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* 議곕━ ?쒖꽌 ?뱀뀡 */}
-      <div style={{...containerStyle, marginTop:'40px', paddingBottom:'80px'}}>
-        <h3 style={sectionTitleStyle}><i className="fa-solid fa-fire-burner"></i> 議곕━ ?쒖꽌</h3>
-        <div style={{maxWidth: '850px', margin: '0 auto'}}>
-          {(recipe.instructionGroup || recipe.instructionGroup)?.map((group, gIdx) => (
-            <div key={gIdx} style={{marginBottom: '40px'}}>
+      {/* 조리 순서 섹션 */}
+      <div style={{ ...containerStyle, marginTop: "40px", paddingBottom: "80px" }}>
+        <h3 style={sectionTitleStyle}>
+          <i className="fa-solid fa-fire-burner" /> 조리 순서
+        </h3>
+        <div style={{ maxWidth: "850px", margin: "0 auto" }}>
+          {(recipe.instructionGroup || []).map((group, gIdx) => (
+            <div key={gIdx} style={{ marginBottom: "40px" }}>
               <h5 style={stepGroupTitle}>{group.groupTitle || group.title}</h5>
               {group.instructions?.map((step, sIdx) => (
                 <div key={sIdx} style={stepCard}>
                   <div style={stepContentFlex}>
                     <div style={stepNumberBadge}>{sIdx + 1}</div>
                     <div style={stepInfo}>
-                      <p 
+                      <p
+                        key={`${sIdx}-${ratio}-${flavor.spiciness}-${flavor.sweetness}-${flavor.saltiness}`}
                         style={stepText}
-                        dangerouslySetInnerHTML={{ __html: renderInstruction(step.content) }}
+                        dangerouslySetInnerHTML={{
+                          __html: renderInstruction(step.content, ratio, recipe, flavor),
+                        }}
                       />
                     </div>
                     {step.stepImg && (
                       <div style={stepImgWrapper}>
-                        <img 
-                          src={toBackendUrl(`/images/recipe/${step.stepImg}`)} 
-                          alt={`Step ${sIdx+1}`} 
-                          style={stepImg} 
-                        />
+                        <img src={toBackendUrl(`/images/recipe/${step.stepImg}`)} alt={`단계 ${sIdx + 1}`} style={stepImg} />
                       </div>
                     )}
                   </div>
@@ -319,56 +336,69 @@ const Recipesid = () => {
           ))}
         </div>
 
-        {/* ?섎떒 ?ㅻ퉬寃뚯씠??*/}
+        {/* 하단 네비게이션 */}
         <div style={bottomNav}>
-          <button onClick={() => navigate(-1)} style={navBtn}>?댁쟾?쇰줈</button>
-          <Link to="/recipe/list" style={{...navBtn, backgroundColor:'#ff6b6b', color:'#fff', border:'none'}}>?꾩껜 ?덉떆??蹂닿린</Link>
-          <button
-            onClick={() => navigate(`/recipes/edit/${id}`)}
-            style={{...navBtn, backgroundColor:'#4dabf7', color:'#fff', border:'none'}}
-            >?섏젙?섍린</button>
-
-           <button
-            onClick={handleDelete}
-            style={{...navBtn, backgroundColor:'#df1a1a', color:'#fff', border:'none'}}
-            >??젣?섍린</button>  
+          <button onClick={() => navigate(-1)} style={navBtn}>
+            이전으로
+          </button>
+          <Link to="/recipes/list" style={{ ...navBtn, backgroundColor: "#ff6b6b", color: "#fff", border: "none" }}>
+            전체 레시피 보기
+          </Link>
+          <button onClick={() => navigate(`/recipes/edit/${id}`)} style={{ ...navBtn, backgroundColor: "#4dabf7", color: "#fff", border: "none" }}>
+            수정하기
+          </button>
+          <button onClick={handleDelete} style={{ ...navBtn, backgroundColor: "#df1a1a", color: "#fff", border: "none" }}>
+            삭제하기
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-// --- ?ㅽ????뺤쓽 (湲곗〈 ?ㅽ????좎? 諛?蹂댁셿) ---
-const bodyStyle = { backgroundColor: '#f8f9fa', minHeight: '100vh', fontFamily: "'Pretendard', sans-serif" };
-const containerStyle = { maxWidth: '1000px', margin: '0 auto', padding: '0 20px' };
-const headerStyle = { background: '#fff', padding: '50px 0', borderBottom: '1px solid #eee' };
-const headerFlex = { display: 'flex', gap: '40px', flexWrap: 'wrap' };
-const imgWrapper = { flex: '1 1 400px', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' };
-const mainImgStyle = { width: '100%', height: '100%', objectFit: 'cover', minHeight: '400px' };
-const infoCard = { flex: '1.2 1 450px' };
-const titleStyle = { fontSize: '28px', fontWeight: 'bold', margin: 0 };
-const categoryBadge = { background: '#6366f1', color: '#fff', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' };
-const servingsBox = { margin: '20px 0', display: 'flex', alignItems: 'center', gap: '10px' };
-const servingsInput = { width: '60px', padding: '5px', borderRadius: '6px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold' };
-const flavorDisplayBox = { background: '#fcfcfc', border: '1px solid #f1f3f5', padding: '15px', borderRadius: '12px', marginBottom: '20px' };
-const flavorRow = { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' };
-const currentValueBadge = { color: '#fff', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', minWidth: '55px', textAlign: 'center' };
-const subTitleStyle = { fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' };
-const ingredientScrollArea = { maxHeight: '250px', overflowY: 'auto', paddingRight: '10px' };
-const ingGroupTitle = { fontSize: '14px', fontWeight: 'bold', color: '#ff6b6b', marginBottom: '8px', borderLeft: '3px solid #ff6b6b', paddingLeft: '8px' };
-const ingRow = { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f8f9fa', fontSize: '14px' };
-const unitText = { color: '#888', marginLeft: '3px', fontSize: '13px' };
-const sectionTitleStyle = { textAlign: 'center', fontSize: '22px', fontWeight: 'bold', marginBottom: '30px' };
-const stepGroupTitle = { fontSize: '16px', color: '#666', borderBottom: '2px solid #eee', paddingBottom: '8px', marginBottom: '20px' };
-const stepCard = { background: '#fff', borderRadius: '12px', padding: '25px', boxShadow: '0 2px 12px rgba(0,0,0,0.03)', marginBottom: '20px' };
-const stepContentFlex = { display: 'flex', gap: '20px', flexWrap: 'wrap' };
-const stepNumberBadge = { flexShrink: 0, width: '30px', height: '30px', backgroundColor: '#ff6b6b', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', marginTop: '2px' };
-const stepInfo = { flex: '1 1 400px' };
-const stepText = { fontSize: '16px', lineHeight: '1.7', color: '#333', margin: 0 };
-const stepImgWrapper = { flex: '0 0 200px' };
-const stepImg = { width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' };
-const bottomNav = { display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '40px' };
-const navBtn = { padding: '12px 25px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'none', color: '#333' };
+// --- 스타일 정의 ---
+const bodyStyle = { backgroundColor: "#f8f9fa", minHeight: "100vh", fontFamily: "'Pretendard', sans-serif" };
+const containerStyle = { maxWidth: "1000px", margin: "0 auto", padding: "0 20px" };
+const headerStyle = { background: "#fff", padding: "50px 0", borderBottom: "1px solid #eee" };
+const headerFlex = { display: "flex", gap: "40px", flexWrap: "wrap" };
+const imgWrapper = { flex: "1 1 400px", borderRadius: "15px", overflow: "hidden", boxShadow: "0 10px 25px rgba(0,0,0,0.08)" };
+const mainImgStyle = { width: "100%", height: "100%", objectFit: "cover", minHeight: "400px" };
+const infoCard = { flex: "1.2 1 450px" };
+const titleStyle = { fontSize: "28px", fontWeight: "bold", margin: 0 };
+const categoryBadge = { background: "#6366f1", color: "#fff", padding: "4px 12px", borderRadius: "20px", fontSize: "12px" };
+const servingsBox = { margin: "20px 0", display: "flex", alignItems: "center", gap: "10px" };
+const servingsInput = { width: "60px", padding: "5px", borderRadius: "6px", border: "1px solid #ddd", textAlign: "center", fontWeight: "bold" };
+const flavorDisplayBox = { background: "#fcfcfc", border: "1px solid #f1f3f5", padding: "15px", borderRadius: "12px", marginBottom: "20px" };
+const flavorRow = { display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" };
+const currentValueBadge = { color: "#fff", padding: "2px 8px", borderRadius: "10px", fontSize: "10px", minWidth: "55px", textAlign: "center" };
+const subTitleStyle = { fontSize: "18px", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "8px" };
+const ingredientScrollArea = { maxHeight: "250px", overflowY: "auto", paddingRight: "10px" };
+const ingGroupTitle = { fontSize: "14px", fontWeight: "bold", color: "#ff6b6b", marginBottom: "8px", borderLeft: "3px solid #ff6b6b", paddingLeft: "8px" };
+const ingRow = { display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f8f9fa", fontSize: "14px" };
+const unitText = { color: "#888", marginLeft: "3px", fontSize: "13px" };
+const sectionTitleStyle = { textAlign: "center", fontSize: "22px", fontWeight: "bold", marginBottom: "30px" };
+const stepGroupTitle = { fontSize: "16px", color: "#666", borderBottom: "2px solid #eee", paddingBottom: "8px", marginBottom: "20px" };
+const stepCard = { background: "#fff", borderRadius: "12px", padding: "25px", boxShadow: "0 2px 12px rgba(0,0,0,0.03)", marginBottom: "20px" };
+const stepContentFlex = { display: "flex", gap: "20px", flexWrap: "wrap" };
+const stepNumberBadge = {
+  flexShrink: 0,
+  width: "30px",
+  height: "30px",
+  backgroundColor: "#ff6b6b",
+  color: "#fff",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: "bold",
+  fontSize: "14px",
+  marginTop: "2px",
+};
+const stepInfo = { flex: "1 1 400px" };
+const stepText = { fontSize: "16px", lineHeight: "1.7", color: "#333", margin: 0 };
+const stepImgWrapper = { flex: "0 0 200px" };
+const stepImg = { width: "100%", height: "140px", objectFit: "cover", borderRadius: "8px", border: "1px solid #eee" };
+const bottomNav = { display: "flex", justifyContent: "center", gap: "15px", marginTop: "40px" };
+const navBtn = { padding: "12px 25px", borderRadius: "8px", border: "1px solid #ddd", background: "#fff", cursor: "pointer", fontWeight: "bold", textDecoration: "none", color: "#333" };
 
 export default Recipesid;
-

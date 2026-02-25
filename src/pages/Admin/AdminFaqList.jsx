@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../api';
 
@@ -16,7 +15,7 @@ function AdminFaqList() {
             setFaqs(response.data.content);
             setTotalPages(response.data.totalPages);
         } catch (error) {
-            console.error('FAQ 불러오기 실패:', error);
+            console.error('자주 묻는 질문 목록 불러오기 실패:', error);
         }
     };
 
@@ -40,16 +39,16 @@ function AdminFaqList() {
     return (
         <div className="container mt-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2>FAQ 관리</h2>
+                <h2>자주 묻는 질문 관리</h2>
                 <Link to="/admin/faq/write" className="btn btn-primary">
-                    새 FAQ 작성
+                    새 질문 등록
                 </Link>
             </div>
 
             <table className="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>번호</th>
                         <th>카테고리</th>
                         <th>질문</th>
                         <th>관리</th>
@@ -81,7 +80,7 @@ function AdminFaqList() {
             <div className="d-flex justify-content-center mt-4">
                 <button
                     className="btn btn-outline-secondary me-2"
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
                 >
                     이전
@@ -91,7 +90,7 @@ function AdminFaqList() {
                 </span>
                 <button
                     className="btn btn-outline-secondary ms-2"
-                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                 >
                     다음

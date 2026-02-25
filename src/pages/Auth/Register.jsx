@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
 import { getBackendBaseUrl } from '../../utils/backendUrl';
@@ -26,13 +26,11 @@ function Register() {
         e.preventDefault();
         setError('');
 
-        // 비밀번호 확인
         if (formData.password !== formData.confirmPassword) {
             setError('비밀번호가 일치하지 않습니다.');
             return;
         }
 
-        // 비밀번호 길이 확인
         if (formData.password.length < 6) {
             setError('비밀번호는 최소 6자 이상이어야 합니다.');
             return;
@@ -50,7 +48,7 @@ function Register() {
             const result = await authApi.register(registerData);
 
             if (result.success) {
-                alert('회원가입이 완료되었습니다! 로그인해주세요.');
+                alert('회원가입이 완료되었습니다. 로그인해 주세요.');
                 navigate('/login');
             } else {
                 setError(result.message || '회원가입에 실패했습니다.');
@@ -73,7 +71,7 @@ function Register() {
                 <div className="auth-container">
                     <div className="auth-card">
                         <h1 className="auth-title">회원가입</h1>
-                        <p className="auth-subtitle">한스푼과 함께 요리를 시작하세요</p>
+                        <p className="auth-subtitle">한스푼과 함께 요리를 시작해 보세요.</p>
 
                         {error && (
                             <div className="alert alert-error">
@@ -101,7 +99,7 @@ function Register() {
                                     type="email"
                                     name="email"
                                     className="form-input"
-                                    placeholder="example@email.com"
+                                    placeholder="이메일 주소를 입력해 주세요"
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
@@ -127,7 +125,7 @@ function Register() {
                                     type="password"
                                     name="confirmPassword"
                                     className="form-input"
-                                    placeholder="비밀번호를 다시 입력하세요"
+                                    placeholder="비밀번호를 다시 입력해 주세요"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     required
@@ -152,15 +150,15 @@ function Register() {
                                 onClick={() => handleOAuthRegister('google')}
                                 className="btn-oauth btn-google"
                             >
-                                <span className="oauth-icon">G</span>
-                                Google로 가입
+                                <span className="oauth-icon">구</span>
+                                구글로 가입
                             </button>
                             <button
                                 onClick={() => handleOAuthRegister('kakao')}
                                 className="btn-oauth btn-kakao"
                             >
-                                <span className="oauth-icon">K</span>
-                                Kakao로 가입
+                                <span className="oauth-icon">카</span>
+                                카카오로 가입
                             </button>
                         </div>
 

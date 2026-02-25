@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyWishes, toggleWish } from "../../api/productWishes";
-import { toErrorMessage } from "../../api/http";
+import {fetchMyWishes, toggleWish} from "../../api/recipeApi.js";
+import {toErrorMessage} from "../../api/http.js";
 
 export default function MyWishesPage() {
   const nav = useNavigate();
@@ -55,7 +55,7 @@ export default function MyWishesPage() {
                   {w.thumbnailUrl ? (
                     <img src={w.thumbnailUrl} alt={w.name} />
                   ) : (
-                    <div className="thumbPlaceholder">No</div>
+                    <div className="thumbPlaceholder">이미지 없음</div>
                   )}
                 </div>
 
@@ -77,7 +77,7 @@ export default function MyWishesPage() {
         {data && (
           <div className="row" style={{ gap: 8, marginTop: 12 }}>
             <button className="ghost" disabled={busy || data.number <= 0} onClick={() => load(data.number - 1)}>이전</button>
-            <div className="muted">page {data.number + 1} / {data.totalPages}</div>
+            <div className="muted">페이지 {data.number + 1} / {data.totalPages}</div>
             <button className="ghost" disabled={busy || data.number + 1 >= data.totalPages} onClick={() => load(data.number + 1)}>다음</button>
           </div>
         )}

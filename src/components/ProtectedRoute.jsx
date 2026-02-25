@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
         return (
             <div className="container mt-5 d-flex justify-content-center">
                 <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">불러오는 중...</span>
                 </div>
             </div>
         );

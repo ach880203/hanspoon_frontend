@@ -33,7 +33,7 @@ export default function AddressSearch({ onSelect }) {
     const trimmedKeyword = keyword.trim();
     if (!trimmedKeyword) return;
     if (!JUSO_API_KEY) {
-      setError("Address search key is missing. Set VITE_JUSO_API_KEY.");
+      setError("주소 검색 키가 없습니다. `VITE_JUSO_API_KEY`를 설정해 주세요.");
       return;
     }
 
@@ -45,7 +45,7 @@ export default function AddressSearch({ onSelect }) {
       const { common, juso } = data?.results ?? {};
 
       if (common?.errorCode !== "0") {
-        setError(common?.errorMessage || "Address search failed.");
+        setError(common?.errorMessage || "주소 검색에 실패했습니다.");
         setResults([]);
         return;
       }
@@ -55,7 +55,7 @@ export default function AddressSearch({ onSelect }) {
       setPage(targetPage);
       setIsOpen(true);
     } catch {
-      setError("Address search failed. Please try again.");
+      setError("주소 검색에 실패했습니다. 다시 시도해 주세요.");
       setResults([]);
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ export default function AddressSearch({ onSelect }) {
         <input
           className="address-search__input"
           type="text"
-          placeholder="Search by road name, building name, or lot number"
+          placeholder="도로명, 건물명 또는 지번으로 검색하세요"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
           onKeyDown={(event) => {
@@ -108,7 +108,7 @@ export default function AddressSearch({ onSelect }) {
               <path d="m21 21-4.35-4.35" strokeLinecap="round" />
             </svg>
           )}
-          Search
+          검색
         </button>
       </div>
 
@@ -117,7 +117,7 @@ export default function AddressSearch({ onSelect }) {
       {isOpen && results.length > 0 && (
         <div className="address-search__dropdown">
           <div className="address-search__result-info">
-            Total <b>{totalCount.toLocaleString()}</b> ({page}/{totalPages})
+            총 <b>{totalCount.toLocaleString()}</b>건 ({page}/{totalPages}페이지)
           </div>
 
           <ul className="address-search__list">
@@ -128,18 +128,18 @@ export default function AddressSearch({ onSelect }) {
                 onClick={() => handleSelect(juso)}
               >
                 <div className="address-search__item-road">
-                  <span className="address-search__badge road">Road</span>
+                  <span className="address-search__badge road">도로명</span>
                   {juso.roadAddr}
                 </div>
 
                 {juso.jibunAddr && (
                   <div className="address-search__item-jibun">
-                    <span className="address-search__badge jibun">Jibun</span>
+                    <span className="address-search__badge jibun">지번</span>
                     {juso.jibunAddr}
                   </div>
                 )}
 
-                <div className="address-search__item-zip">Zip: {juso.zipNo}</div>
+                <div className="address-search__item-zip">우편번호: {juso.zipNo}</div>
               </li>
             ))}
           </ul>
@@ -147,13 +147,13 @@ export default function AddressSearch({ onSelect }) {
           {totalPages > 1 && (
             <div className="address-search__pagination">
               <button disabled={page <= 1} onClick={() => search(page - 1)}>
-                Prev
+                이전
               </button>
               <span>
                 {page} / {totalPages}
               </span>
               <button disabled={page >= totalPages} onClick={() => search(page + 1)}>
-                Next
+                다음
               </button>
             </div>
           )}
@@ -184,7 +184,7 @@ function fetchJusoJsonp(keyword, currentPage, countPerPage) {
 
     const timerId = setTimeout(() => {
       cleanup();
-      reject(new Error("Address search request timed out."));
+      reject(new Error("주소 검색 요청 시간이 초과되었습니다."));
     }, 10000);
 
     window[callbackName] = (data) => {
@@ -196,7 +196,7 @@ function fetchJusoJsonp(keyword, currentPage, countPerPage) {
     script.onerror = () => {
       clearTimeout(timerId);
       cleanup();
-      reject(new Error("Address search request failed."));
+      reject(new Error("주소 검색 요청에 실패했습니다."));
     };
 
     document.head.appendChild(script);

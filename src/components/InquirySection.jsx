@@ -76,26 +76,26 @@ export default function InquirySection({ productId }) {
             <div key={q.inqId} className="panelMini">
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <div className="row" style={{ gap: 10, alignItems: "center" }}>
-                  {q.answeredYn ? <span className="badge">ANSWERED</span> : <span className="badge">WAIT</span>}
+                  {q.answeredYn ? <span className="badge">답변완료</span> : <span className="badge">답변대기</span>}
                   <span className="badge" style={{ marginLeft: 8 }}>
-                  {q.secret ? "SECRET" : "PUBLIC"}
+                  {q.secret ? "비밀" : "공개"}
                   </span>
                   <div className="muted" style={{ fontSize: 12 }}>{String(q.createdAt || "")}</div>
                 </div>
               </div>
 
               <div style={{ marginTop: 6 }}>
-                <b>Q.</b> {q.content}
+                <b>문.</b> {q.content}
               </div>
 
               <div style={{ marginTop: 8 }}>
-                <b>A.</b>{" "}
+                <b>답.</b>{" "}
                 {q.answer ? <span>{q.answer}</span> : <span className="muted">아직 답변이 없습니다.</span>}
               </div>
 
               {q.answeredAt && (
                 <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                  answeredAt: {String(q.answeredAt)}
+                  답변일시: {String(q.answeredAt)}
                 </div>
               )}
             </div>
@@ -106,7 +106,7 @@ export default function InquirySection({ productId }) {
       {data && (
         <div className="row" style={{ gap: 8, marginTop: 12 }}>
           <button className="ghost" disabled={busy || (data.number ?? 0) <= 0} onClick={() => load((data.number ?? 0) - 1)}>이전</button>
-          <div className="muted">page {(data.number ?? 0) + 1} / {data.totalPages ?? 1}</div>
+          <div className="muted">페이지 {(data.number ?? 0) + 1} / {data.totalPages ?? 1}</div>
           <button className="ghost" disabled={busy || (data.number ?? 0) + 1 >= (data.totalPages ?? 1)} onClick={() => load((data.number ?? 0) + 1)}>다음</button>
         </div>
       )}

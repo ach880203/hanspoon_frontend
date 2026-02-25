@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+﻿import { useLocation, useNavigate } from "react-router-dom";
 import "./Payment.css";
 
 function PaymentSuccess() {
@@ -10,23 +10,23 @@ function PaymentSuccess() {
     <div className="payment-result-page">
       <div className="container">
         <div className="result-card success">
-          <div className="result-icon">OK</div>
+          <div className="result-icon">확인</div>
           <h1 className="result-title">결제가 완료되었습니다</h1>
           <p className="result-message">
             결제가 정상적으로 처리되었습니다.
             <br />
-            결제 내역은 마이페이지에서 확인할 수 있습니다.
+            결제 내역은 마이페이지에서 확인하실 수 있습니다.
           </p>
 
           {paymentData && (
             <div className="payment-details">
               <div className="detail-row">
                 <span className="detail-label">주문번호</span>
-                <span className="detail-value">{paymentData.merchantUid || "N/A"}</span>
+                <span className="detail-value">{paymentData.merchantUid || "없음"}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">상품명</span>
-                <span className="detail-value">{paymentData.itemName || "N/A"}</span>
+                <span className="detail-value">{paymentData.itemName || "없음"}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">결제금액</span>
@@ -36,7 +36,7 @@ function PaymentSuccess() {
               </div>
               <div className="detail-row">
                 <span className="detail-label">결제수단</span>
-                <span className="detail-value">{paymentData.payMethod || "N/A"}</span>
+                <span className="detail-value">{paymentData.payMethod || "없음"}</span>
               </div>
             </div>
           )}

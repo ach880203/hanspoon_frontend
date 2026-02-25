@@ -18,10 +18,14 @@ const RecipeList = () => {
             try {
                 // API 호출 시 쿼리 파라미터 전달
                 const response = await getRecipeList({ keyword, category, page });
-                setRecipes(response.data.content || []);
-                setPageInfo(response.data); // 페이지 정보 저장
+                if (response.data && response.data.data) {
+                    console.log("3. 실제내용", response.data.data.content);
+                    setRecipes(response.data.data.content);
+                }
             } catch (error) {
                 console.error("레시피 목록 로드 실패:", error);
+                setRecipes([]);
+                setPageInfo({});
             }
         };
         fetchRecipes();
@@ -130,7 +134,7 @@ const RecipeList = () => {
                     {!pageInfo.first && (
                         <li className="page-item"><button className="page-link" onClick={() => setSearchParams({ category, keyword, page: page - 1 })}>&laquo;</button></li>
                     )}
-                    {[...Array(pageInfo.totalPages)].map((_, i) => (
+                    {[...Array(pageInfo.totalPages || 0)].map((_, i) => (
                         <li key={i} className={`page-item ${page === i ? 'active' : ''}`}>
                             <button className="page-link" onClick={() => setSearchParams({ category, keyword, page: i })}>{i + 1}</button>
                         </li>

@@ -7,7 +7,7 @@ export default function ProductCard({ p }) {
         {p.thumbnailUrl ? (
           <img src={p.thumbnailUrl} alt={p.name} />
         ) : (
-          <div className="thumbPlaceholder">No Image</div>
+          <div className="thumbPlaceholder">이미지 없음</div>
         )}
       </div>
       <div className="cardBody">
@@ -15,7 +15,7 @@ export default function ProductCard({ p }) {
         <div className="title">{p.name}</div>
         <div className="row">
           <div className="price">{p.price.toLocaleString()}원</div>
-          <div className="stock">?ш퀬 {p.stock}</div>
+          <div className="stock">재고 {p.stock}</div>
         </div>
       </div>
     </Link>

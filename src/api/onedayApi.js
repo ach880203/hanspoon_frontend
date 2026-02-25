@@ -76,6 +76,14 @@ export const getOneDayClasses = (params, config = {}) =>
 export const createOneDayClass = (payload, config = {}) =>
   unwrap(api.post("/api/oneday/classes", payload, config));
 
+// 클래스 수정 API (관리자 전용)
+export const updateOneDayClass = (classId, payload, config = {}) =>
+  unwrap(api.put(`/api/oneday/classes/${classId}`, payload, config));
+
+// 클래스 삭제 API (관리자 전용)
+export const deleteOneDayClass = (classId, config = {}) =>
+  unwrap(api.delete(`/api/oneday/classes/${classId}`, config));
+
 export const getOneDayClassDetail = (classId, config = {}) =>
   unwrap(api.get(`/api/oneday/classes/${classId}`, config));
 

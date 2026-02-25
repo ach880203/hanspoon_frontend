@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../api';
 
@@ -7,6 +6,7 @@ function AdminNoticeList() {
     const [notices, setNotices] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+
     const fetchNotices = async () => {
         try {
             const response = await adminApi.getNotices({ page, size: 10 });
@@ -14,7 +14,6 @@ function AdminNoticeList() {
             setTotalPages(response.data.totalPages);
         } catch (error) {
             console.error('공지사항 불러오기 실패:', error);
-            // alert('공지사항 목록을 불러오는데 실패했습니다.');
         }
     };
 
@@ -47,7 +46,7 @@ function AdminNoticeList() {
             <table className="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>번호</th>
                         <th>제목</th>
                         <th>작성일</th>
                         <th>관리</th>
@@ -63,10 +62,7 @@ function AdminNoticeList() {
                                 <Link to={`/admin/notice/edit/${notice.noticeId}`} className="btn btn-sm btn-outline-primary me-2">
                                     수정
                                 </Link>
-                                <button
-                                    onClick={() => handleDelete(notice.noticeId)}
-                                    className="btn btn-sm btn-outline-danger"
-                                >
+                                <button onClick={() => handleDelete(notice.noticeId)} className="btn btn-sm btn-outline-danger">
                                     삭제
                                 </button>
                             </td>
@@ -79,7 +75,7 @@ function AdminNoticeList() {
             <div className="d-flex justify-content-center mt-4">
                 <button
                     className="btn btn-outline-secondary me-2"
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
                 >
                     이전
@@ -89,7 +85,7 @@ function AdminNoticeList() {
                 </span>
                 <button
                     className="btn btn-outline-secondary ms-2"
-                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                 >
                     다음

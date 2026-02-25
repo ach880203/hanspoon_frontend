@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { createProductWithImages } from "../api/products";
 import { toErrorMessage } from "../api/http";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +26,7 @@ export default function AdminAddProductPage() {
     setErr("");
 
     if (files.length < 1) {
-      setErr("이미지는 최소 1장 이상 필수입니다.");
+      setErr("이미지는 최소 1개 이상 등록해야 합니다.");
       return;
     }
 
@@ -45,7 +45,7 @@ export default function AdminAddProductPage() {
       const productId = created?.id;
       if (!productId) {
         console.log("create response:", created);
-        throw new Error("응답에서 product id를 찾을 수 없습니다. 콘솔 로그를 확인하세요.");
+        throw new Error("응답에서 상품 ID를 찾을 수 없습니다. 콘솔 로그를 확인해 주세요.");
       }
 
       nav(`/products/${productId}`);
@@ -58,7 +58,7 @@ export default function AdminAddProductPage() {
 
   return (
     <div>
-      <h1>Admin: Add Product</h1>
+      <h1>관리자: 상품 등록</h1>
 
       <div className="panel">
         {err && <div className="error">{err}</div>}
@@ -106,7 +106,7 @@ export default function AdminAddProductPage() {
 
           {files.length > 0 && (
             <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-              <span className="muted">대표 이미지 index:</span>
+              <span className="muted">대표 이미지 순번:</span>
               <input
                 type="number"
                 min={0}
@@ -121,7 +121,7 @@ export default function AdminAddProductPage() {
 
         <div className="row" style={{ marginTop: 12, gap: 8 }}>
           <button disabled={!canSubmit || busy} onClick={submit}>
-            {busy ? "등록중..." : "등록(이미지 포함)"}
+            {busy ? "등록 중..." : "등록(이미지 포함)"}
           </button>
           <button className="ghost" onClick={() => nav("/products")}>목록으로</button>
         </div>
