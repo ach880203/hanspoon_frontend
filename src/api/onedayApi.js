@@ -43,6 +43,17 @@ export function isOneDayAdmin() {
   return merged.some((x) => hasAdminRole(x));
 }
 
+export function isOneDayInstructor() {
+  const auth = loadAuth();
+  const role = normalizeRoleText(auth?.role);
+  if (hasInstructorRole(role)) return true;
+
+  const roles = Array.isArray(auth?.roles) ? auth.roles : [];
+  const authorities = Array.isArray(auth?.authorities) ? auth.authorities : [];
+  const merged = [...roles, ...authorities].map((x) => normalizeRoleText(x));
+  return merged.some((x) => hasInstructorRole(x));
+}
+
 /**
  * role 텍스트를 권한 판별에 유리한 형태로 정리합니다.
  * - 대괄호 제거: "[ROLE_ADMIN]" -> "ROLE_ADMIN"
@@ -65,6 +76,12 @@ function hasAdminRole(roleText) {
   if (!roleText) return false;
   const tokens = roleText.split(/[,\s]+/).filter(Boolean);
   return tokens.includes("ROLE_ADMIN") || tokens.includes("ADMIN");
+}
+
+function hasInstructorRole(roleText) {
+  if (!roleText) return false;
+  const tokens = roleText.split(/[,\s]+/).filter(Boolean);
+  return tokens.includes("ROLE_INSTRUCTOR") || tokens.includes("INSTRUCTOR");
 }
 
 export const getOneDayHome = (config = {}) => unwrap(api.get("/api/oneday/home", config));

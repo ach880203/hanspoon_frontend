@@ -30,6 +30,7 @@
   display: grid;
   grid-template-columns: 1fr 1.1fr;
   gap: 12px;
+  align-items: start;
 }
 
 .admin-oneday-panel {
@@ -48,8 +49,10 @@
 .class-list {
   display: grid;
   gap: 8px;
-  max-height: 720px;
+  min-height: 520px;
+  max-height: min(720px, calc(100vh - 260px));
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .class-row {
@@ -62,6 +65,24 @@
   gap: 10px;
   flex-wrap: wrap;
   background: #fcfcfd;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.class-row:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.class-row:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}
+
+.class-row.is-active {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.2);
+  background: #f8fbff;
 }
 
 .class-row-main {
@@ -127,6 +148,17 @@
   gap: 8px;
 }
 
+.selected-file-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -140,10 +172,20 @@
 
 .preview-wrap img {
   width: 100%;
-  max-height: 320px;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.always-config-box {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  background: #f8fafc;
 }
 
 .session-head {

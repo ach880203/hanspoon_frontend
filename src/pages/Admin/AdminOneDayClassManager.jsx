@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import {
   createOneDayClass,
   deleteOneDayClass,
@@ -7,10 +7,12 @@ import {
   getOneDayClassSessions,
   updateOneDayClass,
 } from "../../api/onedayApi";
+import { adminApi } from "../../api/adminApi";
 import "./AdminOneDayClassManager.css";
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_IMAGE_COUNT = 10;
+const ALWAYS_MAX_DAYS = 90;
 
 const EMPTY_FORM = {
   id: null,
@@ -22,41 +24,21 @@ const EMPTY_FORM = {
   runType: "ALWAYS",
   category: "KOREAN",
   instructorId: "",
+  alwaysStartDate: todayDateString(),
+  alwaysDays: "30",
   sessions: [{ startAt: "", slot: "AM", capacity: "10", price: "50000" }],
 };
 
 export default function AdminOneDayClassManager() {
   const [mode, setMode] = useState("list"); // list | create | edit
   const [form, setForm] = useState(EMPTY_FORM);
+  const [detailImageNames, setDetailImageNames] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  const payload = useMemo(() => {
-    const instructorId = Number(form.instructorId);
-    const detailImageDataList = Array.isArray(form.detailImageDataList) ? form.detailImageDataList : [];
-
-    return {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      detailDescription: form.detailDescription.trim(),
-      // 백엔드 하위 호환용 단일 필드 + 신규 다중 필드를 함께 전달합니다.
-      detailImageData: detailImageDataList[0] || "",
-      detailImageDataList,
-      level: form.level,
-      runType: form.runType,
-      category: form.category,
-      instructorId: Number.isInteger(instructorId) && instructorId > 0 ? instructorId : null,
-      sessions: form.sessions.map((row) => ({
-        startAt: toIsoWithSeconds(row.startAt),
-        slot: row.slot,
-        capacity: Number(row.capacity),
-        price: Number(row.price),
-      })),
-    };
-  }, [form]);
 
   const loadClasses = useCallback(async () => {
     setLoading(true);
@@ -77,9 +59,22 @@ export default function AdminOneDayClassManager() {
     loadClasses();
   }, [loadClasses]);
 
+  useEffect(() => {
+    const loadInstructors = async () => {
+      try {
+        const res = await adminApi.getOneDayInstructors();
+        setInstructors(Array.isArray(res?.data) ? res.data : []);
+      } catch (e) {
+        setInstructors([]);
+      }
+    };
+    loadInstructors();
+  }, []);
+
   const openCreate = () => {
     setMode("create");
     setForm(EMPTY_FORM);
+    setDetailImageNames([]);
     setError("");
     setMessage("");
   };
@@ -89,10 +84,7 @@ export default function AdminOneDayClassManager() {
     setError("");
     setMessage("");
     try {
-      const [detail, sessions] = await Promise.all([
-        getOneDayClassDetail(classId),
-        getOneDayClassSessions(classId),
-      ]);
+      const [detail, sessions] = await Promise.all([getOneDayClassDetail(classId), getOneDayClassSessions(classId)]);
 
       const normalizedSessions = (Array.isArray(sessions) ? sessions : []).map((session) => ({
         startAt: toDatetimeLocal(session.startAt),
@@ -117,8 +109,11 @@ export default function AdminOneDayClassManager() {
         runType: detail?.runType ?? "ALWAYS",
         category: detail?.category ?? "KOREAN",
         instructorId: String(detail?.instructorId ?? ""),
+        alwaysStartDate: todayDateString(),
+        alwaysDays: "30",
         sessions: normalizedSessions.length > 0 ? normalizedSessions : EMPTY_FORM.sessions,
       });
+      setDetailImageNames(detailImages.map((_, index) => `기존 상세 이미지 ${index + 1}`));
       setMode("edit");
     } catch (e) {
       setError(e?.message ?? "클래스 상세를 불러오지 못했습니다.");
@@ -127,67 +122,9 @@ export default function AdminOneDayClassManager() {
     }
   };
 
-  const validate = () => {
-    if (!payload.title) return "클래스 제목을 입력해 주세요.";
-    if (!payload.description) return "요약 설명을 입력해 주세요.";
-    if (!payload.detailDescription) return "상세 설명을 입력해 주세요.";
-    if (!payload.instructorId) return "강사 ID를 입력해 주세요.";
-    if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) return "세션은 최소 1개가 필요합니다.";
-    if ((payload.detailImageDataList?.length ?? 0) > MAX_IMAGE_COUNT) return `상세 이미지는 최대 ${MAX_IMAGE_COUNT}장까지 등록할 수 있습니다.`;
-
-    for (let i = 0; i < payload.sessions.length; i += 1) {
-      const row = payload.sessions[i];
-      const prefix = `세션 ${i + 1}`;
-      if (!row.startAt) return `${prefix} 시작일시를 입력해 주세요.`;
-      if (!row.slot) return `${prefix} 시간대를 선택해 주세요.`;
-      if (!Number.isInteger(row.capacity) || row.capacity <= 0) return `${prefix} 정원은 1 이상이어야 합니다.`;
-      if (!Number.isInteger(row.price) || row.price < 0) return `${prefix} 가격은 0 이상이어야 합니다.`;
-    }
-    return "";
-  };
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setError("");
-    setMessage("");
-
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      if (mode === "create") {
-        await createOneDayClass(payload);
-        setMessage("클래스가 등록되었습니다.");
-      } else {
-        await updateOneDayClass(form.id, payload);
-        setMessage("클래스가 수정되었습니다.");
-      }
-
-      await loadClasses();
-      setMode("list");
-      setForm(EMPTY_FORM);
-    } catch (e) {
-      setError(e?.message ?? "요청 처리에 실패했습니다.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const removeClass = async (classId) => {
-    if (!window.confirm("클래스를 삭제하시겠습니까? 예약 이력이 있으면 삭제할 수 없습니다.")) return;
-    setError("");
-    setMessage("");
-    try {
-      await deleteOneDayClass(classId);
-      setMessage("클래스가 삭제되었습니다.");
-      await loadClasses();
-    } catch (e) {
-      setError(e?.message ?? "클래스 삭제에 실패했습니다.");
-    }
+  const handleRowOpenEdit = (classId) => {
+    if (loading || submitting) return;
+    openEdit(classId);
   };
 
   const setField = (name, value) => setForm((prev) => ({ ...prev, [name]: value }));
@@ -213,6 +150,107 @@ export default function AdminOneDayClassManager() {
     }));
   };
 
+  const buildPayload = () => {
+    const instructorId = Number(form.instructorId);
+    const detailImageDataList = Array.isArray(form.detailImageDataList) ? form.detailImageDataList : [];
+    const sessions =
+      mode === "create" && form.runType === "ALWAYS"
+        ? buildAlwaysSessions(form.sessions, form.alwaysStartDate, Number(form.alwaysDays))
+        : form.sessions.map((row) => ({
+            startAt: toIsoWithSeconds(row.startAt),
+            slot: row.slot,
+            capacity: Number(row.capacity),
+            price: Number(row.price),
+          }));
+
+    return {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      detailDescription: form.detailDescription.trim(),
+      detailImageData: detailImageDataList[0] || "",
+      detailImageDataList,
+      level: form.level,
+      runType: form.runType,
+      category: form.category,
+      instructorId: Number.isInteger(instructorId) && instructorId > 0 ? instructorId : null,
+      sessions,
+    };
+  };
+
+  const validate = (payload) => {
+    if (!payload.title) return "클래스 제목을 입력해 주세요.";
+    if (!payload.description) return "요약 설명을 입력해 주세요.";
+    if (!payload.detailDescription) return "상세 설명을 입력해 주세요.";
+    if (!payload.instructorId) return "강사를 선택해 주세요.";
+    if (mode === "create" && form.runType === "ALWAYS") {
+      const days = Number(form.alwaysDays);
+      if (!form.alwaysStartDate) return "상시 시작일을 입력해 주세요.";
+      if (!Number.isInteger(days) || days <= 0 || days > ALWAYS_MAX_DAYS) {
+        return `상시 운영일수는 1~${ALWAYS_MAX_DAYS}일 사이로 입력해 주세요.`;
+      }
+    }
+    if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) return "세션은 최소 1개가 필요합니다.";
+    if ((payload.detailImageDataList?.length ?? 0) > MAX_IMAGE_COUNT) {
+      return `상세 이미지는 최대 ${MAX_IMAGE_COUNT}장까지 등록할 수 있습니다.`;
+    }
+
+    for (let i = 0; i < payload.sessions.length; i += 1) {
+      const row = payload.sessions[i];
+      const prefix = `세션 ${i + 1}`;
+      if (!row.startAt) return `${prefix} 시작일시를 입력해 주세요.`;
+      if (!row.slot) return `${prefix} 시간대를 선택해 주세요.`;
+      if (!Number.isInteger(row.capacity) || row.capacity <= 0) return `${prefix} 정원은 1 이상이어야 합니다.`;
+      if (!Number.isInteger(row.price) || row.price < 0) return `${prefix} 가격은 0 이상이어야 합니다.`;
+    }
+    return "";
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+
+    const payload = buildPayload();
+    const validationError = validate(payload);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (mode === "create") {
+        await createOneDayClass(payload);
+        setMessage("클래스가 등록되었습니다.");
+      } else {
+        await updateOneDayClass(form.id, payload);
+        setMessage("클래스가 수정되었습니다.");
+      }
+
+      await loadClasses();
+      setMode("list");
+      setForm(EMPTY_FORM);
+      setDetailImageNames([]);
+    } catch (e) {
+      setError(e?.message ?? "요청 처리에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const removeClass = async (classId) => {
+    if (!window.confirm("클래스를 삭제하시겠습니까? 예약 이력이 있으면 삭제할 수 없습니다.")) return;
+    setError("");
+    setMessage("");
+    try {
+      await deleteOneDayClass(classId);
+      setMessage("클래스가 삭제되었습니다.");
+      await loadClasses();
+    } catch (e) {
+      setError(e?.message ?? "클래스 삭제에 실패했습니다.");
+    }
+  };
+
   const handleImageFiles = async (event) => {
     setError("");
     const files = Array.from(event.target.files || []);
@@ -226,6 +264,7 @@ export default function AdminOneDayClassManager() {
 
     const limited = files.slice(0, remain);
     const nextImages = [];
+    const nextNames = [];
 
     for (const file of limited) {
       if (!file.type.startsWith("image/")) {
@@ -233,21 +272,27 @@ export default function AdminOneDayClassManager() {
         return;
       }
       if (file.size > MAX_IMAGE_SIZE) {
-        setError("이미지 파일은 2MB 이하만 업로드할 수 있습니다.");
+        setError("이미지 파일은 50MB 이하만 업로드할 수 있습니다.");
         return;
       }
       nextImages.push(await readFileAsDataUrl(file));
+      nextNames.push(file.name);
     }
 
-    setField("detailImageDataList", [...form.detailImageDataList, ...nextImages]);
+    setForm((prev) => ({
+      ...prev,
+      detailImageDataList: [...prev.detailImageDataList, ...nextImages],
+    }));
+    setDetailImageNames((prev) => [...prev, ...nextNames]);
     event.target.value = "";
   };
 
   const removeDetailImage = (index) => {
-    setField(
-      "detailImageDataList",
-      form.detailImageDataList.filter((_, i) => i !== index)
-    );
+    setForm((prev) => ({
+      ...prev,
+      detailImageDataList: prev.detailImageDataList.filter((_, i) => i !== index),
+    }));
+    setDetailImageNames((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -278,21 +323,46 @@ export default function AdminOneDayClassManager() {
           ) : (
             <div className="class-list">
               {classes.map((item) => (
-                <article key={item.id} className="class-row">
+                <article
+                  key={item.id}
+                  className={`class-row ${mode === "edit" && Number(form.id) === Number(item.id) ? "is-active" : ""}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleRowOpenEdit(item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleRowOpenEdit(item.id);
+                    }
+                  }}
+                >
                   <div className="class-row-main">
                     <strong>{item.title || `클래스 #${item.id}`}</strong>
                     <div className="class-row-meta">
                       <span>{toKoreanLevel(item.level)}</span>
                       <span>{toKoreanRunType(item.runType)}</span>
                       <span>{toKoreanCategory(item.category)}</span>
-                      <span>강사 ID: {item.instructorId ?? "-"}</span>
+                      <span>강사: {item.instructorName || "-"} (ID: {item.instructorId ?? "-"})</span>
                     </div>
                   </div>
                   <div className="class-row-actions">
-                    <button className="btn-ghost" onClick={() => openEdit(item.id)}>
+                    <button
+                      className="btn-ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.currentTarget.blur();
+                        openEdit(item.id);
+                      }}
+                    >
                       수정
                     </button>
-                    <button className="btn-danger" onClick={() => removeClass(item.id)}>
+                    <button
+                      className="btn-danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeClass(item.id);
+                      }}
+                    >
                       삭제
                     </button>
                   </div>
@@ -331,17 +401,16 @@ export default function AdminOneDayClassManager() {
                 <span>상세 이미지 (여러 장)</span>
                 <input type="file" accept="image/*" multiple onChange={handleImageFiles} />
               </label>
+              <div className="selected-file-box">
+                {detailImageNames.length > 0 ? `선택된 파일: ${detailImageNames.join(", ")}` : "선택된 파일 없음"}
+              </div>
               {form.detailImageDataList.length > 0 ? (
                 <div className="preview-wrap">
                   <div className="preview-grid">
                     {form.detailImageDataList.map((img, index) => (
                       <div key={`detail-img-${index}`} className="preview-item">
                         <img src={img} alt={`상세 이미지 ${index + 1}`} />
-                        <button
-                          type="button"
-                          className="btn-danger"
-                          onClick={() => removeDetailImage(index)}
-                        >
+                        <button type="button" className="btn-danger" onClick={() => removeDetailImage(index)}>
                           이미지 삭제
                         </button>
                       </div>
@@ -352,13 +421,15 @@ export default function AdminOneDayClassManager() {
 
               <div className="class-form-grid">
                 <label>
-                  <span>강사 ID</span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.instructorId}
-                    onChange={(e) => setField("instructorId", e.target.value)}
-                  />
+                  <span>강사 선택</span>
+                  <select value={form.instructorId} onChange={(e) => setField("instructorId", e.target.value)}>
+                    <option value="">강사 선택</option>
+                    {instructors.map((inst) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.userName} ({inst.specialty || "전문분야 미입력"})
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label>
@@ -386,6 +457,33 @@ export default function AdminOneDayClassManager() {
                   </select>
                 </label>
               </div>
+
+              {mode === "create" && form.runType === "ALWAYS" ? (
+                <div className="always-config-box">
+                  <strong>상시 운영 자동 생성</strong>
+                  <div className="class-form-grid">
+                    <label>
+                      <span>상시 시작일</span>
+                      <input
+                        type="date"
+                        value={form.alwaysStartDate}
+                        onChange={(e) => setField("alwaysStartDate", e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>운영일수</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={ALWAYS_MAX_DAYS}
+                        value={form.alwaysDays}
+                        onChange={(e) => setField("alwaysDays", e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <p className="muted">상시 클래스는 입력한 세션 시간대를 기준으로 시작일부터 매일 자동 생성됩니다.</p>
+                </div>
+              ) : null}
 
               <div className="session-head">
                 <strong>세션 목록</strong>
@@ -458,6 +556,7 @@ export default function AdminOneDayClassManager() {
                   onClick={() => {
                     setMode("list");
                     setForm(EMPTY_FORM);
+                    setDetailImageNames([]);
                     setError("");
                   }}
                 >
@@ -470,6 +569,56 @@ export default function AdminOneDayClassManager() {
       </div>
     </div>
   );
+}
+
+function todayDateString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildAlwaysSessions(templateRows, startDate, days) {
+  const rows = Array.isArray(templateRows) ? templateRows : [];
+  const dayCount = Number.isInteger(days) && days > 0 ? days : 0;
+  if (!startDate || dayCount <= 0) return [];
+
+  const base = new Date(`${startDate}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return [];
+
+  const now = new Date();
+  const result = [];
+
+  for (let offset = 0; offset < dayCount; offset += 1) {
+    const date = new Date(base);
+    date.setDate(base.getDate() + offset);
+
+    rows.forEach((row) => {
+      if (!row?.startAt) return;
+      const templateDate = new Date(row.startAt);
+      if (Number.isNaN(templateDate.getTime())) return;
+
+      const sessionDate = new Date(date);
+      sessionDate.setHours(templateDate.getHours(), templateDate.getMinutes(), 0, 0);
+      if (sessionDate < now) return;
+
+      const year = sessionDate.getFullYear();
+      const month = String(sessionDate.getMonth() + 1).padStart(2, "0");
+      const day = String(sessionDate.getDate()).padStart(2, "0");
+      const hour = String(sessionDate.getHours()).padStart(2, "0");
+      const minute = String(sessionDate.getMinutes()).padStart(2, "0");
+
+      result.push({
+        startAt: `${year}-${month}-${day}T${hour}:${minute}:00`,
+        slot: row.slot,
+        capacity: Number(row.capacity),
+        price: Number(row.price),
+      });
+    });
+  }
+
+  return result;
 }
 
 function toIsoWithSeconds(value) {
@@ -516,3 +665,4 @@ function toKoreanCategory(category) {
   if (category === "BAKERY") return "베이커리";
   return category || "-";
 }
+

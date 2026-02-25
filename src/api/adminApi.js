@@ -96,5 +96,28 @@ export const adminApi = {
     rejectCancelRequest: async (id) => {
         const response = await axiosInstance.post(`/api/admin/reservations/${id}/reject-cancel`);
         return response.data;
+    },
+
+    // OneDay Instructors
+    getOneDayInstructors: async () => {
+        const response = await axiosInstance.get('/api/admin/oneday/instructors');
+        return response.data;
+    },
+    getInstructorCandidateUsers: async (keyword) => {
+        const params = keyword ? { keyword } : {};
+        const response = await axiosInstance.get('/api/admin/oneday/instructors/candidate-users', { params });
+        return response.data;
+    },
+    createOneDayInstructor: async (data) => {
+        const response = await axiosInstance.post('/api/admin/oneday/instructors', data);
+        return response.data;
+    },
+    updateOneDayInstructor: async (id, data) => {
+        const response = await axiosInstance.put(`/api/admin/oneday/instructors/${id}`, data);
+        return response.data;
+    },
+    deleteOneDayInstructor: async (id) => {
+        const response = await axiosInstance.delete(`/api/admin/oneday/instructors/${id}`);
+        return response.data;
     }
 };

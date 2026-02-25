@@ -4,6 +4,12 @@ import { paymentApi } from "../../api";
 import { formatPhoneNumber } from "../../utils/format";
 import "./Payment.css";
 
+function formatDateOnly(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString("ko-KR");
+}
+
 function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -268,7 +274,7 @@ function Payment() {
                     <option value="">적용할 쿠폰을 선택해 주세요</option>
                     {coupons.map((c) => (
                       <option key={c.userCouponId} value={c.userCouponId}>
-                        {c.name} ({c.discountType === "FIXED" ? `${c.discountValue.toLocaleString()}원` : `${c.discountValue}%`} 할인)
+                        {c.name} ({c.discountType === "FIXED" ? `${c.discountValue.toLocaleString()}원` : `${c.discountValue}%`} 할인, 발급일로부터 6개월 유효, 만료 {formatDateOnly(c.expiresAt)})
                       </option>
                     ))}
                   </select>

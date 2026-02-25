@@ -15,6 +15,7 @@ import {
   getOneDayClassSessions,
   getOneDayInquiries,
   isOneDayAdmin,
+  isOneDayInstructor,
   isSessionCompleted,
   resolveOneDayUserId,
   toggleOneDayWish,
@@ -23,15 +24,24 @@ import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./on
 import "./OneDayClassDetail.css";
 
 const INQUIRY_CATEGORIES = ["예약", "결제", "클래스", "기타"];
+const DETAIL_TABS = [
+  { id: "detail", label: "클래스 상세" },
+  { id: "inquiry", label: "클래스 문의" },
+  { id: "review", label: "클래스 리뷰" },
+  { id: "policy", label: "예약/환불 안내" },
+];
 
 export const OneDayClassDetail = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const inquirySectionRef = useRef(null);
+  const tabBarRef = useRef(null);
+  const sectionRefs = useRef({});
+  const ratiosRef = useRef(new Map());
 
   const currentUserId = Number(resolveOneDayUserId() ?? 0);
   const admin = isOneDayAdmin();
+  const instructor = isOneDayInstructor();
 
   const [detail, setDetail] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -42,6 +52,7 @@ export const OneDayClassDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("detail");
 
   const [isWished, setIsWished] = useState(false);
   const [reservingSessionId, setReservingSessionId] = useState(null);
@@ -121,6 +132,10 @@ export const OneDayClassDetail = () => {
     loadClassData();
   }, [loadClassData]);
 
+  useEffect(() => {
+    setActiveTab("detail");
+  }, [classId]);
+
   const reviewedReservationIds = useMemo(
     () => new Set(reviews.map((review) => Number(review.reservationId)).filter(Boolean)),
     [reviews]
@@ -141,6 +156,92 @@ export const OneDayClassDetail = () => {
     }
     return detail.detailImageData ? [detail.detailImageData] : [];
   }, [detail]);
+
+  const reviewStats = useMemo(() => {
+    const total = reviews.length;
+    const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+    reviews.forEach((review) => {
+      const score = Math.max(1, Math.min(5, Number(review.rating || 0)));
+      ratingCounts[score] += 1;
+    });
+
+    const sum = reviews.reduce((acc, review) => acc + Number(review.rating || 0), 0);
+    const average = total > 0 ? sum / total : 0;
+
+    return {
+      total,
+      average,
+      ratingCounts,
+      ratingPercents: {
+        5: total > 0 ? (ratingCounts[5] / total) * 100 : 0,
+        4: total > 0 ? (ratingCounts[4] / total) * 100 : 0,
+        3: total > 0 ? (ratingCounts[3] / total) * 100 : 0,
+        2: total > 0 ? (ratingCounts[2] / total) * 100 : 0,
+        1: total > 0 ? (ratingCounts[1] / total) * 100 : 0,
+      },
+    };
+  }, [reviews]);
+
+  const getHeaderHeight = () => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue("--app-header-height");
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 72;
+  };
+
+  const getTabBarHeight = () => {
+    const element = tabBarRef.current;
+    return element ? element.getBoundingClientRect().height : 52;
+  };
+
+  const getScrollOffset = () => getHeaderHeight() + getTabBarHeight() + 12;
+
+  const scrollToSection = (tabId) => {
+    const element = sectionRefs.current[tabId];
+    if (!element) return;
+
+    const top = element.getBoundingClientRect().top + window.scrollY - getScrollOffset();
+    window.scrollTo({ top, behavior: "smooth" });
+    setActiveTab(tabId);
+  };
+
+  useEffect(() => {
+    if (loading) return undefined;
+
+    const topOffset = getHeaderHeight() + getTabBarHeight() + 8;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const key = entry.target.dataset.tab;
+          if (!key) return;
+          ratiosRef.current.set(key, entry.isIntersecting ? entry.intersectionRatio : 0);
+        });
+
+        let bestTab = activeTab;
+        let bestRatio = 0;
+        for (const [key, ratio] of ratiosRef.current.entries()) {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestTab = key;
+          }
+        }
+
+        if (bestRatio > 0.15 && bestTab !== activeTab) {
+          setActiveTab(bestTab);
+        }
+      },
+      {
+        root: null,
+        rootMargin: `-${topOffset}px 0px -60% 0px`,
+        threshold: [0, 0.15, 0.3, 0.5, 0.7, 1],
+      }
+    );
+
+    const elements = Object.values(sectionRefs.current).filter(Boolean);
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [activeTab, loading, detail, sessions.length, reviews.length, inquiries.length]);
 
   useEffect(() => {
     if (!selectedReservationId && reviewableReservations.length > 0) {
@@ -337,7 +438,7 @@ export const OneDayClassDetail = () => {
         <button
           type="button"
           className="od-btn od-btn-ghost"
-          onClick={() => inquirySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onClick={() => scrollToSection("inquiry")}
         >
           문의 영역으로 이동
         </button>
@@ -354,7 +455,7 @@ export const OneDayClassDetail = () => {
             <span className="od-chip">{detail?.levelLabel ?? toLevelLabel(detail?.level)}</span>
             <span className="od-chip">{detail?.categoryLabel ?? toCategoryLabel(detail?.category)}</span>
             <span className="od-chip">{detail?.runTypeLabel ?? toRunTypeLabel(detail?.runType)}</span>
-            <span className="od-chip">강사 #{detail?.instructorId ?? "-"}</span>
+            <span className="od-chip">{detail?.instructorName || `강사 #${detail?.instructorId ?? "-"}`}</span>
           </div>
         </div>
         <button type="button" className="od-heart-btn" onClick={handleWishToggle} title={isWished ? "찜 해제" : "찜 추가"}>
@@ -362,7 +463,26 @@ export const OneDayClassDetail = () => {
         </button>
       </section>
 
-      <section className="od-panel">
+      <div className="od-tabbar" ref={tabBarRef}>
+        {DETAIL_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={tab.id === activeTab ? "od-tab active" : "od-tab"}
+            onClick={() => scrollToSection(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <section
+        className="od-panel od-section"
+        data-tab="detail"
+        ref={(element) => {
+          sectionRefs.current.detail = element;
+        }}
+      >
         <h2>세션 선택</h2>
         {sessions.length === 0 ? (
           <div className="od-muted">등록된 세션이 없습니다.</div>
@@ -441,7 +561,13 @@ export const OneDayClassDetail = () => {
         </p>
       </section>
 
-      <section className="od-panel" ref={inquirySectionRef}>
+      <section
+        className="od-panel od-section"
+        data-tab="inquiry"
+        ref={(element) => {
+          sectionRefs.current.inquiry = element;
+        }}
+      >
         <h2>문의하기</h2>
         <form className="od-form-grid" onSubmit={handleCreateInquiry}>
           <div className="od-form-row">
@@ -557,7 +683,13 @@ export const OneDayClassDetail = () => {
         )}
       </section>
 
-      <section className="od-panel">
+      <section
+        className="od-panel od-section"
+        data-tab="review"
+        ref={(element) => {
+          sectionRefs.current.review = element;
+        }}
+      >
         <h2>리뷰 작성</h2>
         <form className="od-form-grid" onSubmit={handleCreateReview}>
           <label>
@@ -591,13 +723,34 @@ export const OneDayClassDetail = () => {
 
       <section className="od-panel">
         <h2>리뷰 목록</h2>
+        <div className="od-review-stats">
+          <div className="od-review-summary">
+            <strong className="od-review-average">{reviewStats.average.toFixed(1)}</strong>
+            <div className="od-review-stars">{renderStars(Math.round(reviewStats.average || 0))}</div>
+            <span className="od-meta">총 {reviewStats.total}개 리뷰</span>
+          </div>
+          <div className="od-review-bars">
+            {[5, 4, 3, 2, 1].map((score) => (
+              <div className="od-review-bar-row" key={score}>
+                <span>{score}점</span>
+                <div className="od-review-bar-track">
+                  <div
+                    className="od-review-bar-fill"
+                    style={{ width: `${reviewStats.ratingPercents[score].toFixed(1)}%` }}
+                  />
+                </div>
+                <span>{reviewStats.ratingCounts[score]}개</span>
+              </div>
+            ))}
+          </div>
+        </div>
         {reviews.length === 0 ? (
           <div className="od-muted">아직 등록된 리뷰가 없습니다.</div>
         ) : (
           <div className="od-list-grid">
             {reviews.map((review) => {
               const mine = Number(review.userId) === currentUserId;
-              const canReply = Boolean(review?.canAnswer ?? admin);
+              const canReply = Boolean(review?.canAnswer ?? (admin || instructor));
               return (
                 <article key={review.reviewId} className="od-item-card">
                   <div className="od-item-head">
@@ -662,6 +815,50 @@ export const OneDayClassDetail = () => {
           </div>
         )}
       </section>
+
+      <section
+        className="od-panel od-section"
+        data-tab="policy"
+        ref={(element) => {
+          sectionRefs.current.policy = element;
+        }}
+      >
+        <h2>예약/환불 안내</h2>
+        <div className="od-policy-box">
+          <h3>예약 안내</h3>
+          <ul>
+            <li>예약 홀딩 후 결제가 완료되어야 최종 예약이 확정됩니다.</li>
+            <li>세션별 잔여 좌석은 실시간 상황에 따라 변동될 수 있습니다.</li>
+          </ul>
+
+          <h3>취소/환불 안내</h3>
+          <ul>
+            <li>클래스 일정과 운영 정책에 따라 취소 가능 기간 및 환불 금액이 달라질 수 있습니다.</li>
+            <li>환불 문의는 클래스 문의 탭에서 접수하면 관리자 확인 후 안내됩니다.</li>
+          </ul>
+        </div>
+      </section>
+
+      {detail?.instructorName || detail?.instructorBio ? (
+        <section className="od-panel od-instructor-intro">
+          <h2>강사 소개</h2>
+          <div className="od-instructor-card">
+            {detail?.instructorProfileImageData ? (
+              <img
+                className="od-instructor-photo"
+                src={detail.instructorProfileImageData}
+                alt={`${detail?.instructorName || "강사"} 프로필`}
+              />
+            ) : null}
+            <div className="od-instructor-info">
+              <strong>{detail?.instructorName || "강사 정보"}</strong>
+              {detail?.instructorSpecialty ? <span className="od-chip">전문분야: {detail.instructorSpecialty}</span> : null}
+              {detail?.instructorCareer ? <p>{detail.instructorCareer}</p> : null}
+              {detail?.instructorBio ? <p>{detail.instructorBio}</p> : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 };
