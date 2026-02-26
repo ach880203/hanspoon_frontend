@@ -10,9 +10,9 @@ const MyPageLayout = () => {
         { path: '/mypage/orders', label: '주문/배송' },
         { path: '/mypage/reservations', label: '클래스 예약' },
         { path: '/mypage/payments', label: '결제 내역' },
+        { path: '/mypage/wishlist', label: '찜 목록' },
         { path: '/mypage/reviews', label: '내 리뷰' },
         { path: '/mypage/inquiries', label: '문의 내역' },
-        { path: '/mypage/wishlist', label: '관심 목록' },
         { path: '/mypage/profile', label: '정보 수정' },
     ];
 
