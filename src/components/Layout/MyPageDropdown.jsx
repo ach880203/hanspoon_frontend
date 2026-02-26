@@ -23,7 +23,7 @@ export default function MyPageDropdown() {
     const fetchStats = async () => {
       setStatsLoading(true);
       try {
-        // Load summary and coupons in parallel to reduce dropdown open latency.
+        // 드롭다운 오픈 시 지연을 줄이기 위해 요약/쿠폰 정보를 병렬 조회합니다.
         const [summaryRes, couponRes] = await Promise.allSettled([
           mypageApi.getSummary(),
           mypageApi.getMyCoupons(),
@@ -35,7 +35,7 @@ export default function MyPageDropdown() {
           const summaryData = summaryRes.value.data;
           setSummary(summaryData);
 
-          // ✅ 가져온 최신 포인트 정보를 전역 AuthContext에 반영 (다른 페이지와 동기화)
+          // 최신 포인트 잔액을 AuthContext에도 반영해 다른 화면과 동기화합니다.
           if (summaryData && typeof summaryData.spoonBalance === "number") {
             updateUserBalance(summaryData.spoonBalance);
           }
@@ -147,11 +147,7 @@ export default function MyPageDropdown() {
               </div>
             </Link>
 
-            <Link
-              to="/classes/oneday/coupons"
-              className="stat-box"
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/classes/oneday/coupons" className="stat-box" onClick={() => setIsOpen(false)}>
               <div className="stat-icon-wrapper">
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
                   <rect x="5" y="10" width="30" height="20" rx="4" fill="var(--primary)" />
@@ -181,13 +177,18 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
-              <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
-                나의 리뷰
+              <Link to="/mypage/wishlist" onClick={() => setIsOpen(false)}>
+                찜 목록
               </Link>
             </li>
             <li>
-              <Link to="/mypage/wishlist" onClick={() => setIsOpen(false)}>
-                찜 목록
+              <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
+                내 리뷰
+              </Link>
+            </li>
+            <li>
+              <Link to="/mypage/inquiries" onClick={() => setIsOpen(false)}>
+                문의 내역
               </Link>
             </li>
             <li>

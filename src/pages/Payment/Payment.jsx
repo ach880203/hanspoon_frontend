@@ -42,6 +42,19 @@ function Payment() {
     buyerTel: initialBuyerTel ? formatPhoneNumber(initialBuyerTel) : "",
   });
 
+  const isNumeric = (v) => /^\d+$/.test(String(v));
+
+  const makePaymentId = (orderId) => {
+    // 클래스: 이미 ORDER_... 형태면 그대로 사용(길이/문자 OK)
+    if (orderId && String(orderId).startsWith("ORDER_")) return String(orderId);
+
+    // 상품 주문: 내부 주문 PK(숫자)를 PG 규칙 맞는 paymentId로 변환 (6~64, [-,_] 허용) :contentReference[oaicite:1]{index=1}
+    if (orderId && isNumeric(orderId)) return `PAY_${orderId}_${Date.now()}`;
+
+    // 그 외(혹시 orderId가 없거나 예상 밖): 랜덤 paymentId 생성
+    return `PAY_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -175,10 +188,13 @@ function Payment() {
       // ✅ 상품 주문 번호가 있으면 그것을 결제 고유 ID로 사용, 없으면 새로 생성 (클래스 등)
       const merchantUid = orderId ? String(orderId) : `PAY-${Date.now()}`;
 
+      const internalOrderId = orderId != null ? String(orderId) : null;
+      const paymentId = makePaymentId(internalOrderId);
+
       const response = await window.PortOne.requestPayment({
         storeId: config.storeId,
         channelKey,
-        paymentId: merchantUid,
+        paymentId,
         orderName: formData.itemName,
         totalAmount: finalAmount,
         currency: "CURRENCY_KRW",
@@ -197,7 +213,7 @@ function Payment() {
 
       const verifyResult = await paymentApi.verifyPayment({
         paymentId: response.paymentId,
-        orderId: merchantUid, // 서버에서 조회 시 사용
+        orderId: internalOrderId, // 서버에서 조회 시 사용
         amount: Number(formData.amount),
         productId: null,
         classId: classId ? Number(classId) : null,

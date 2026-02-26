@@ -67,6 +67,19 @@
     font-weight: 600;
 }
 
+.status-PAID {
+    color: #0369a1;
+}
+
+.status-CANCELED,
+.status-CANCEL_REQUESTED {
+    color: #b91c1c;
+}
+
+.status-COMPLETED {
+    color: var(--primary, #ea580c);
+}
+
 .res-body {
     display: flex;
     justify-content: space-between;
@@ -105,6 +118,22 @@
 
 .btn-action:hover {
     background: #f8fafc;
+}
+
+.res-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-action-danger {
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.btn-action-danger:hover {
+    background: #fef2f2;
 }
 
 /* Modal Styles for MyClassPage */

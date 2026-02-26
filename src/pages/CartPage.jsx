@@ -1,4 +1,4 @@
-// src/pages/CartPage.jsx
+﻿// src/pages/CartPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyCart, deleteMyCartItem, updateMyCartItem } from "../api/carts";
@@ -14,8 +14,12 @@ import {
   setDefaultMyShippingAddress,
 } from "../api/shippingAddresses";
 import "./CartPage.css";
+import { loadAuth } from "../utils/authStorage";
 
 const fmt = (n) => (n ?? 0).toLocaleString();
+
+// ✅ 백엔드 JSON이 isDefault 또는 default로 내려오는 경우 모두 대응
+const isDefaultAddr = (a) => Boolean(a?.isDefault ?? a?.default);
 
 function Modal({ open, title, onClose, children, footer, bodyScroll = true }) {
   if (!open) return null;
@@ -42,29 +46,36 @@ function Modal({ open, title, onClose, children, footer, bodyScroll = true }) {
 export default function CartPage() {
   const nav = useNavigate();
 
-  // cart
+  // =========================
+  // Cart
+  // =========================
   const [cart, setCart] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
 
-  // ui
+  // =========================
+  // UI common
+  // =========================
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // shipping
+  // =========================
+  // Shipping addresses
+  // =========================
   const [addresses, setAddresses] = useState([]);
-  const [currentAddrId, setCurrentAddrId] = useState(null);
+  const [currentAddrId, setCurrentAddrId] = useState(null); // ✅ 우측 카드에 반영되는 “확정 선택”
+  const [pickedAddrId, setPickedAddrId] = useState(null); // ✅ 모달에서 라디오로 고르는 “임시 선택”
   const [addrLoading, setAddrLoading] = useState(true);
 
   // modals
   const [addrManageOpen, setAddrManageOpen] = useState(false);
   const [addrEditOpen, setAddrEditOpen] = useState(false);
-
-  // delete confirm modal
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null); // address object
 
-  // ship card pulse
+  // delete target
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // right ship card pulse
   const [shipFlash, setShipFlash] = useState(false);
   const shipFlashTimer = useRef(null);
 
@@ -80,6 +91,16 @@ export default function CartPage() {
     isDefault: true,
   });
 
+  const buildBuyerState = () => {
+      const auth = loadAuth() || {};
+      return {
+        buyerName: String(auth.userName || ""),
+        buyerEmail: String(auth.email || ""),
+        buyerTel: String(auth.phone || auth.userPhone || auth.tel || ""),
+      };
+    };
+
+  // computed
   const items = cart?.items ?? [];
   const allSelected = items.length > 0 && selected.size === items.length;
   const canOrder = selected.size > 0 && !busy;
@@ -87,11 +108,10 @@ export default function CartPage() {
   const currentAddress = useMemo(() => {
     if (!addresses.length) return null;
     const found = addresses.find((a) => a.shippingAddressId === currentAddrId);
-    return found || addresses.find((a) => a.isDefault) || addresses[0];
+    return found || addresses.find((a) => isDefaultAddr(a)) || addresses[0];
   }, [addresses, currentAddrId]);
 
   const pulseShippingCard = () => {
-    // toggle 방식으로 애니메이션 재트리거
     if (shipFlashTimer.current) clearTimeout(shipFlashTimer.current);
     setShipFlash(false);
     requestAnimationFrame(() => {
@@ -100,7 +120,9 @@ export default function CartPage() {
     });
   };
 
-  // ----- cart -----
+  // =========================
+  // Load cart
+  // =========================
   const loadCart = async () => {
     setErr("");
     setLoading(true);
@@ -121,7 +143,9 @@ export default function CartPage() {
     loadCart();
   }, []);
 
-  // ----- shipping -----
+  // =========================
+  // Load addresses
+  // =========================
   const loadAddresses = async () => {
     setAddrLoading(true);
     try {
@@ -129,10 +153,9 @@ export default function CartPage() {
       setAddresses(list ?? []);
 
       const def = await fetchMyDefaultShippingAddress().catch(() => null);
-      if (def?.shippingAddressId) setCurrentAddrId(def.shippingAddressId);
-      else if (list?.[0]?.shippingAddressId) setCurrentAddrId(list[0].shippingAddressId);
-      else setCurrentAddrId(null);
-    } catch (e) {
+      const nextId = def?.shippingAddressId ?? list?.[0]?.shippingAddressId ?? null;
+      setCurrentAddrId(nextId);
+    } catch {
       setAddresses([]);
       setCurrentAddrId(null);
     } finally {
@@ -142,12 +165,12 @@ export default function CartPage() {
 
   useEffect(() => {
     loadAddresses();
-    return () => {
-      if (shipFlashTimer.current) clearTimeout(shipFlashTimer.current);
-    };
+    return () => shipFlashTimer.current && clearTimeout(shipFlashTimer.current);
   }, []);
 
-  // selection
+  // =========================
+  // Cart selection
+  // =========================
   const toggleAll = () => {
     if (!items.length) return;
     setSelected(allSelected ? new Set() : new Set(items.map((it) => it.itemId)));
@@ -161,7 +184,9 @@ export default function CartPage() {
     });
   };
 
-  // cart actions
+  // =========================
+  // Cart actions
+  // =========================
   const changeQty = async (itemId, nextQty) => {
     if (nextQty < 1) return;
     setBusy(true);
@@ -170,6 +195,7 @@ export default function CartPage() {
       const updated = await updateMyCartItem(itemId, nextQty);
       setCart(updated);
 
+      // 업데이트 후 선택 유지(존재하는 것만)
       const updatedIds = new Set((updated?.items ?? []).map((it) => it.itemId));
       setSelected((prev) => new Set([...prev].filter((id) => updatedIds.has(id))));
     } catch (e) {
@@ -220,7 +246,9 @@ export default function CartPage() {
     }
   };
 
-  // calc
+  // =========================
+  // Calc (selected items only)
+  // =========================
   const calc = useMemo(() => {
     const selectedItems = items.filter((it) => selected.has(it.itemId));
     const productAmount = selectedItems.reduce((sum, it) => {
@@ -235,13 +263,31 @@ export default function CartPage() {
     return { productAmount, itemDiscount, shippingFee, payable };
   }, [items, selected]);
 
-  // ----- shipping handlers -----
+  // =========================
+  // Address handlers
+  // =========================
   const openManageAddress = async () => {
     setAddrManageOpen(true);
+
     try {
       const list = await fetchMyShippingAddresses();
-      setAddresses(list ?? []);
-    } catch (_) {}
+      const sorted = [...(list ?? [])].sort(
+        (a, b) => (isDefaultAddr(b) - isDefaultAddr(a)) || (b.shippingAddressId - a.shippingAddressId)
+      );
+      setAddresses(sorted);
+
+      // ✅ 모달 임시 선택은 “현재 확정 배송지”로 시작
+      setPickedAddrId(currentAddrId ?? sorted?.[0]?.shippingAddressId ?? null);
+    } catch {
+      setPickedAddrId(currentAddrId);
+    }
+  };
+
+  const applySelectedAddress = () => {
+    if (!pickedAddrId) return;
+    setCurrentAddrId(pickedAddrId);
+    setAddrManageOpen(false);
+    pulseShippingCard();
   };
 
   const openAddAddress = () => {
@@ -267,28 +313,23 @@ export default function CartPage() {
       zipCode: addr.zipCode ?? "",
       address1: addr.address1 ?? "",
       address2: addr.address2 ?? "",
-      isDefault: !!addr.isDefault,
+      isDefault: isDefaultAddr(addr),
     });
     setAddrEditOpen(true);
   };
 
-  const applySelectedAddress = (shippingAddressId) => {
-    setCurrentAddrId(shippingAddressId);
-    setAddrManageOpen(false);
-    pulseShippingCard(); // ✅ 선택 시 우측 카드 강조
-  };
-
   const makeDefault = async (addr) => {
-    if (addr.isDefault) return; // 이미 기본이면 아무것도 안 함
+    if (isDefaultAddr(addr)) return;
     setErr("");
+    setBusy(true);
     try {
       await setDefaultMyShippingAddress(addr.shippingAddressId);
       const list = await fetchMyShippingAddresses();
       setAddresses(list ?? []);
-      setCurrentAddrId(addr.shippingAddressId);
-      pulseShippingCard(); // (선택 사항) 기본 지정 후에도 강조
     } catch (e) {
       setErr(toErrorMessage(e));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -307,14 +348,21 @@ export default function CartPage() {
       const list = await fetchMyShippingAddresses();
       setAddresses(list ?? []);
 
-      const def = (list ?? []).find((a) => a.isDefault) || (list ?? [])[0];
-      setCurrentAddrId(def?.shippingAddressId ?? null);
+      // 확정 배송지가 삭제되면 보정
+      if (deleteTarget.shippingAddressId === currentAddrId) {
+        const def = (list ?? []).find((a) => isDefaultAddr(a)) || (list ?? [])[0];
+        setCurrentAddrId(def?.shippingAddressId ?? null);
+        pulseShippingCard();
+      }
+
+      // 임시 선택도 보정
+      if (deleteTarget.shippingAddressId === pickedAddrId) {
+        const def = (list ?? []).find((a) => isDefaultAddr(a)) || (list ?? [])[0];
+        setPickedAddrId(def?.shippingAddressId ?? null);
+      }
 
       setDeleteConfirmOpen(false);
       setDeleteTarget(null);
-
-      // 삭제 후에도 우측 카드 업데이트 티나게(선택 사항)
-      pulseShippingCard();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -331,37 +379,16 @@ export default function CartPage() {
     setErr("");
     setBusy(true);
     try {
-      let saved;
       if (editTargetId) {
-        saved = await updateMyShippingAddress(editTargetId, {
-          label: addrDraft.label,
-          receiverName: addrDraft.receiverName,
-          receiverPhone: addrDraft.receiverPhone,
-          zipCode: addrDraft.zipCode,
-          address1: addrDraft.address1,
-          address2: addrDraft.address2,
-          isDefault: addrDraft.isDefault,
-        });
+        await updateMyShippingAddress(editTargetId, { ...addrDraft });
       } else {
-        saved = await createMyShippingAddress({
-          label: addrDraft.label,
-          receiverName: addrDraft.receiverName,
-          receiverPhone: addrDraft.receiverPhone,
-          zipCode: addrDraft.zipCode,
-          address1: addrDraft.address1,
-          address2: addrDraft.address2,
-          isDefault: addrDraft.isDefault,
-        });
+        await createMyShippingAddress({ ...addrDraft });
       }
 
       const list = await fetchMyShippingAddresses();
       setAddresses(list ?? []);
-      setCurrentAddrId(saved?.shippingAddressId ?? null);
 
       setAddrEditOpen(false);
-      setAddrManageOpen(false);
-
-      pulseShippingCard();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -369,7 +396,9 @@ export default function CartPage() {
     }
   };
 
-  // ----- order -----
+  // =========================
+  // Order (uses confirmed currentAddress)
+  // =========================
   const makeOrder = async () => {
     setBusy(true);
     setErr("");
@@ -395,6 +424,7 @@ export default function CartPage() {
           itemName: itemCount > 1 ? `${firstName} 외 ${itemCount - 1}건` : firstName,
           amount: created.totalPrice,
           shippingAddress: currentAddress,
+          ...buildBuyerState(),
         },
       });
     } catch (e) {
@@ -439,8 +469,12 @@ export default function CartPage() {
             <div className="empty">
               <div className="muted">장바구니가 비어 있습니다.</div>
               <div className="row" style={{ marginTop: 10, gap: 8 }}>
-                <button className="btn" onClick={() => nav("/products")}>상품 보러가기</button>
-                <button className="btnGhost" onClick={loadCart}>다시 불러오기</button>
+                <button className="btn" onClick={() => nav("/products")}>
+                  상품 보러가기
+                </button>
+                <button className="btnGhost" onClick={loadCart}>
+                  다시 불러오기
+                </button>
               </div>
             </div>
           ) : (
@@ -452,7 +486,13 @@ export default function CartPage() {
 
                   return (
                     <div key={it.itemId} className="item">
-                      <button className="xBtn" onClick={() => removeOne(it.itemId)} disabled={busy} aria-label="삭제" title="삭제">
+                      <button
+                        className="xBtn"
+                        onClick={() => removeOne(it.itemId)}
+                        disabled={busy}
+                        aria-label="삭제"
+                        title="삭제"
+                      >
                         ×
                       </button>
 
@@ -465,21 +505,35 @@ export default function CartPage() {
 
                       <div className="itemBody">
                         <div className="thumb">
-                          {it.thumbnailUrl ? <img src={it.thumbnailUrl} alt={it.name} /> : <div className="thumbPlaceholder">이미지 없음</div>}
+                          {it.thumbnailUrl ? (
+                            <img src={it.thumbnailUrl} alt={it.name} />
+                          ) : (
+                            <div className="thumbPlaceholder">이미지 없음</div>
+                          )}
                         </div>
 
                         <div className="priceBox">
                           <div className="priceMain">{fmt(it.price)}원</div>
 
                           <div className="priceSub">
-                            <span className="muted">{fmt(it.price)}원 × {it.quantity}</span>
+                            <span className="muted">
+                              {fmt(it.price)}원 × {it.quantity}
+                            </span>
                             <span className="lineTotal">{fmt(line)}원</span>
                           </div>
 
                           <div className="qty">
-                            <button className="qtyBtn" disabled={busy || it.quantity <= 1} onClick={() => changeQty(it.itemId, it.quantity - 1)}>−</button>
+                            <button
+                              className="qtyBtn"
+                              disabled={busy || it.quantity <= 1}
+                              onClick={() => changeQty(it.itemId, it.quantity - 1)}
+                            >
+                              −
+                            </button>
                             <div className="qtyNum">{it.quantity}</div>
-                            <button className="qtyBtn" disabled={busy} onClick={() => changeQty(it.itemId, it.quantity + 1)}>+</button>
+                            <button className="qtyBtn" disabled={busy} onClick={() => changeQty(it.itemId, it.quantity + 1)}>
+                              +
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -512,7 +566,9 @@ export default function CartPage() {
                   <div className="shipTitle">배송지</div>
                   <span className="shipBadge">샛별배송</span>
                 </div>
-                <button className="shipChangeBtn" onClick={openManageAddress}>변경</button>
+                <button className="shipChangeBtn" onClick={openManageAddress}>
+                  변경
+                </button>
               </div>
 
               {addrLoading ? (
@@ -522,20 +578,26 @@ export default function CartPage() {
               ) : !currentAddress ? (
                 <div className="shipAddr">
                   <div className="shipAddrLine">배송지를 설정해 주세요</div>
-                  <div className="shipAddrSub">변경 버튼을 눌러 배송지를 추가할 수 있어요.</div>
                 </div>
               ) : (
                 <div className="shipAddr">
                   <div className="shipAddrLine">{currentAddress.address1}</div>
-                  <div className="shipAddrSub">
-                    {currentAddress.receiverName} · {currentAddress.receiverPhone}
-                    {(currentAddress.zipCode || currentAddress.address2) && (
-                      <>
-                        {" "}
-                        / {currentAddress.zipCode ? `${currentAddress.zipCode}` : ""}
-                        {currentAddress.address2 ? ` ${currentAddress.address2}` : ""}
-                      </>
-                    )}
+
+                  <div className="shipInfoList">
+                    <div className="shipInfoRow">
+                      <span className="shipInfoKey">상세주소</span>
+                      <span className="shipInfoVal">{currentAddress.address2 || "-"}</span>
+                    </div>
+                    <div className="shipInfoRow">
+                      <span className="shipInfoKey">우편번호</span>
+                      <span className="shipInfoVal">{currentAddress.zipCode || "-"}</span>
+                    </div>
+                    <div className="shipInfoRow">
+                      <span className="shipInfoKey">받는분</span>
+                      <span className="shipInfoVal">
+                        {currentAddress.receiverName} ({currentAddress.receiverPhone})
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -578,7 +640,9 @@ export default function CartPage() {
                 {calc.productAmount >= 20000 ? (
                   <>무료배송 적용 중</>
                 ) : (
-                  <>2만원 이상 무료배송까지 <b>{fmt(20000 - calc.productAmount)}</b>원 남았어요</>
+                  <>
+                    2만원 이상 무료배송까지 <b>{fmt(20000 - calc.productAmount)}</b>원 남았어요
+                  </>
                 )}
               </div>
 
@@ -601,62 +665,88 @@ export default function CartPage() {
         onClose={() => setAddrManageOpen(false)}
         footer={
           <>
-            <button className="btnGhost" onClick={() => setAddrManageOpen(false)}>닫기</button>
-            <button className="btnPrimary" onClick={openAddAddress}>새 배송지 추가</button>
+            <button
+              className="btnFooterHalf btnFooterPrimary"
+              onClick={openAddAddress}
+              disabled={busy}
+            >
+              새 배송지 추가
+            </button>
+
+            <button
+              className="btnFooterHalf btnFooterOutline"
+              onClick={applySelectedAddress}
+              disabled={!pickedAddrId || busy}
+            >
+              선택
+            </button>
           </>
         }
       >
         <div className="addressList">
-          {addresses.length === 0 ? (
-            <div className="muted">등록된 배송지가 없습니다. 새 배송지를 추가해 주세요.</div>
-          ) : (
-            addresses.map((a) => (
-              <div key={a.shippingAddressId} className="addressItem">
-                <label className="addressRadio">
-                  <input
-                    type="radio"
-                    name="addr"
-                    checked={a.shippingAddressId === currentAddrId}
-                    onChange={() => setCurrentAddrId(a.shippingAddressId)}
-                  />
-                  <span className="addressText">
-                    <div className="addressTopRow">
-                      <span className="addressLabel">{a.label}</span>
-                      {a.isDefault && <span className="addressDefault">기본배송지</span>}
-                    </div>
+          {[...addresses]
+            .sort((a, b) => (isDefaultAddr(b) - isDefaultAddr(a)) || (b.shippingAddressId - a.shippingAddressId))
+            .map((a) => {
+              const def = isDefaultAddr(a);
+              return (
+                <div key={a.shippingAddressId} className="addressItem">
+                  <label className="addressRadio">
+                    <input
+                      type="radio"
+                      name="addr"
+                      checked={a.shippingAddressId === pickedAddrId}
+                      onChange={() => setPickedAddrId(a.shippingAddressId)}
+                    />
 
-                    <div className="addressLine">{a.address1}</div>
+                    <span className="addressText">
+                      <div className="addressTopRow">
+                        <span className="addressLabel">{a.label}</span>
+                        {def && <span className="addressDefault strong">기본배송지</span>}
+                      </div>
 
-                    <div className="addressSub">
-                      {a.receiverName} · {a.receiverPhone}
-                      {(a.zipCode || a.address2) && (
-                        <>
-                          {" "}
-                          / {a.zipCode ? `${a.zipCode}` : ""}
-                          {a.address2 ? ` ${a.address2}` : ""}
-                        </>
-                      )}
-                    </div>
-                  </span>
-                </label>
+                      <div className="addressLine">{a.address1}</div>
 
-                <div className="addressActions">
-                  <button
-                    className="miniBtn"
-                    disabled={a.isDefault}
-                    onClick={() => makeDefault(a)}
-                    title={a.isDefault ? "이미 기본 배송지입니다." : "기본 배송지로 설정"}
-                  >
-                    기본
-                  </button>
-                  <button className="miniBtn" onClick={() => openEditAddress(a)}>수정</button>
-                  <button className="miniBtn" onClick={() => openDeleteConfirm(a)}>삭제</button>
-                  <button className="miniBtn primary" onClick={() => applySelectedAddress(a.shippingAddressId)}>선택</button>
+                      {/* ✅ 모달에서도 배송지 카드와 동일하게 표시 */}
+                      <div className="shipInfoList">
+                        <div className="shipInfoRow">
+                          <span className="shipInfoKey">상세주소</span>
+                          <span className="shipInfoVal">{a.address2 || "-"}</span>
+                        </div>
+                        <div className="shipInfoRow">
+                          <span className="shipInfoKey">우편번호</span>
+                          <span className="shipInfoVal">{a.zipCode || "-"}</span>
+                        </div>
+                        <div className="shipInfoRow">
+                          <span className="shipInfoKey">받는분</span>
+                          <span className="shipInfoVal">
+                            {a.receiverName} ({a.receiverPhone})
+                          </span>
+                        </div>
+                      </div>
+                    </span>
+                  </label>
+
+                  <div className="addressActions">
+                    {/* ✅ 기본 배송지에는 기본/삭제 버튼 숨김 */}
+                    {!def && (
+                      <button className="miniBtn" onClick={() => makeDefault(a)} disabled={busy}>
+                        기본
+                      </button>
+                    )}
+                    <button className="miniBtn" onClick={() => openEditAddress(a)} disabled={busy}>
+                      수정
+                    </button>
+                    {!def && (
+                      <button className="miniBtn" onClick={() => openDeleteConfirm(a)} disabled={busy}>
+                        삭제
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              );
+            })}
         </div>
+        
       </Modal>
 
       {/* 삭제 confirm 모달 */}
@@ -669,14 +759,7 @@ export default function CartPage() {
         }}
         footer={
           <>
-            <button
-              className="btnGhost"
-              onClick={() => {
-                setDeleteConfirmOpen(false);
-                setDeleteTarget(null);
-              }}
-              disabled={busy}
-            >
+            <button className="btnGhost" onClick={() => setDeleteConfirmOpen(false)} disabled={busy}>
               취소
             </button>
             <button className="btnDanger" onClick={confirmDelete} disabled={busy}>
@@ -686,9 +769,7 @@ export default function CartPage() {
         }
       >
         <div className="confirmText">
-          <div className="confirmTitle">
-            정말 삭제할까요?
-          </div>
+          <div className="confirmTitle">정말 삭제할까요?</div>
           <div className="confirmDesc">
             <b>{deleteTarget?.label ?? "선택한 배송지"}</b> 배송지가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
           </div>
@@ -696,7 +777,6 @@ export default function CartPage() {
       </Modal>
 
       {/* 새 배송지 추가/수정 모달 */}
-      {/* AddressSearch dropdown이 잘리지 않도록 bodyScroll=false */}
       <Modal
         open={addrEditOpen}
         title={editTargetId ? "배송지 수정" : "새 배송지 추가"}
@@ -704,7 +784,9 @@ export default function CartPage() {
         bodyScroll={false}
         footer={
           <>
-            <button className="btnGhost" onClick={() => setAddrEditOpen(false)} disabled={busy}>취소</button>
+            <button className="btnGhost" onClick={() => setAddrEditOpen(false)} disabled={busy}>
+              취소
+            </button>
             <button
               className="btnPrimary"
               onClick={saveAddressDraft}
@@ -722,8 +804,43 @@ export default function CartPage() {
         }
       >
         <div className="addrForm">
+
+          <label className="checkbox" style={{ marginBottom: 10 }}>
+            <span className="checkboxText">주 소</span>
+          </label>
+
+          <div>
+            <AddressSearch
+              onSelect={({ zipCode, address1, address2 }) =>
+                setAddrDraft((p) => ({
+                  ...p,
+                  zipCode: zipCode ?? "",
+                  address1: address1 ?? "",
+                  address2: address2 ?? "",
+                }))
+              }
+            />
+          </div>
+
+          <input className="input" placeholder="우편 번호 (자동 입력)" value={addrDraft.zipCode} readOnly />
+
+          <input className="input" placeholder="주소 (자동 입력)" value={addrDraft.address1} readOnly />
+
           <input
             className="input"
+            
+            placeholder="상세 주소 (선택 입력)"
+            value={addrDraft.address2}
+            onChange={(e) => setAddrDraft((p) => ({ ...p, address2: e.target.value }))}
+          />
+
+          <label className="checkbox" style={{ marginTop: 10 }}>
+            <span className="checkboxText">받 는 분</span>
+          </label>
+
+          <input
+            className="input"
+            style={{ marginTop: 10 }}
             placeholder="배송지 이름 (예: 우리집, 회사)"
             value={addrDraft.label}
             onChange={(e) => setAddrDraft((p) => ({ ...p, label: e.target.value }))}
@@ -744,38 +861,7 @@ export default function CartPage() {
             />
           </div>
 
-          <div style={{ marginTop: 10 }}>
-            <AddressSearch
-              onSelect={({ zipCode, address1, address2 }) =>
-                setAddrDraft((p) => ({
-                  ...p,
-                  zipCode: zipCode ?? "",
-                  address1: address1 ?? "",
-                  address2: address2 ?? "",
-                }))
-              }
-            />
-          </div>
-
-          {addrDraft.zipCode && (
-            <input className="input" style={{ marginTop: 10 }} value={addrDraft.zipCode} readOnly />
-          )}
-
-          <input
-            className="input"
-            style={{ marginTop: 10 }}
-            placeholder="기본 주소 (검색 시 자동 입력)"
-            value={addrDraft.address1}
-            readOnly
-          />
-
-          <input
-            className="input"
-            style={{ marginTop: 10 }}
-            placeholder="상세 주소 (선택 입력)"
-            value={addrDraft.address2}
-            onChange={(e) => setAddrDraft((p) => ({ ...p, address2: e.target.value }))}
-          />
+          
 
           <label className="checkbox" style={{ marginTop: 12 }}>
             <input

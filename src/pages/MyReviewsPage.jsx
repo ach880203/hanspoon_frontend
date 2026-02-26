@@ -5,16 +5,17 @@ import { deleteReview, fetchMyReviews, updateReview } from "../api/productReview
 import { deleteOneDayReview, getMyOneDayReviews } from "../api/onedayApi";
 import { fetchMyRecipeReviews } from "../api/recipeApi";
 import { toErrorMessage } from "../api/http";
+import "./MyReviewsPage.css";
 
 const REVIEW_SOURCE = {
   ALL: "ALL",
+  RECIPE: "RECIPE",
   MARKET: "MARKET",
   ONEDAY: "ONEDAY",
-  RECIPE: "RECIPE",
 };
 
-// 마켓 리뷰는 페이징 응답이므로 모든 페이지를 순회해서 전체 리스트를 만듭니다.
-// 통합 목록에서 소스별 필터를 걸어도 데이터가 빠지지 않도록 전체를 수집합니다.
+// 마켓 리뷰는 페이지 응답이므로 모든 페이지를 순회해서 전체 리스트를 만듭니다.
+// 통합 목록에서 소스별 필터를 걸어도 데이터가 비지 않도록 전체를 수집합니다.
 async function fetchAllMarketReviews(pageSize = 50) {
   const first = await fetchMyReviews(0, pageSize);
   const totalPages = Number(first?.totalPages ?? 1);
@@ -42,12 +43,30 @@ function formatDate(value) {
 }
 
 function getSourceLabel(source) {
+  if (source === REVIEW_SOURCE.RECIPE) return "레시피";
   if (source === REVIEW_SOURCE.MARKET) return "마켓";
   if (source === REVIEW_SOURCE.ONEDAY) return "원데이";
-  if (source === REVIEW_SOURCE.RECIPE) return "레시피";
   return "전체";
 }
 
+function renderStars(rating) {
+  const score = Math.max(1, Math.min(5, Number(rating || 0)));
+  return "★".repeat(score) + "☆".repeat(5 - score);
+}
+
+function normalizeRecipeReviews(list) {
+  return (list ?? []).map((item) => ({
+    id: `RECIPE-${item.revId}`,
+    source: REVIEW_SOURCE.RECIPE,
+    reviewId: item.revId,
+    targetId: item.recipeId,
+    targetLabel: item.recipeTitle ? `레시피 · ${item.recipeTitle}` : `레시피 #${item.recipeId}`,
+    rating: Number(item.rating ?? 0),
+    content: item.content ?? "",
+    createdAt: null,
+    raw: item,
+  }));
+}
 function normalizeMarketReviews(list) {
   return (list ?? []).map((item) => ({
     id: `MARKET-${item.revId}`,
@@ -77,19 +96,6 @@ function normalizeOneDayReviews(list) {
   }));
 }
 
-function normalizeRecipeReviews(list) {
-  return (list ?? []).map((item) => ({
-    id: `RECIPE-${item.revId}`,
-    source: REVIEW_SOURCE.RECIPE,
-    reviewId: item.revId,
-    targetId: item.recipeId,
-    targetLabel: item.recipeTitle ? `레시피: ${item.recipeTitle}` : `레시피 #${item.recipeId}`,
-    rating: Number(item.rating ?? 0),
-    content: item.content ?? "",
-    createdAt: null,
-    raw: item,
-  }));
-}
 
 export default function MyReviewsPage() {
   const nav = useNavigate();
@@ -154,6 +160,15 @@ export default function MyReviewsPage() {
     return all.filter((item) => item.source === sourceFilter);
   }, [marketReviews, oneDayReviews, recipeReviews, sourceFilter]);
 
+  const sourceStats = useMemo(() => {
+    return {
+      ALL: marketReviews.length + oneDayReviews.length + recipeReviews.length,
+      RECIPE: recipeReviews.length,
+      MARKET: marketReviews.length,
+      ONEDAY: oneDayReviews.length,
+    };
+  }, [marketReviews, oneDayReviews, recipeReviews]);
+
   const startEdit = (item) => {
     if (item.source !== REVIEW_SOURCE.MARKET) return;
 
@@ -172,7 +187,7 @@ export default function MyReviewsPage() {
   const saveEdit = async (item) => {
     if (!editingId || item.source !== REVIEW_SOURCE.MARKET) return;
     if (!editForm.content.trim()) {
-      setErr("내용을 입력해 주세요.");
+      setErr("리뷰 내용을 입력해 주세요.");
       return;
     }
 
@@ -231,122 +246,133 @@ export default function MyReviewsPage() {
   };
 
   return (
-    <div>
-      <h1>내 리뷰</h1>
-      {err && <div className="error" style={{ whiteSpace: "pre-line" }}>{err}</div>}
+    <div className="my-review-page">
+      <header className="my-review-hero">
+        <h1>내 리뷰</h1>
+        <p>마켓, 원데이, 레시피 리뷰를 한 곳에서 관리할 수 있습니다.</p>
+      </header>
 
-      <div className="panel" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-          <button
-            className={sourceFilter === REVIEW_SOURCE.ALL ? "" : "ghost"}
-            onClick={() => setSourceFilter(REVIEW_SOURCE.ALL)}
-          >
-            전체
-          </button>
-          <button
-            className={sourceFilter === REVIEW_SOURCE.MARKET ? "" : "ghost"}
-            onClick={() => setSourceFilter(REVIEW_SOURCE.MARKET)}
-          >
-            마켓
-          </button>
-          <button
-            className={sourceFilter === REVIEW_SOURCE.ONEDAY ? "" : "ghost"}
-            onClick={() => setSourceFilter(REVIEW_SOURCE.ONEDAY)}
-          >
-            원데이
-          </button>
-          <button
-            className={sourceFilter === REVIEW_SOURCE.RECIPE ? "" : "ghost"}
-            onClick={() => setSourceFilter(REVIEW_SOURCE.RECIPE)}
-          >
-            레시피
-          </button>
+      {err ? (
+        <div className="my-review-alert" style={{ whiteSpace: "pre-line" }}>
+          {err}
+        </div>
+      ) : null}
 
-          <button className="ghost" disabled={busy} onClick={load}>
-            새로고침
-          </button>
+      <section className="my-review-toolbar">
+        <div className="my-review-filter">
+          {[
+            { value: REVIEW_SOURCE.ALL, label: "전체" },
+            { value: REVIEW_SOURCE.RECIPE, label: "레시피" },
+            { value: REVIEW_SOURCE.MARKET, label: "마켓" },
+            { value: REVIEW_SOURCE.ONEDAY, label: "원데이" },
+          ].map((tab) => (
+            <button
+              key={`source-${tab.value}`}
+              type="button"
+              className={sourceFilter === tab.value ? "source-tab is-active" : "source-tab"}
+              onClick={() => setSourceFilter(tab.value)}
+            >
+              {tab.label} ({sourceStats[tab.value]})
+            </button>
+          ))}
         </div>
 
-        {mergedReviews.length === 0 ? (
-          <div className="muted">작성한 리뷰가 없습니다.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {mergedReviews.map((item) => {
-              const isEditing = editingId === item.id;
-              const canEdit = item.source === REVIEW_SOURCE.MARKET;
-              const canDelete = item.source === REVIEW_SOURCE.MARKET || item.source === REVIEW_SOURCE.ONEDAY;
+        <button type="button" className="refresh-btn" disabled={busy} onClick={load}>
+          {busy ? "불러오는 중..." : "새로고침"}
+        </button>
+      </section>
 
-              return (
-                <div key={item.id} className="panelMini">
-                  <div className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                    <div className="row" style={{ gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span className="badge">{getSourceLabel(item.source)}</span>
-                      <span className="badge">{item.rating}점</span>
-                      <span className="muted" style={{ fontSize: 12 }}>{formatDate(item.createdAt)}</span>
+      {mergedReviews.length === 0 ? (
+        <section className="my-review-empty">
+          <strong>작성한 리뷰가 없습니다.</strong>
+          <p>구매/수강 후 리뷰를 작성하면 여기에 표시됩니다.</p>
+        </section>
+      ) : (
+        <section className="my-review-list">
+          {mergedReviews.map((item) => {
+            const isEditing = editingId === item.id;
+            const canEdit = item.source === REVIEW_SOURCE.MARKET;
+            const canDelete = item.source === REVIEW_SOURCE.MARKET || item.source === REVIEW_SOURCE.ONEDAY;
 
-                      <button className="ghost" onClick={() => moveToTarget(item)}>
-                        상세 보기
-                      </button>
-                    </div>
-
-                    <div className="row" style={{ gap: 8 }}>
-                      {!isEditing ? (
-                        <>
-                          {canEdit && (
-                            <button className="ghost" disabled={busy} onClick={() => startEdit(item)}>
-                              수정
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button className="danger" disabled={busy} onClick={() => remove(item)}>
-                              삭제
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <button disabled={busy} onClick={() => saveEdit(item)}>저장</button>
-                          <button className="ghost" disabled={busy} onClick={cancelEdit}>취소</button>
-                        </>
-                      )}
-                    </div>
+            return (
+              <article key={item.id} className="my-review-card">
+                <div className="review-card-head">
+                  <div className="review-head-left">
+                    <span className="source-badge">{getSourceLabel(item.source)}</span>
+                    <span className="rating-stars">{renderStars(item.rating)}</span>
+                    <span className="review-date">{formatDate(item.createdAt)}</span>
                   </div>
+                  <div className="review-head-right">
+                    <button type="button" className="ghost-btn" onClick={() => moveToTarget(item)}>
+                      관련 페이지
+                    </button>
+                    {!isEditing ? (
+                      <>
+                        {canEdit ? (
+                          <button type="button" className="ghost-btn" disabled={busy} onClick={() => startEdit(item)}>
+                            수정
+                          </button>
+                        ) : null}
+                        {canDelete ? (
+                          <button type="button" className="danger-btn" disabled={busy} onClick={() => remove(item)}>
+                            삭제
+                          </button>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" className="save-btn" disabled={busy} onClick={() => saveEdit(item)}>
+                          저장
+                        </button>
+                        <button type="button" className="ghost-btn" disabled={busy} onClick={cancelEdit}>
+                          취소
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-                  <div style={{ marginTop: 8, fontWeight: 600 }}>{item.targetLabel}</div>
+                <div className="review-target">{item.targetLabel}</div>
 
-                  {!isEditing ? (
-                    <div style={{ marginTop: 8 }}>{item.content}</div>
-                  ) : (
-                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                {!isEditing ? (
+                  <p className="review-content">{item.content || "리뷰 내용이 없습니다."}</p>
+                ) : (
+                  <div className="review-edit-form">
+                    <label>
+                      <span>별점</span>
                       <select
                         value={editForm.rating}
                         onChange={(e) => setEditForm({ ...editForm, rating: Number(e.target.value) })}
-                        style={{ width: 120 }}
                       >
                         {[5, 4, 3, 2, 1].map((n) => (
-                          <option key={n} value={n}>{n}점</option>
+                          <option key={n} value={n}>
+                            {n}점
+                          </option>
                         ))}
                       </select>
-
+                    </label>
+                    <label>
+                      <span>리뷰 내용</span>
                       <textarea
-                        rows={3}
+                        rows={4}
                         value={editForm.content}
                         onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
                       />
-                    </div>
-                  )}
+                    </label>
+                  </div>
+                )}
 
-                  {item.source === REVIEW_SOURCE.ONEDAY && item.answerContent && (
-                    <div style={{ marginTop: 8 }}>
-                      <b>답글:</b> {item.answerContent}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                {item.source === REVIEW_SOURCE.ONEDAY && item.answerContent ? (
+                  <div className="review-answer-box">
+                    <strong>관리자 답변</strong>
+                    <p>{item.answerContent}</p>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }

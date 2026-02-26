@@ -132,6 +132,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="orders" element={<MyOrdersPage />} />
           <Route path="reservations" element={<MyClassPage />} />
+          <Route path="class-wishes" element={<Navigate to="/mypage/wishlist" replace />} />
           <Route path="wishlist" element={<MyWishesPage />} />
           <Route path="inquiries" element={<MyInquiriesPage title="내 문의" />} />
           <Route path="reviews" element={<MyReviewsPage title="내 리뷰" />} />
