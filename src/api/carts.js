@@ -1,9 +1,9 @@
-﻿// src/api/carts.js
+// src/api/carts.js
 import { http } from "./http";
 
 /**
- * ???λ컮援щ땲 議고쉶
- * - ?놁쑝硫?404) ?앹꽦 ???ㅼ떆 議고쉶?댁꽌 諛섑솚
+ * 내 장바구니 조회
+ * - 장바구니가 없으면(404) 생성 후 다시 조회해서 반환합니다.
  */
 export async function fetchMyCart() {
   try {
@@ -11,7 +11,7 @@ export async function fetchMyCart() {
     return data; // CartResponseDto
   } catch (e) {
     if (e?.status === 404) {
-      await ensureMyCart();               // ?놁쑝硫??앹꽦
+      await ensureMyCart();               // 없으면 생성
       const { data } = await http.get("/api/carts/me");
       return data;
     }
@@ -24,13 +24,13 @@ export async function fetchMyCartCount() {
     const { data } = await http.get("/api/carts/me/count");
     return data?.count ?? data ?? 0;
   } catch (e) {
-    if (e?.status === 401 || e?.status === 404) return 0; // 미로그인/장바구니없음
+    if (e?.status === 401 || e?.status === 404) return 0; // 미로그인/장바구니 없음
     throw e;
   }
 }
 
 /**
- * ???λ컮援щ땲 ?뺣낫(?놁쑝硫??앹꽦)
+ * 내 장바구니 생성 (이미 있으면 기존 장바구니 반환)
  * POST /api/carts/me -> { cartId }
  */
 export async function ensureMyCart() {
@@ -39,8 +39,8 @@ export async function ensureMyCart() {
 }
 
 /**
- * ???λ컮援щ땲???닿린
- * - CartService媛 userId濡?getOrCreate ?섎?濡? cart媛 ?놁뼱???먮룞 ?앹꽦???쒕퉬??而⑦듃濡ㅻ윭 援ы쁽 湲곗?)
+ * 내 장바구니에 상품 추가
+ * - CartService가 userId 기준 getOrCreate를 수행하므로, 장바구니가 없어도 자동 생성됩니다.
  */
 export async function addMyCartItem({ productId, quantity }) {
   const { data } = await http.post("/api/carts/me/items", {
@@ -51,7 +51,7 @@ export async function addMyCartItem({ productId, quantity }) {
 }
 
 /**
- * ???λ컮援щ땲?먯꽌 ?섎웾 蹂寃?
+ * 내 장바구니에서 수량 변경
  */
 export async function updateMyCartItem(itemId, quantity) {
   const { data } = await http.patch(`/api/carts/me/items/${itemId}`, {
@@ -61,9 +61,8 @@ export async function updateMyCartItem(itemId, quantity) {
 }
 
 /**
- * ???λ컮援щ땲?먯꽌 ?꾩씠??삭제
+ * 내 장바구니에서 아이템 삭제
  */
 export async function deleteMyCartItem(itemId) {
   await http.del(`/api/carts/me/items/${itemId}`);
 }
-

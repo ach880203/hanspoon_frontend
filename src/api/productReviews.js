@@ -1,4 +1,4 @@
-﻿// src/api/productReviews.js
+// src/api/productReviews.js
 import { http } from "./http";
 
 /**

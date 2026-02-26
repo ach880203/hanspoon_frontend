@@ -1,4 +1,4 @@
-﻿// src/pages/MyReviewsPage.jsx
+// src/pages/MyReviewsPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteReview, fetchMyReviews, updateReview } from "../api/productReviews";

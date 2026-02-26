@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createOneDayClass,
   deleteOneDayClass,
@@ -67,7 +67,7 @@ export default function AdminOneDayClassManager() {
       try {
         const res = await adminApi.getOneDayInstructors();
         setInstructors(Array.isArray(res?.data) ? res.data : []);
-      } catch (e) {
+      } catch {
         setInstructors([]);
       }
     };
@@ -140,6 +140,7 @@ export default function AdminOneDayClassManager() {
       return;
     }
 
+    // 등록 화면에서 상시(ALWAYS)로 바꾸면 오전/오후 템플릿 2개를 기준으로 입력값을 고정합니다.
     if (nextRunType === "ALWAYS") {
       setForm((prev) => ({
         ...prev,
@@ -192,6 +193,7 @@ export default function AdminOneDayClassManager() {
   const buildPayload = () => {
     const instructorId = Number(form.instructorId);
     const detailImageDataList = Array.isArray(form.detailImageDataList) ? form.detailImageDataList : [];
+    // 상시 등록은 운영일수만큼 세션 배열을 펼쳐 서버 DTO 형식(초 포함 ISO 문자열)으로 변환합니다.
     const sessions =
       mode === "create" && form.runType === "ALWAYS"
         ? buildAlwaysSessions(buildAlwaysTemplateRows(form.sessions), todayDateString(), Number(form.alwaysDays))
@@ -226,6 +228,7 @@ export default function AdminOneDayClassManager() {
       if (!Number.isInteger(days) || days < ALWAYS_MIN_DAYS || days > ALWAYS_MAX_DAYS) {
         return `상시 운영일수는 ${ALWAYS_MIN_DAYS}~${ALWAYS_MAX_DAYS}일 사이로 입력해 주세요.`;
       }
+      // 상시 템플릿은 시간(HH:MM)만 입력받기 때문에 datetime-local 검증 대신 시간 문자열 검증을 사용합니다.
       const alwaysRows = buildAlwaysTemplateRows(form.sessions);
       if (!alwaysRows.every((row) => isTimeString(row.startAt))) {
         return "상시 클래스는 오전/오후 시간을 HH:MM 형식으로 입력해 주세요.";
@@ -524,7 +527,7 @@ export default function AdminOneDayClassManager() {
 
               {mode === "create" && form.runType === "ALWAYS" ? (
                 <div className="session-list">
-                  {buildAlwaysTemplateRows(form.sessions).map((session, index) => (
+                  {buildAlwaysTemplateRows(form.sessions).map((session) => (
                     <article key={`always-session-${session.slot}`} className="session-row">
                       <div className="session-row-head">
                         <strong>{session.slot === "AM" ? "오전 세션" : "오후 세션"}</strong>
@@ -681,6 +684,7 @@ function buildAlwaysSessions(templateRows, startDate, days) {
 
       const sessionDate = new Date(date);
       sessionDate.setHours(time.hour, time.minute, 0, 0);
+      // 이미 지난 시각은 생성하지 않아 "생성 직후 과거 세션"이 생기는 문제를 막습니다.
       if (sessionDate < now) return;
 
       const year = sessionDate.getFullYear();
@@ -750,6 +754,7 @@ function isTimeString(value) {
 
 function toIsoWithSeconds(value) {
   if (!value) return "";
+  // datetime-local 입력은 초 단위가 없는 경우가 있어 서버 포맷과 맞추기 위해 :00을 보정합니다.
   return value.length === 16 ? `${value}:00` : value;
 }
 

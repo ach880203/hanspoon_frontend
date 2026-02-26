@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchProductDetail } from "../../api/products";
 import { addMyCartItem, fetchMyCart } from "../../api/carts";

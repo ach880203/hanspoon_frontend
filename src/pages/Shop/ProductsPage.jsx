@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProductCard from "../../components/ProductCard";
 import { fetchProducts } from "../../api/products";
 import { toErrorMessage } from "../../api/http";

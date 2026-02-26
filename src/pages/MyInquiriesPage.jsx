@@ -1,4 +1,4 @@
-﻿// src/pages/MyInquiriesPage.jsx
+// src/pages/MyInquiriesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteMyInquiry, fetchMyInquiries, updateMyInquiry } from "../api/productInquiries";

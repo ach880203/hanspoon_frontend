@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { http } from '../../api/http';
 import { toErrorMessage } from '../../api/http';
 import './MyClassPage.css';

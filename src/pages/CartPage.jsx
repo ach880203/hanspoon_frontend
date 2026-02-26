@@ -1,4 +1,4 @@
-﻿// src/pages/CartPage.jsx
+// src/pages/CartPage.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyCart, deleteMyCartItem, updateMyCartItem } from "../api/carts";

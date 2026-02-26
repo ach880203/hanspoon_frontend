@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyWishes, toggleWish } from "../api/productWishes";
 import { toErrorMessage } from "../api/http";

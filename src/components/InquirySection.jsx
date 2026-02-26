@@ -1,4 +1,4 @@
-﻿// src/components/InquirySection.jsx
+// src/components/InquirySection.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createProductInquiry, fetchProductInquiries } from "../api/productInquiries";

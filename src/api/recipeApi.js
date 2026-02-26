@@ -1,4 +1,4 @@
-﻿import axiosInstance from "./axios";
+import axiosInstance from "./axios";
 import {loadAuth} from "../utils/authStorage.js";
 
 const api = axiosInstance;

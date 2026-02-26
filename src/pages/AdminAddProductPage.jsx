@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createProductWithImages } from "../api/products";
 import { toErrorMessage } from "../api/http";
 import { useNavigate } from "react-router-dom";
