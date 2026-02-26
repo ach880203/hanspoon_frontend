@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from "react";
 import {useParams, useNavigate, Link, replace} from "react-router-dom";
-import { deleteRecipe, getRecipeDetail, toggleWish } from "../../api/recipeApi";
+import {deleteRecipe, deletewihses, getRecipeDetail, toggleWish} from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
 
 const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
@@ -70,10 +70,11 @@ const Recipesid = () => {
         setLoading(true);
         const response = await getRecipeDetail(id);
         const data = response.data.data;
+        console.log("레시피",data)
 
         setRecipe(data);
         setCurrentServings(Number(data.baseServings) || 1);
-        setIsFavorite(data.isWished);
+        setIsFavorite(data.wished);
 
         const initialFlavor = {
           spiciness: data.spiciness ?? 3,
@@ -128,12 +129,17 @@ const Recipesid = () => {
 
   const handleToggleFavorite = async () => {
     try {
-      const response = await toggleWish(id);
 
-      if (response && response.success === true) {
-        const next = !isFavorite;
-        setIsFavorite(next);
-        alert(next ? "관심 목록에 추가되었습니다." : "관심 목록에서 제거되었습니다.");
+      if (isFavorite) {
+        await deletewihses(recipe.wished);
+        setIsFavorite(false);
+        alert("관심 목록에서 제거되었습니다")
+        console.log ("관심목록 삭제");
+      }else{
+        await toggleWish(id);
+        setIsFavorite(true);
+        alert("관심 목록에 등록되었습니다")
+        console.log ("관심목록 등록");
       }
     } catch (error) {
       console.error("관심 등록/해제 실패:", error);
@@ -326,9 +332,9 @@ const Recipesid = () => {
                         }}
                       />
                     </div>
-                    {step.stepImg && (
+                    {step.instImg && (
                       <div style={stepImgWrapper}>
-                        <img src={toBackendUrl(`/images/recipe/${step.stepImg}`)} alt={`단계 ${sIdx + 1}`} style={stepImg} />
+                        <img src={toBackendUrl(`/images/recipe/${step.instImg}`)} alt={`단계 ${sIdx + 1}`} style={stepImg} />
                       </div>
                     )}
                   </div>
