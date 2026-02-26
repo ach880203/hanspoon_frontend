@@ -80,3 +80,7 @@ export const fetchMyRecipeReviews = async () => {
     const response = await api.get(`/api/recipe/reviews/me`);
     return response?.data?.data ?? [];
 };
+
+export const Recommend = async (id) => {
+    return await api.post(`api/recipe/${id}/recommend`);
+}
