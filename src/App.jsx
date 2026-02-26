@@ -22,11 +22,14 @@ import FindIdPage from "./pages/Auth/FindIdPage";
 import FindPasswordPage from "./pages/Auth/FindPasswordPage";
 import NoticeList from "./pages/Notice/NoticeList";
 import NoticeDetail from "./pages/Notice/NoticeDetail";
+import EventList from "./pages/Event/EventList";
+import EventDetail from "./pages/Event/EventDetail";
 import FaqList from "./pages/Faq/FaqList";
 import OAuth2RedirectHandler from "./pages/Auth/OAuth2RedirectHandler";
 
 import AdminNoticeList from "./pages/Admin/AdminNoticeList";
 import AdminNoticeWrite from "./pages/Admin/AdminNoticeWrite";
+import AdminEventWrite from "./pages/Admin/AdminEventWrite";
 import AdminFaqList from "./pages/Admin/AdminFaqList";
 import AdminFaqWrite from "./pages/Admin/AdminFaqWrite";
 import AdminDashboardPage from "./pages/Admin/AdminDashboardPage";
@@ -116,6 +119,8 @@ export default function App() {
 
         <Route path="notice" element={<NoticeList title="공지사항" />} />
         <Route path="notice/:id" element={<NoticeDetail />} />
+        <Route path="event" element={<EventList />} />
+        <Route path="event/:id" element={<EventDetail />} />
         <Route path="faq" element={<FaqList title="자주 묻는 질문" />} />
 
         <Route path="payment" element={<Payment />} />
@@ -210,6 +215,16 @@ export default function App() {
         <Route path="admin/notice/edit/:id" element={
           <ProtectedRoute requiredRole="ROLE_ADMIN">
             <AdminNoticeWrite />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/event/write" element={
+          <ProtectedRoute requiredRole="ROLE_ADMIN">
+            <AdminEventWrite />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/event/edit/:id" element={
+          <ProtectedRoute requiredRole="ROLE_ADMIN">
+            <AdminEventWrite />
           </ProtectedRoute>
         } />
 

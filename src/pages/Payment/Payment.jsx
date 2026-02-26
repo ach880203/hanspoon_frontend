@@ -105,12 +105,34 @@ function Payment() {
   };
 
   const handlePointInput = (e) => {
-    const value = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+    const rawValue = e.target.value;
+    if (rawValue === "") {
+      setUsedPoints(0);
+      return;
+    }
+
+    const value = parseInt(rawValue, 10);
     if (Number.isNaN(value)) return;
 
-    let targetPoint = Math.max(0, Math.min(value, pointBalance));
+    if (pointBalance === 0 && value > 0) {
+      alert("보유하신 포인트(스푼)가 없습니다.");
+      setUsedPoints(0);
+      return;
+    }
+
+    if (value > pointBalance) {
+      alert(`보유 포인트(${pointBalance.toLocaleString()}P)를 초과하여 입력할 수 없습니다.`);
+      setUsedPoints(pointBalance);
+      return;
+    }
+
     const remainingAmountAfterCoupon = Number(formData.amount) - discountAmount;
-    targetPoint = Math.min(targetPoint, remainingAmountAfterCoupon);
+    let targetPoint = Math.min(value, remainingAmountAfterCoupon);
+
+    if (value > remainingAmountAfterCoupon) {
+      alert("결제 금액을 초과하여 포인트를 사용할 수 없습니다.");
+    }
+
     setUsedPoints(targetPoint);
   };
 
@@ -299,7 +321,7 @@ function Payment() {
                 <div className="form-group">
                   <label className="form-label">포인트 사용 (보유: {pointBalance.toLocaleString()}P)</label>
                   <div className="point-input-group">
-                    <input type="number" className="form-input" value={usedPoints} onChange={handlePointInput} placeholder="0" />
+                    <input type="number" className="form-input" value={usedPoints === 0 ? "" : usedPoints} onChange={handlePointInput} placeholder="0" />
                     <button type="button" className="btn-point-all" onClick={applyAllPoints}>
                       전액 사용
                     </button>

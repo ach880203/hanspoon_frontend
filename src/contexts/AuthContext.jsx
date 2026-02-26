@@ -43,23 +43,26 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await authApi.login({ email, password });
     // res: {accessToken, tokenType, userId, email, userName, role}
+    const saved = loadAuth();
     saveAuth({
       accessToken: res.accessToken,
       tokenType: res.tokenType,
       userId: res.userId,
       email: res.email,
       userName: res.userName,
-      spoonBalance: res.spoonBalance, // ✅ 추가
+      spoonBalance: res.spoonBalance,
       role: res.role,
     });
+    const isFirstLogin = res.spoonBalance === 3000 && !saved?.accessToken;
+
     setUser({
       userId: res.userId,
       email: res.email,
       userName: res.userName,
-      spoonBalance: res.spoonBalance, // ✅ 추가
+      spoonBalance: res.spoonBalance,
       role: res.role,
     });
-    return res;
+    return { ...res, isFirstLogin };
   };
 
   const logout = () => {
@@ -72,12 +75,12 @@ export function AuthProvider({ children }) {
    */
   const updateUserBalance = (newSpoonBalance) => {
     setUser((prev) => {
-      if (!prev) return null;
+      if (!prev || prev.spoonBalance === newSpoonBalance) return prev;
       const updated = { ...prev, spoonBalance: newSpoonBalance };
 
       // 로컬 스토리지도 동기화
       const saved = loadAuth();
-      if (saved) {
+      if (saved && saved.spoonBalance !== newSpoonBalance) {
         saveAuth({ ...saved, spoonBalance: newSpoonBalance });
       }
 

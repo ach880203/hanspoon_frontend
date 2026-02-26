@@ -38,3 +38,27 @@ export const faqApi = {
         return response.data;
     }
 };
+
+/**
+ * 이벤트 API
+ */
+export const eventApi = {
+    /**
+     * 이벤트 목록 조회
+     * @param {Object} params - { page, size, activeOnly }
+     */
+    getEvents: async (params = { page: 0, size: 10, activeOnly: false }) => {
+        const response = await axiosInstance.get('/api/events', { params });
+        return response.data;
+    },
+
+    /**
+     * 이벤트 상세 조회
+     * @param {number} id - 이벤트 ID
+     */
+    getEventById: async (id) => {
+        const response = await axiosInstance.get(`/api/events/${id}`);
+        return response.data;
+    }
+};
+

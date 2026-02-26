@@ -398,6 +398,36 @@
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+/* Welcome modal for first-login points notice */
+.hs-welcome-modal {
+  width: min(520px, 100%);
+  margin-top: 120px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.98);
+  padding: 22px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.24);
+  position: relative;
+  text-align: center;
+}
+.hs-welcome-body h2 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 950;
+  color: var(--primary);
+}
+.hs-welcome-body p {
+  margin: 0 0 18px 0;
+  color: rgba(0,0,0,0.78);
+}
+.hs-welcome-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+}
+
 .hs-drawerLink {
   height: 44px;
   border-radius: 14px;

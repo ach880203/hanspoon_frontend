@@ -43,6 +43,12 @@ function NoticeList() {
     });
   };
 
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -68,10 +74,11 @@ function NoticeList() {
             </div>
           ) : (
             notices.map((notice) => (
-              <Link key={notice.noticeId} to={`/notice/${notice.noticeId}`} className="notice-item">
+              <Link key={notice.noticeId} to={`/notice/${notice.noticeId}`} className="notice-item" style={{ textDecoration: 'none' }}>
                 <div className="notice-content">
-                  <h3 className="notice-title">{notice.title}</h3>
-                  <p className="notice-preview">{notice.content?.substring(0, 100)}...</p>
+                  {/* 타이틀에서 파란색 링크 효과 제거 위해 color 적용 */}
+                  <h3 className="notice-title" style={{ color: '#2c3e50' }}>{notice.title}</h3>
+                  <p className="notice-preview">{stripHtml(notice.content).substring(0, 100)}...</p>
                   <div className="notice-meta">
                     <span className="notice-date">{formatDate(notice.createdAt)}</span>
                     {notice.isImportant && <span className="badge badge-important">중요</span>}

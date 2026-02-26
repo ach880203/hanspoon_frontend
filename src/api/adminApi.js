@@ -125,5 +125,26 @@ export const adminApi = {
     deleteOneDayInstructor: async (id) => {
         const response = await axiosInstance.delete(`/api/admin/oneday/instructors/${id}`);
         return response.data;
+    },
+
+    // Events
+    getEvents: async (params) => {
+        const response = await axiosInstance.get('/api/admin/events/list', { params });
+        return response.data;
+    },
+    getEvent: async (id) => {
+        const response = await axiosInstance.get(`/api/admin/events/${id}`);
+        return response.data;
+    },
+    createEvent: async (data) => {
+        const response = await axiosInstance.post('/api/admin/events', data);
+        return response.data;
+    },
+    updateEvent: async (id, data) => {
+        const response = await axiosInstance.put(`/api/admin/events/${id}`, data);
+        return response.data;
+    },
+    deleteEvent: async (id) => {
+        await axiosInstance.delete(`/api/admin/events/${id}`);
     }
 };

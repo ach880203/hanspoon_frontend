@@ -91,9 +91,10 @@ function NoticeDetail() {
                         </div>
                     </div>
 
-                    <div className="notice-detail-content">
-                        {notice.content}
-                    </div>
+                    <div
+                        className="notice-detail-content"
+                        dangerouslySetInnerHTML={{ __html: notice.content }}
+                    />
 
                     <div className="notice-detail-footer">
                         <button

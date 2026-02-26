@@ -4,6 +4,7 @@ import AdminPaymentList from "./AdminPaymentList";
 import AdminDashboardPage from "./AdminDashboardPage";
 import AdminNoticeList from "./AdminNoticeList";
 import AdminFaqList from "./AdminFaqList";
+import AdminEventList from "./AdminEventList";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassHub from "./AdminOneDayClassHub";
 import AdminInquiryList from "./AdminInquiryList";
@@ -33,6 +34,9 @@ const AdminManagementPage = () => {
           <div className="admin-cs-container">
             <h3>공지사항 관리</h3>
             <AdminNoticeList />
+            <hr style={{ margin: "40px 0" }} />
+            <h3>이벤트 관리</h3>
+            <AdminEventList />
             <hr style={{ margin: "40px 0" }} />
             <h3>자주 묻는 질문 관리</h3>
             <AdminFaqList />

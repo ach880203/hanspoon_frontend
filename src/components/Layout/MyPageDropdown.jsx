@@ -59,7 +59,7 @@ export default function MyPageDropdown() {
     return () => {
       alive = false;
     };
-  }, [isOpen, user]);
+  }, [isOpen]); // user 객체 전체를 의존성에 넣으면 업데이트 시 무한 루프 위험이 있어 제거
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -142,7 +142,7 @@ export default function MyPageDropdown() {
               <div className="stat-label">
                 <span className="label-text">포인트</span>
                 <span className="stat-value">
-                  {statsLoading && !user?.spoonBalance ? "..." : (user?.spoonBalance ?? 0).toLocaleString()}
+                  {statsLoading && user?.spoonBalance === undefined ? "..." : (user?.spoonBalance ?? 0).toLocaleString()}
                 </span>
               </div>
             </Link>
@@ -196,7 +196,7 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
-              <Link to="/events" onClick={() => setIsOpen(false)}>
+              <Link to="/event" onClick={() => setIsOpen(false)}>
                 이벤트
               </Link>
             </li>
