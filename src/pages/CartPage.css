@@ -638,3 +638,336 @@
   display: flex;
   flex-direction: column;
 }
+
+/* modal body scroll 옵션 */
+.cartPage .modalBodyScroll {
+  padding: 16px;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+}
+
+.cartPage .modalBodyNoScroll {
+  padding: 16px;
+  overflow: visible; /* AddressSearch dropdown 안 잘리게 */
+}
+
+/* =========================
+   Address Manage Modal (Kurly-like)
+   - keep existing JSX/handlers
+   ========================= */
+
+.cartPage .modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.cartPage .modal {
+  width: min(920px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+  overflow: hidden;
+}
+
+.cartPage .modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.cartPage .modalTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.cartPage .modalClose {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+
+.cartPage .modalBody {
+  padding: 18px 22px;
+  max-height: min(72vh, 640px);
+  overflow: auto;
+  background: #fafafa;
+}
+
+/* AddressSearch 모달(새 배송지 추가)에서 dropdown 잘리면
+   bodyScroll=false를 쓰고 있었지? 그 경우 이 클래스도 유지 */
+.cartPage .modalBodyNoScroll {
+  padding: 18px 22px;
+  overflow: visible;
+  background: #fafafa;
+}
+
+.cartPage .modalFooter {
+  padding: 14px 22px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+  display: grid;
+  grid-template-columns: 110px 1fr; /* 닫기 + 큰 버튼 */
+  gap: 12px;
+  align-items: center;
+}
+
+/* footer 안의 버튼을 Kurly처럼 */
+.cartPage .modalFooter .btnGhost {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.cartPage .modalFooter .btnPrimary {
+  height: 44px;
+  border-radius: 12px;
+  width: 100%;
+  margin-top: 0; /* 기존 btnPrimary margin-top 제거 효과 */
+}
+
+/* =========================
+   Address list cards
+   ========================= */
+
+.cartPage .addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cartPage .addressItem {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 18px 18px;
+  display: grid;
+  grid-template-columns: 30px 1fr 96px; /* radio / content / actions */
+  gap: 14px;
+  align-items: start;
+}
+
+/* 선택된 항목 강조(Chrome :has 지원) */
+.cartPage .addressItem:has(input[type="radio"]:checked) {
+  border-color: rgba(95,0,128,0.55);
+  box-shadow: 0 0 0 3px rgba(95,0,128,0.10);
+}
+
+.cartPage .addressRadio {
+  display: contents; /* grid 칸을 자연스럽게 씀 */
+}
+
+.cartPage .addressRadio input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 6px;
+  accent-color: #5f0080;
+  cursor: pointer;
+}
+
+.cartPage .addressText {
+  display: block;
+}
+
+/* 제목(라벨) + 기본 뱃지 */
+.cartPage .addressTopRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.cartPage .addressLabel {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.cartPage .addressDefault {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #f5f5f5;
+  color: #444;
+}
+
+/* 주소 라인(굵게) */
+.cartPage .addressLine {
+  font-size: 15px;
+  font-weight: 800;
+  color: #222;
+  line-height: 1.35;
+}
+
+/* 수령인/연락처/우편번호 */
+.cartPage .addressSub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.35;
+}
+
+/* =========================
+   Right side actions
+   ========================= */
+
+.cartPage .addressActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.cartPage .miniBtn {
+  width: 72px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 12px;
+  color: #333;
+}
+
+.cartPage .miniBtn:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.cartPage .miniBtn.primary {
+  width: 72px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(95,0,128,0.60);
+  color: #5f0080;
+  background: #fff;
+}
+
+.cartPage .miniBtn.primary:hover {
+  background: rgba(95,0,128,0.06);
+}
+
+/* =========================
+   Mobile
+   ========================= */
+
+@media (max-width: 640px) {
+  .cartPage .modal {
+    border-radius: 14px;
+  }
+
+  .cartPage .modalFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .cartPage .addressItem {
+    grid-template-columns: 26px 1fr;
+  }
+
+  .cartPage .addressActions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .cartPage .miniBtn,
+  .cartPage .miniBtn.primary {
+    width: auto;
+    padding: 0 12px;
+  }
+}
+
+/* ===== modal body scroll 옵션 (없으면 추가) ===== */
+.cartPage .modalBodyScroll {
+  padding: 18px 22px;
+  max-height: min(72vh, 640px);
+  overflow: auto;
+  background: #fafafa;
+}
+.cartPage .modalBodyNoScroll {
+  padding: 18px 22px;
+  overflow: visible;
+  background: #fafafa;
+}
+
+/* ===== 기본 뱃지 강화 ===== */
+.cartPage .addressDefault {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 0, 128, 0.35);
+  background: rgba(95, 0, 128, 0.08);
+  color: #5f0080;
+}
+
+/* ===== 기본 버튼 disabled 처리 ===== */
+.cartPage .miniBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f7f7f7;
+}
+
+/* ===== 삭제(confirm) 버튼 ===== */
+.cartPage .btnDanger {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(220, 0, 0, 0.35);
+  background: #fff;
+  color: #d10000;
+  font-weight: 900;
+  cursor: pointer;
+}
+.cartPage .btnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* confirm modal text */
+.cartPage .confirmText {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 14px;
+}
+.cartPage .confirmTitle {
+  font-weight: 900;
+  font-size: 16px;
+  color: #111;
+  margin-bottom: 6px;
+}
+.cartPage .confirmDesc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+/* ===== 우측 배송지 카드 강조 애니메이션 ===== */
+.cartPage .shipCard.shipFlash {
+  animation: shipFlash 650ms ease;
+  border-color: rgba(95, 0, 128, 0.55);
+}
+@keyframes shipFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0.00); background: #fff; }
+  35%  { box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.14); background: rgba(95, 0, 128, 0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0.00); background: #fff; }
+}

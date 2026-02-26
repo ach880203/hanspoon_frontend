@@ -118,6 +118,27 @@
   font-size: 20px;
 }
 
+.od-session-date-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.od-session-date-filter label {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 700;
+}
+
+.od-session-date-filter input[type="date"] {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
 .od-session-grid,
 .od-list-grid {
   display: grid;
@@ -483,6 +504,10 @@
 
   .od-session-card {
     align-items: flex-start;
+  }
+
+  .od-session-date-filter input[type="date"] {
+    width: 100%;
   }
 
   .od-tabbar {
