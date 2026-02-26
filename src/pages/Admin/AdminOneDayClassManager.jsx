@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createOneDayClass,
   deleteOneDayClass,
@@ -14,12 +14,19 @@ const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_IMAGE_COUNT = 10;
 const ALWAYS_MIN_DAYS = 30;
 const ALWAYS_MAX_DAYS = 60;
+const CLASS_LIST_PAGE_SIZE = 6;
+const LIST_RUN_TYPE_TABS = [
+  { value: "ALWAYS", label: "상시 운영" },
+  { value: "EVENT", label: "이벤트" },
+  { value: "ENDED", label: "종료 클래스" },
+];
 
 const EMPTY_FORM = {
   id: null,
   title: "",
   description: "",
   detailDescription: "",
+  mainImageData: "",
   detailImageDataList: [],
   level: "BEGINNER",
   runType: "ALWAYS",
@@ -32,9 +39,69 @@ const EMPTY_FORM = {
   ],
 };
 
+function toClassId(item) {
+  return Number(item?.id ?? item?.classId ?? 0);
+}
+
+function toSessionStatus(session) {
+  const capacity = Number(session?.capacity ?? 0);
+  const reserved = Number(session?.reservedCount ?? 0);
+  const full = Boolean(session?.full) || capacity <= reserved;
+  const completed = Boolean(session?.completed) || isSessionCompletedByTime(session?.startAt);
+  return { full, completed };
+}
+
+function toClassSlotStatus(sessions) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  const hasSessions = list.length > 0;
+
+  const amSessions = list.filter((session) => session?.slot === "AM");
+  const pmSessions = list.filter((session) => session?.slot === "PM");
+
+  const calcSlot = (targetSessions) => {
+    if (targetSessions.length === 0) return { completed: false, full: false };
+
+    const completed = targetSessions.every((session) => toSessionStatus(session).completed);
+    if (completed) return { completed: true, full: false };
+
+    const upcoming = targetSessions.filter((session) => !toSessionStatus(session).completed);
+    if (upcoming.length === 0) return { completed: true, full: false };
+
+    const full = upcoming.every((session) => toSessionStatus(session).full);
+    return { completed: false, full };
+  };
+
+  const am = calcSlot(amSessions);
+  const pm = calcSlot(pmSessions);
+  const classEnded = hasSessions ? list.every((session) => toSessionStatus(session).completed) : false;
+
+  return {
+    hasSessions,
+    classEnded,
+    amCompleted: am.completed,
+    pmCompleted: pm.completed,
+    amFull: am.full,
+    pmFull: pm.full,
+  };
+}
+
+function toDateMillis(value) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function isSessionCompletedByTime(startAt) {
+  if (!startAt) return false;
+  const time = new Date(startAt).getTime();
+  if (Number.isNaN(time)) return false;
+  return time <= Date.now();
+}
+
 export default function AdminOneDayClassManager() {
   const [mode, setMode] = useState("list"); // list | create | edit
   const [form, setForm] = useState(EMPTY_FORM);
+  const [mainImageName, setMainImageName] = useState("");
   const [detailImageNames, setDetailImageNames] = useState([]);
   const [classes, setClasses] = useState([]);
   const [instructors, setInstructors] = useState([]);
@@ -42,14 +109,34 @@ export default function AdminOneDayClassManager() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [listRunTypeTab, setListRunTypeTab] = useState("ALWAYS");
+  const [listPage, setListPage] = useState(0);
+  const [classStatusByClassId, setClassStatusByClassId] = useState({});
 
   const loadClasses = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await getOneDayClasses({ page: 0, size: 200, sort: "createdAt,desc" });
-      const list = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
-      setClasses(list);
+      const pageSize = 120;
+      const firstPage = await getOneDayClasses({ page: 0, size: pageSize, sort: "createdAt,desc" });
+      const firstList = Array.isArray(firstPage?.content) ? firstPage.content : Array.isArray(firstPage) ? firstPage : [];
+      const totalPages = Number(firstPage?.totalPages ?? 1);
+
+      if (totalPages <= 1) {
+        setClasses(firstList);
+        return;
+      }
+
+      const remainIndexes = Array.from({ length: totalPages - 1 }, (_, index) => index + 1);
+      const remainPages = await Promise.all(
+        remainIndexes.map((pageIndex) => getOneDayClasses({ page: pageIndex, size: pageSize, sort: "createdAt,desc" }))
+      );
+      const merged = [...firstList];
+      remainPages.forEach((pageData) => {
+        const list = Array.isArray(pageData?.content) ? pageData.content : Array.isArray(pageData) ? pageData : [];
+        merged.push(...list);
+      });
+      setClasses(merged);
     } catch (e) {
       setError(e?.message ?? "클래스 목록을 불러오지 못했습니다.");
       setClasses([]);
@@ -63,6 +150,51 @@ export default function AdminOneDayClassManager() {
   }, [loadClasses]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const resolveClassStatus = async () => {
+      const classIds = [...new Set(classes.map((item) => toClassId(item)).filter((id) => id > 0))];
+      if (classIds.length === 0) {
+        setClassStatusByClassId({});
+        return;
+      }
+
+      const results = await Promise.all(
+        classIds.map(async (classId) => {
+          try {
+            const sessions = await getOneDayClassSessions(classId);
+            const status = toClassSlotStatus(sessions);
+            return { classId, ...status };
+          } catch {
+            return {
+              classId,
+              hasSessions: false,
+              classEnded: false,
+              amCompleted: false,
+              pmCompleted: false,
+              amFull: false,
+              pmFull: false,
+            };
+          }
+        })
+      );
+
+      if (cancelled) return;
+
+      const nextMap = {};
+      results.forEach((item) => {
+        nextMap[item.classId] = item;
+      });
+      setClassStatusByClassId(nextMap);
+    };
+
+    resolveClassStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [classes]);
+
+  useEffect(() => {
     const loadInstructors = async () => {
       try {
         const res = await adminApi.getOneDayInstructors();
@@ -74,12 +206,70 @@ export default function AdminOneDayClassManager() {
     loadInstructors();
   }, []);
 
+  const classRunTypeCounts = useMemo(
+    () => ({
+      ALWAYS: classes.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "ALWAYS" && !status?.classEnded;
+      }).length,
+      EVENT: classes.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "EVENT" && !status?.classEnded;
+      }).length,
+      ENDED: classes.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded).length,
+    }),
+    [classes, classStatusByClassId]
+  );
+
+  const visibleClasses = useMemo(() => {
+    let filtered = classes;
+
+    if (listRunTypeTab === "ENDED") {
+      filtered = classes.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded);
+    } else if (listRunTypeTab === "ALWAYS") {
+      filtered = classes.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "ALWAYS" && !status?.classEnded;
+      });
+    } else if (listRunTypeTab === "EVENT") {
+      filtered = classes.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "EVENT" && !status?.classEnded;
+      });
+    }
+
+    return [...filtered].sort((left, right) => {
+      const leftCreatedAt = toDateMillis(left?.createdAt);
+      const rightCreatedAt = toDateMillis(right?.createdAt);
+      if (leftCreatedAt !== rightCreatedAt) return rightCreatedAt - leftCreatedAt;
+      return toClassId(right) - toClassId(left);
+    });
+  }, [classes, classStatusByClassId, listRunTypeTab]);
+
+  const listTotalPages = Math.max(1, Math.ceil(visibleClasses.length / CLASS_LIST_PAGE_SIZE));
+  const currentListPage = Math.min(listPage, listTotalPages - 1);
+  const pagedClasses = useMemo(() => {
+    const start = currentListPage * CLASS_LIST_PAGE_SIZE;
+    return visibleClasses.slice(start, start + CLASS_LIST_PAGE_SIZE);
+  }, [visibleClasses, currentListPage]);
+
+  useEffect(() => {
+    setListPage(0);
+  }, [listRunTypeTab]);
+
+  useEffect(() => {
+    if (listPage > listTotalPages - 1) {
+      setListPage(Math.max(listTotalPages - 1, 0));
+    }
+  }, [listPage, listTotalPages]);
+
   const openCreate = () => {
     setMode("create");
     setForm({
       ...EMPTY_FORM,
       sessions: buildAlwaysTemplateRows([]),
     });
+    setMainImageName("");
     setDetailImageNames([]);
     setError("");
     setMessage("");
@@ -99,17 +289,20 @@ export default function AdminOneDayClassManager() {
         price: String(session.price ?? 0),
       }));
 
-      const detailImages = Array.isArray(detail?.detailImageDataList)
+      const detailImagesRaw = Array.isArray(detail?.detailImageDataList)
         ? detail.detailImageDataList.filter((x) => typeof x === "string" && x.length > 0)
         : detail?.detailImageData
         ? [detail.detailImageData]
         : [];
+      const mainImageData = detail?.detailImageData || detailImagesRaw[0] || "";
+      const detailImages = detailImagesRaw.filter((x, index) => !(index === 0 && x === mainImageData));
 
       setForm({
         id: detail?.id ?? classId,
         title: detail?.title ?? "",
         description: detail?.description ?? "",
         detailDescription: detail?.detailDescription ?? "",
+        mainImageData,
         detailImageDataList: detailImages,
         level: detail?.level ?? "BEGINNER",
         runType: detail?.runType ?? "ALWAYS",
@@ -118,6 +311,7 @@ export default function AdminOneDayClassManager() {
         alwaysDays: "30",
         sessions: normalizedSessions.length > 0 ? normalizedSessions : EMPTY_FORM.sessions,
       });
+      setMainImageName(mainImageData ? "기존 메인 이미지" : "");
       setDetailImageNames(detailImages.map((_, index) => `기존 상세 이미지 ${index + 1}`));
       setMode("edit");
     } catch (e) {
@@ -208,7 +402,7 @@ export default function AdminOneDayClassManager() {
       title: form.title.trim(),
       description: form.description.trim(),
       detailDescription: form.detailDescription.trim(),
-      detailImageData: detailImageDataList[0] || "",
+      detailImageData: form.mainImageData || "",
       detailImageDataList,
       level: form.level,
       runType: form.runType,
@@ -335,12 +529,38 @@ export default function AdminOneDayClassManager() {
     event.target.value = "";
   };
 
+  const handleMainImageFile = async (event) => {
+    setError("");
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      setError("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError("이미지 파일은 50MB 이하만 업로드할 수 있습니다.");
+      return;
+    }
+
+    const dataUrl = await readFileAsDataUrl(file);
+    setForm((prev) => ({ ...prev, mainImageData: dataUrl }));
+    setMainImageName(file.name);
+    event.target.value = "";
+  };
+
   const removeDetailImage = (index) => {
     setForm((prev) => ({
       ...prev,
       detailImageDataList: prev.detailImageDataList.filter((_, i) => i !== index),
     }));
     setDetailImageNames((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeMainImage = () => {
+    setForm((prev) => ({ ...prev, mainImageData: "" }));
+    setMainImageName("");
   };
 
   return (
@@ -365,58 +585,126 @@ export default function AdminOneDayClassManager() {
 
       <div className="admin-oneday-grid">
         <section className="admin-oneday-panel">
-          <h3>전체 클래스</h3>
-          {classes.length === 0 ? (
+          <h3>클래스 리스트</h3>
+          <div className="admin-class-tabs">
+            {LIST_RUN_TYPE_TABS.map((tab) => {
+              const count =
+                tab.value === "ALWAYS"
+                  ? classRunTypeCounts.ALWAYS
+                  : tab.value === "EVENT"
+                  ? classRunTypeCounts.EVENT
+                  : classRunTypeCounts.ENDED;
+
+              return (
+                <button
+                  key={`admin-class-tab-${tab.value}`}
+                  type="button"
+                  className={listRunTypeTab === tab.value ? "admin-class-tab is-active" : "admin-class-tab"}
+                  onClick={() => setListRunTypeTab(tab.value)}
+                >
+                  {tab.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+          {visibleClasses.length === 0 ? (
             <div className="muted">등록된 클래스가 없습니다.</div>
           ) : (
-            <div className="class-list">
-              {classes.map((item) => (
-                <article
-                  key={item.id}
-                  className={`class-row ${mode === "edit" && Number(form.id) === Number(item.id) ? "is-active" : ""}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleRowOpenEdit(item.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleRowOpenEdit(item.id);
-                    }
-                  }}
-                >
-                  <div className="class-row-main">
-                    <strong>{item.title || `클래스 #${item.id}`}</strong>
-                    <div className="class-row-meta">
-                      <span>{toKoreanLevel(item.level)}</span>
-                      <span>{toKoreanRunType(item.runType)}</span>
-                      <span>{toKoreanCategory(item.category)}</span>
-                      <span>강사: {item.instructorName || "-"} (ID: {item.instructorId ?? "-"})</span>
+            <>
+              <div className="class-list">
+              {pagedClasses.map((item) => {
+                const classStatus = classStatusByClassId[toClassId(item)];
+
+                return (
+                  <article
+                    key={item.id}
+                    className={`class-row ${mode === "edit" && Number(form.id) === Number(item.id) ? "is-active" : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleRowOpenEdit(item.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleRowOpenEdit(item.id);
+                      }
+                    }}
+                  >
+                    <div className="class-row-thumb-wrap">
+                      {item?.mainImageData ? (
+                        <img className="class-row-thumb" src={item.mainImageData} alt={`${item.title || "클래스"} 메인 이미지`} />
+                      ) : (
+                        <div className="class-row-thumb class-row-thumb-empty">이미지 없음</div>
+                      )}
                     </div>
-                  </div>
-                  <div className="class-row-actions">
-                    <button
-                      className="btn-ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.currentTarget.blur();
-                        openEdit(item.id);
-                      }}
-                    >
-                      수정
-                    </button>
-                    <button
-                      className="btn-danger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeClass(item.id);
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <div className="class-row-main">
+                      <strong>{item.title || `클래스 #${item.id}`}</strong>
+                      <div className="class-row-meta">
+                        <span>{toKoreanLevel(item.level)}</span>
+                        <span>{toKoreanRunType(item.runType)}</span>
+                        <span>{toKoreanCategory(item.category)}</span>
+                        <span>강사: {item.instructorName || "-"} (ID: {item.instructorId ?? "-"})</span>
+                      </div>
+                      <div className="class-row-status">
+                        {classStatus?.amCompleted ? <span className="class-status-chip">오전 완료</span> : null}
+                        {classStatus?.pmCompleted ? <span className="class-status-chip">오후 완료</span> : null}
+                        {classStatus?.amFull ? <span className="class-status-chip">오전 마감</span> : null}
+                        {classStatus?.pmFull ? <span className="class-status-chip">오후 마감</span> : null}
+                        {classStatus?.classEnded ? (
+                          <span className="class-status-chip is-ended">종료 클래스</span>
+                        ) : classStatus?.hasSessions ? (
+                          <span className="class-status-chip is-open">운영 중</span>
+                        ) : (
+                          <span className="class-status-chip">상태 확인중</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="class-row-actions">
+                      <button
+                        className="btn-ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.currentTarget.blur();
+                          openEdit(item.id);
+                        }}
+                      >
+                        수정
+                      </button>
+                      <button
+                        className="btn-danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeClass(item.id);
+                        }}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+              </div>
+              <div className="class-list-pagination">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={currentListPage <= 0}
+                  onClick={() => setListPage((prev) => Math.max(prev - 1, 0))}
+                >
+                  이전
+                </button>
+                <span>
+                  {currentListPage + 1} / {listTotalPages} 페이지
+                </span>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={currentListPage >= listTotalPages - 1}
+                  onClick={() => setListPage((prev) => Math.min(prev + 1, listTotalPages - 1))}
+                >
+                  다음
+                </button>
+              </div>
+            </>
           )}
         </section>
 
@@ -444,6 +732,24 @@ export default function AdminOneDayClassManager() {
                   onChange={(e) => setField("detailDescription", e.target.value)}
                 />
               </label>
+
+              <label>
+                <span>메인 사진 (리스트 썸네일)</span>
+                <input type="file" accept="image/*" onChange={handleMainImageFile} />
+              </label>
+              <div className="selected-file-box">{mainImageName ? `선택된 파일: ${mainImageName}` : "선택된 파일 없음"}</div>
+              {form.mainImageData ? (
+                <div className="preview-wrap">
+                  <div className="preview-grid">
+                    <div className="preview-item">
+                      <img src={form.mainImageData} alt="메인 이미지 미리보기" />
+                      <button type="button" className="btn-danger" onClick={removeMainImage}>
+                        메인 이미지 삭제
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <label>
                 <span>상세 이미지 (여러 장)</span>
@@ -639,6 +945,7 @@ export default function AdminOneDayClassManager() {
                   onClick={() => {
                     setMode("list");
                     setForm(EMPTY_FORM);
+                    setMainImageName("");
                     setDetailImageNames([]);
                     setError("");
                   }}
@@ -809,4 +1116,3 @@ function toKoreanCategory(category) {
   if (category === "BAKERY") return "베이커리";
   return category || "-";
 }
-

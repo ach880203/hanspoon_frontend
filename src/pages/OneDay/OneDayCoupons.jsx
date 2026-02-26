@@ -4,6 +4,8 @@ import { getMyOneDayCoupons } from "../../api/onedayApi";
 import { toDiscountTypeLabel } from "./onedayLabels";
 import { OneDayTopTabs } from "./OneDayTopTabs";
 
+const EXPIRE_SOON_DAYS = 3;
+
 export const OneDayCoupons = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const refresh = Number(searchParams.get("refresh") || 0);
@@ -44,6 +46,13 @@ export const OneDayCoupons = () => {
     return [...coupons].sort((a, b) => Date.parse(b?.issueAt ?? "") - Date.parse(a?.issueAt ?? ""));
   }, [coupons]);
 
+  const expireSoonCoupons = useMemo(() => {
+    return sortedCoupons.filter((coupon) => {
+      const leftDays = getDaysUntil(coupon?.expiresAt);
+      return leftDays >= 0 && leftDays <= EXPIRE_SOON_DAYS;
+    });
+  }, [sortedCoupons]);
+
   return (
     <div style={{ paddingBottom: 24 }}>
       <OneDayTopTabs />
@@ -59,6 +68,11 @@ export const OneDayCoupons = () => {
 
         {error && <div style={errorBox}>{error}</div>}
         {message && <div style={okBox}>{message}</div>}
+        {expireSoonCoupons.length > 0 ? (
+          <div style={warnBox}>
+            만료 임박 쿠폰 {expireSoonCoupons.length}개가 있어요. 만료 전에 사용해 주세요.
+          </div>
+        ) : null}
 
         <div style={panel}>
           <h2 style={{ margin: "0 0 10px", fontSize: 18 }}>쿠폰 목록</h2>
@@ -95,6 +109,14 @@ function fmtDate(value) {
   if (!value) return "-";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("ko-KR");
+}
+
+function getDaysUntil(value) {
+  if (!value) return -1;
+  const expireTime = new Date(value).getTime();
+  if (Number.isNaN(expireTime)) return -1;
+  const now = Date.now();
+  return Math.ceil((expireTime - now) / (1000 * 60 * 60 * 24));
 }
 
 const panel = {
@@ -148,4 +170,13 @@ const okBox = {
   color: "#166534",
   borderRadius: 10,
   padding: 10,
+};
+
+const warnBox = {
+  border: "1px solid #fed7aa",
+  background: "#fff7ed",
+  color: "#9a3412",
+  borderRadius: 10,
+  padding: 10,
+  fontWeight: 700,
 };

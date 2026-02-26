@@ -9,7 +9,9 @@ const CANCEL_REASON_OPTIONS = [
   "결제 실수",
   "클래스 정보와 상이",
   "강사/운영 이슈",
+  "기타",
 ];
+const CANCEL_DETAIL_MAX_LENGTH = 200;
 
 const STATUS_TABS = [
   { key: "ALL", label: "전체" },
@@ -17,6 +19,20 @@ const STATUS_TABS = [
   { key: "COMPLETED", label: "수강 완료" },
   { key: "CANCELED", label: "취소/환불" },
 ];
+
+const normalizeReservationStatus = (statusValue) => {
+  const value = String(statusValue || "").trim();
+
+  // 백엔드 응답이 "코드값(PAID)" 또는 "한글 설명(예약 확정)" 둘 다 올 수 있어
+  // UI 조건 분기 전에 코드값으로 정규화합니다.
+  if (value === "PAID" || value === "예약 확정") return "PAID";
+  if (value === "COMPLETED" || value === "수강 완료") return "COMPLETED";
+  if (value === "CANCELED" || value === "취소 완료" || value === "예약 취소") return "CANCELED";
+  if (value === "CANCEL_REQUESTED" || value === "취소 요청") return "CANCEL_REQUESTED";
+  if (value === "HOLD" || value === "예약 대기") return "HOLD";
+  if (value === "EXPIRED" || value === "기간 만료") return "EXPIRED";
+  return value;
+};
 
 const MyClassPage = () => {
   const navigate = useNavigate();
@@ -28,7 +44,7 @@ const MyClassPage = () => {
   // Cancel Modal
   const [cancelModal, setCancelModal] = useState({ open: false, reservationId: null });
   const [cancelReason, setCancelReason] = useState("");
-  const [customCancelReason, setCustomCancelReason] = useState("");
+  const [cancelDetail, setCancelDetail] = useState("");
   const [actioningId, setActioningId] = useState(null);
 
   // Filters
@@ -44,29 +60,35 @@ const MyClassPage = () => {
   };
 
   const toStatusLabel = (statusValue) => {
-    if (statusValue === "PAID") return "예약 확정";
-    if (statusValue === "COMPLETED") return "수강 완료";
-    if (statusValue === "CANCELED") return "취소 완료";
-    if (statusValue === "CANCEL_REQUESTED") return "취소 요청";
-    if (statusValue === "HOLD") return "예약 대기";
+    const normalized = normalizeReservationStatus(statusValue);
+    if (normalized === "PAID") return "예약 확정";
+    if (normalized === "COMPLETED") return "수강 완료";
+    if (normalized === "CANCELED") return "취소 완료";
+    if (normalized === "CANCEL_REQUESTED") return "취소 요청";
+    if (normalized === "HOLD") return "예약 대기";
+    if (normalized === "EXPIRED") return "기간 만료";
     return statusValue || "-";
   };
 
   const resolvedCancelReason = useMemo(() => {
-    if (cancelReason === "기타") return customCancelReason.trim();
-    return cancelReason.trim();
-  }, [cancelReason, customCancelReason]);
+    const selectedReason = cancelReason.trim();
+    const detailText = cancelDetail.trim();
+    if (!selectedReason) return "";
+    if (selectedReason === "기타") return detailText;
+    if (!detailText) return selectedReason;
+    return `${selectedReason} / 상세: ${detailText}`;
+  }, [cancelReason, cancelDetail]);
 
   const openCancelModal = (reservationId) => {
     setCancelModal({ open: true, reservationId });
     setCancelReason("");
-    setCustomCancelReason("");
+    setCancelDetail("");
   };
 
   const closeCancelModal = () => {
     setCancelModal({ open: false, reservationId: null });
     setCancelReason("");
-    setCustomCancelReason("");
+    setCancelDetail("");
   };
 
   const loadReservations = async (nextPage) => {
@@ -92,7 +114,12 @@ const MyClassPage = () => {
   };
 
   const submitCancelRequest = async () => {
-    if (!resolvedCancelReason) {
+    if (!cancelReason) {
+      alert("취소 사유를 선택해 주세요.");
+      return;
+    }
+
+    if (cancelReason === "기타" && !cancelDetail.trim()) {
       alert("취소 사유를 입력해 주세요.");
       return;
     }
@@ -152,6 +179,9 @@ const MyClassPage = () => {
           </button>
         ))}
       </div>
+      <p className="class-cancel-guide">
+        취소 요청은 <b>수강 예정</b> 탭에서만 가능합니다. 클래스 시작 시각이 지나면 환불이 불가합니다.
+      </p>
 
       {loading && <div className="loading-msg">로딩 중...</div>}
       {error && <div className="error-msg">{error}</div>}
@@ -162,7 +192,9 @@ const MyClassPage = () => {
             <div className="empty-msg">예약 내역이 없습니다.</div>
           ) : (
             <div className="reservation-list">
-              {content.map((reservation) => (
+              {content.map((reservation) => {
+                const normalizedStatus = normalizeReservationStatus(reservation.status);
+                return (
                 <div key={reservation.reservationId} className="reservation-item">
                   <div className="res-header">
                     <span className="res-date">
@@ -172,7 +204,7 @@ const MyClassPage = () => {
                         minute: "2-digit",
                       })}
                     </span>
-                    <span className={`res-status status-${reservation.status}`}>
+                    <span className={`res-status status-${normalizedStatus}`}>
                       {toStatusLabel(reservation.status)}
                     </span>
                   </div>
@@ -196,7 +228,7 @@ const MyClassPage = () => {
                         클래스 상세
                       </button>
 
-                      {reservation.status === "PAID" ? (
+                      {status === "UPCOMING" && normalizedStatus === "PAID" ? (
                         <button
                           className="btn-action btn-action-danger"
                           onClick={() => openCancelModal(reservation.reservationId)}
@@ -204,12 +236,12 @@ const MyClassPage = () => {
                           취소 요청
                         </button>
                       ) : null}
-                      {reservation.status === "COMPLETED" ? (
+                      {normalizedStatus === "COMPLETED" ? (
                         <button className="btn-action" onClick={() => goToClassDetail(reservation)}>
                           리뷰 작성
                         </button>
                       ) : null}
-                      {reservation.status === "CANCEL_REQUESTED" ? (
+                      {normalizedStatus === "CANCEL_REQUESTED" ? (
                         <button className="btn-action" disabled>
                           취소 대기중
                         </button>
@@ -217,7 +249,7 @@ const MyClassPage = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
 
@@ -255,18 +287,23 @@ const MyClassPage = () => {
                   {reason}
                 </option>
               ))}
-              <option value="기타">기타 (직접 입력)</option>
             </select>
 
-            {cancelReason === "기타" ? (
-              <textarea
-                className="modal-input"
-                placeholder="구체적인 사유를 입력해 주세요"
-                value={customCancelReason}
-                onChange={(e) => setCustomCancelReason(e.target.value)}
-                style={{ marginTop: "10px" }}
-              />
-            ) : null}
+            <textarea
+              className="modal-input"
+              placeholder={
+                cancelReason === "기타"
+                  ? "기타 취소 사유를 자세히 입력해 주세요."
+                  : "추가로 전달할 내용을 입력해 주세요. (선택)"
+              }
+              value={cancelDetail}
+              maxLength={CANCEL_DETAIL_MAX_LENGTH}
+              onChange={(e) => setCancelDetail(e.target.value)}
+              style={{ marginTop: "10px" }}
+            />
+            <p className="modal-count">
+              {cancelDetail.length}/{CANCEL_DETAIL_MAX_LENGTH}자
+            </p>
 
             <div className="modal-actions">
               <button className="btn-close" onClick={closeCancelModal}>

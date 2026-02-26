@@ -2,9 +2,38 @@ import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../api';
 import './AdminDashboardPage.css';
 
+const DASHBOARD_CACHE_KEY_PREFIX = 'adminDashboardSummary';
+
+function buildTodayCacheKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${DASHBOARD_CACHE_KEY_PREFIX}:${year}-${month}-${day}`;
+}
+
+function readDashboardCache() {
+    try {
+        const raw = window.localStorage.getItem(buildTodayCacheKey());
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeDashboardCache(summary) {
+    try {
+        window.localStorage.setItem(buildTodayCacheKey(), JSON.stringify(summary));
+    } catch {
+        // localStorage를 사용할 수 없는 환경에서는 캐시를 건너뜁니다.
+    }
+}
+
 const AdminDashboardPage = () => {
-    const [summary, setSummary] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [summary, setSummary] = useState(() => readDashboardCache());
+    const [loading, setLoading] = useState(() => !readDashboardCache());
 
     useEffect(() => {
         fetchSummary();
@@ -16,6 +45,7 @@ const AdminDashboardPage = () => {
             // ApiResponse { data: AdminDashboardSummaryDto }
             if (response && response.data) {
                 setSummary(response.data);
+                writeDashboardCache(response.data);
             }
         } catch (error) {
             console.error('대시보드 로딩 실패:', error);

@@ -46,6 +46,13 @@ export const paymentApi = {
         ),
 
     /**
+     * 결제 상세 조회
+     * @param {number|string} payId
+     * @returns {Promise<Object>}
+     */
+    getPaymentDetail: (payId) => unwrap(axiosInstance.get(`/api/payment/${payId}`)),
+
+    /**
      * 포트원 설정 정보 조회
      * @returns {Promise<Object>}
      */

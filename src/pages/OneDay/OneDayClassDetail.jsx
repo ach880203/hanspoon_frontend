@@ -24,6 +24,7 @@ import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./on
 import "./OneDayClassDetail.css";
 
 const INQUIRY_CATEGORIES = ["예약", "결제", "클래스", "기타"];
+const SESSION_DATE_OPTION_MAX = 10;
 const DETAIL_TABS = [
   { id: "detail", label: "클래스 상세" },
   { id: "inquiry", label: "클래스 문의" },
@@ -164,7 +165,7 @@ export const OneDayClassDetail = () => {
         .map((session) => toIsoDateKey(session?.startAt))
         .filter(Boolean)
     );
-    return Array.from(dateSet).sort((a, b) => a.localeCompare(b));
+    return Array.from(dateSet).sort((a, b) => a.localeCompare(b)).slice(0, SESSION_DATE_OPTION_MAX);
   }, [sessions]);
 
   useEffect(() => {
@@ -886,6 +887,7 @@ export const OneDayClassDetail = () => {
           <h3>취소/환불 안내</h3>
           <ul>
             <li>클래스 일정과 운영 정책에 따라 취소 가능 기간 및 환불 금액이 달라질 수 있습니다.</li>
+            <li>결제 후 클래스에 참여하지 않은 경우(노쇼) 환불이 불가합니다.</li>
             <li>환불 문의는 클래스 문의 탭에서 접수하면 관리자 확인 후 안내됩니다.</li>
           </ul>
         </div>

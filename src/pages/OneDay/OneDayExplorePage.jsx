@@ -15,14 +15,16 @@ import {
 } from "./onedayLabels";
 import "./OneDayExplorePage.css";
 
-const CLASS_PAGE_SIZE = 12;
+const CLASS_PAGE_SIZE = 6;
 const SESSION_VISIBLE_SIZE = 8;
+const SESSION_DATE_OPTION_MAX = 10;
 const LATEST_BANNER_SIZE = 8;
 const LATEST_BANNER_ROTATE_MS = 3500;
 const LIST_RUN_TYPE_TABS = [
   { value: "ALL", label: "전체" },
   { value: "ALWAYS", label: "상시 운영" },
   { value: "EVENT", label: "이벤트" },
+  { value: "ENDED", label: "종료 클래스" },
 ];
 
 function toTodayDateText() {
@@ -79,6 +81,81 @@ function toSessionStatus(session) {
   return { full, completed };
 }
 
+function toClassSlotStatus(sessions) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  const hasSessions = list.length > 0;
+
+  const amSessions = list.filter((session) => session?.slot === "AM");
+  const pmSessions = list.filter((session) => session?.slot === "PM");
+
+  const calcSlot = (target) => {
+    if (target.length === 0) return { completed: false, full: false };
+
+    const completed = target.every((session) => toSessionStatus(session).completed);
+    if (completed) return { completed: true, full: false };
+
+    const upcoming = target.filter((session) => !toSessionStatus(session).completed);
+    if (upcoming.length === 0) return { completed: true, full: false };
+
+    const full = upcoming.every((session) => toSessionStatus(session).full);
+    return { completed: false, full };
+  };
+
+  const am = calcSlot(amSessions);
+  const pm = calcSlot(pmSessions);
+  const classEnded = hasSessions ? list.every((session) => toSessionStatus(session).completed) : false;
+  const hasReservableSession = hasSessions
+    ? list.some((session) => {
+        const status = toSessionStatus(session);
+        return !status.completed && !status.full;
+      })
+    : false;
+
+  return {
+    hasSessions,
+    classEnded,
+    hasReservableSession,
+    amCompleted: am.completed,
+    pmCompleted: pm.completed,
+    amFull: am.full,
+    pmFull: pm.full,
+  };
+}
+
+function toDateMillis(value) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function toClassSortPriority(item, status) {
+  const runType = String(item?.runType || "").toUpperCase();
+  const ended = Boolean(status?.classEnded);
+
+  // 운영 중 클래스를 항상 위로 배치하고, 운영 중에서는 EVENT를 ALWAYS보다 우선합니다.
+  if (!ended && runType === "EVENT") return 0;
+  if (!ended) return 1;
+  if (ended && runType === "EVENT") return 2;
+  return 3;
+}
+
+function compareClassItem(left, right, statusByClassId) {
+  const leftId = toClassId(left);
+  const rightId = toClassId(right);
+  const leftStatus = statusByClassId[leftId];
+  const rightStatus = statusByClassId[rightId];
+
+  const leftPriority = toClassSortPriority(left, leftStatus);
+  const rightPriority = toClassSortPriority(right, rightStatus);
+  if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+
+  const leftCreatedAt = toDateMillis(left?.createdAt);
+  const rightCreatedAt = toDateMillis(right?.createdAt);
+  if (leftCreatedAt !== rightCreatedAt) return rightCreatedAt - leftCreatedAt;
+
+  return rightId - leftId;
+}
+
 export function OneDayExplorePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -101,6 +178,7 @@ export function OneDayExplorePage() {
   const [latestClassItems, setLatestClassItems] = useState([]);
   const [latestBannerIndex, setLatestBannerIndex] = useState(0);
   const [listRunTypeTab, setListRunTypeTab] = useState("ALL");
+  const [classStatusByClassId, setClassStatusByClassId] = useState({});
 
   const [classesLoading, setClassesLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -235,6 +313,51 @@ export function OneDayExplorePage() {
     fetchClassList(committed);
   }, [committed, fetchClassList]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const resolveClassSlotStatus = async () => {
+      const classIds = [...new Set(classItems.map((item) => toClassId(item)).filter((id) => id > 0))];
+      if (classIds.length === 0) {
+        setClassStatusByClassId({});
+        return;
+      }
+
+      const results = await Promise.all(
+        classIds.map(async (classId) => {
+          try {
+            const sessionsResponse = await getOneDayClassSessions(classId);
+            const status = toClassSlotStatus(sessionsResponse);
+            return { classId, ...status };
+          } catch {
+            return {
+              classId,
+              hasSessions: false,
+              classEnded: false,
+              hasReservableSession: false,
+              amCompleted: false,
+              pmCompleted: false,
+              amFull: false,
+              pmFull: false,
+            };
+          }
+        })
+      );
+
+      if (cancelled) return;
+      const nextMap = {};
+      results.forEach((item) => {
+        nextMap[item.classId] = item;
+      });
+      setClassStatusByClassId(nextMap);
+    };
+
+    resolveClassSlotStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [classItems]);
+
   const fetchSelectedClassData = useCallback(async (selectedClassId) => {
     if (!selectedClassId) {
       setSelectedClassDetail(null);
@@ -291,22 +414,57 @@ export function OneDayExplorePage() {
     });
   }, [committed.date, committed.onlyAvailable, committed.slot, selectedClassSessions]);
 
+  const selectedClassDateOptions = useMemo(() => {
+    const dateSet = new Set(
+      selectedClassSessions
+        .map((session) => toIsoDateKey(session?.startAt))
+        .filter(Boolean)
+    );
+    return Array.from(dateSet)
+      .sort((left, right) => left.localeCompare(right))
+      .slice(0, SESSION_DATE_OPTION_MAX);
+  }, [selectedClassSessions]);
+
   const classRunTypeCounts = useMemo(
     () => ({
-      ALWAYS: classItems.filter((item) => item?.runType === "ALWAYS").length,
-      EVENT: classItems.filter((item) => item?.runType === "EVENT").length,
+      ALWAYS: classItems.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "ALWAYS" && !status?.classEnded;
+      }).length,
+      EVENT: classItems.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === "EVENT" && !status?.classEnded;
+      }).length,
+      ENDED: classItems.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded).length,
     }),
-    [classItems]
+    [classItems, classStatusByClassId]
   );
 
   const visibleClassItems = useMemo(() => {
-    // 상단 필터에서 runType을 고정했다면 해당 조건을 우선합니다.
-    if (committed.runType === "ALWAYS" || committed.runType === "EVENT") {
-      return classItems;
+    let filtered = classItems;
+
+    // "예약 가능한 세션만 보기"를 체크하면
+    // 클래스 리스트에서도 실제로 예약 가능한 세션이 1개 이상 있는 클래스만 노출합니다.
+    if (committed.onlyAvailable) {
+      filtered = filtered.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return Boolean(status?.hasReservableSession);
+      });
     }
-    if (listRunTypeTab === "ALL") return classItems;
-    return classItems.filter((item) => item?.runType === listRunTypeTab);
-  }, [classItems, committed.runType, listRunTypeTab]);
+
+    if (listRunTypeTab === "ENDED") {
+      filtered = filtered.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded);
+    } else if (listRunTypeTab !== "ALL") {
+      filtered = filtered.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return item?.runType === listRunTypeTab && !status?.classEnded;
+      });
+    }
+
+    return [...filtered].sort((left, right) =>
+      compareClassItem(left, right, classStatusByClassId)
+    );
+  }, [classItems, classStatusByClassId, listRunTypeTab, committed.onlyAvailable]);
 
   const visibleSessions = filteredSelectedSessions.slice(0, visibleSessionCount);
   const canShowMoreSessions = visibleSessionCount < filteredSelectedSessions.length;
@@ -373,6 +531,25 @@ export function OneDayExplorePage() {
 
   const hasSelection = committed.selectedClassId > 0;
   const selectedClassId = committed.selectedClassId;
+
+  useEffect(() => {
+    if (!hasSelection) return;
+    if (selectedClassDateOptions.length === 0) return;
+    if (selectedClassDateOptions.includes(committed.date)) return;
+
+    // 선택한 클래스에 실제로 존재하는 날짜를 기본으로 맞춰야 우측 패널에서
+    // 세션이 비어 보이지 않고 바로 예약 가능한 시간대를 확인할 수 있습니다.
+    syncQuery(
+      { ...committed, date: selectedClassDateOptions[0], selectedClassId },
+      { replace: true }
+    );
+  }, [hasSelection, selectedClassDateOptions, committed, selectedClassId, syncQuery]);
+
+  const onDetailDateChange = (nextDate) => {
+    if (!nextDate) return;
+    setVisibleSessionCount(SESSION_VISIBLE_SIZE);
+    syncQuery({ ...committed, date: nextDate, selectedClassId }, { replace: false });
+  };
 
   return (
     <div className="odxv-root">
@@ -548,13 +725,14 @@ export function OneDayExplorePage() {
 
           <div className="odxv-list-toolbar">
             {LIST_RUN_TYPE_TABS.map((tab) => {
-              const disabled = committed.runType === "ALWAYS" || committed.runType === "EVENT";
               const active = listRunTypeTab === tab.value;
               const countText =
                 tab.value === "ALWAYS"
                   ? classRunTypeCounts.ALWAYS
                   : tab.value === "EVENT"
                   ? classRunTypeCounts.EVENT
+                  : tab.value === "ENDED"
+                  ? classRunTypeCounts.ENDED
                   : classItems.length;
 
               return (
@@ -563,7 +741,6 @@ export function OneDayExplorePage() {
                   type="button"
                   className={active ? "odxv-run-tab is-active" : "odxv-run-tab"}
                   onClick={() => setListRunTypeTab(tab.value)}
-                  disabled={disabled}
                 >
                   {tab.label} ({countText})
                 </button>
@@ -581,6 +758,7 @@ export function OneDayExplorePage() {
                 {visibleClassItems.map((item, index) => {
                   const classId = toClassId(item);
                   const active = classId === selectedClassId;
+                  const classStatus = classStatusByClassId[classId];
                   return (
                     <button
                       key={`class-line-${classId || index}`}
@@ -589,13 +767,43 @@ export function OneDayExplorePage() {
                       onClick={() => openClassDetailPanel(classId)}
                     >
                       <div className="odxv-class-thumb">
-                        <span>{toCategoryLabel(item?.category)}</span>
+                        {item?.mainImageData ? (
+                          <img
+                            src={item.mainImageData}
+                            alt={`${item?.title || "클래스"} 메인 이미지`}
+                            className="odxv-class-thumb-image"
+                          />
+                        ) : (
+                          <div className="odxv-class-thumb-fallback">클래스</div>
+                        )}
+                        <span className="odxv-class-thumb-tag">{toCategoryLabel(item?.category)}</span>
                       </div>
                       <div className="odxv-class-line-body">
                         <strong>{item?.title || `클래스 #${classId || "-"}`}</strong>
                         <div className="odxv-chip-row">
                           <span className="odxv-chip">{toRunTypeLabel(item?.runType)}</span>
                           <span className="odxv-chip">{toLevelLabel(item?.level)}</span>
+                        </div>
+                        <div className="odxv-status-row">
+                          {classStatus?.amCompleted ? (
+                            <span className="odxv-chip odxv-chip-status">오전 완료</span>
+                          ) : null}
+                          {classStatus?.pmCompleted ? (
+                            <span className="odxv-chip odxv-chip-status">오후 완료</span>
+                          ) : null}
+                          {classStatus?.amFull ? (
+                            <span className="odxv-chip odxv-chip-status">오전 마감</span>
+                          ) : null}
+                          {classStatus?.pmFull ? (
+                            <span className="odxv-chip odxv-chip-status">오후 마감</span>
+                          ) : null}
+                          {classStatus?.classEnded ? (
+                            <span className="odxv-chip odxv-chip-ended">종료 클래스</span>
+                          ) : classStatus?.hasSessions ? (
+                            <span className="odxv-chip odxv-chip-open">운영 중</span>
+                          ) : (
+                            <span className="odxv-chip">상태 확인중</span>
+                          )}
                         </div>
                         <span className="odxv-meta">강사: {item?.instructorName || "미지정"}</span>
                       </div>
@@ -673,6 +881,29 @@ export function OneDayExplorePage() {
                 <div className="odxv-panel-head odxv-session-head">
                   <h4>{committed.date} 세션</h4>
                   <p>{filteredSelectedSessions.length.toLocaleString("ko-KR")}개</p>
+                </div>
+
+                <div className="odxv-detail-date-picker">
+                  <label htmlFor="odxv-detail-date">날짜 선택</label>
+                  {selectedClassDateOptions.length > 0 ? (
+                    <select
+                      id="odxv-detail-date"
+                      value={
+                        selectedClassDateOptions.includes(committed.date)
+                          ? committed.date
+                          : selectedClassDateOptions[0]
+                      }
+                      onChange={(event) => onDetailDateChange(event.target.value)}
+                    >
+                      {selectedClassDateOptions.map((dateText) => (
+                        <option key={dateText} value={dateText}>
+                          {dateText}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input id="odxv-detail-date" type="text" value="선택 가능한 날짜 없음" disabled />
+                  )}
                 </div>
 
                 {filteredSelectedSessions.length === 0 ? (

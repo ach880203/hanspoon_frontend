@@ -10,6 +10,13 @@ function formatDateOnly(value) {
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString("ko-KR");
 }
 
+function toPaymentMethodLabel(method) {
+  if (method === "card") return "신용/체크카드";
+  if (method === "kakaopay") return "카카오페이";
+  if (method === "tosspay") return "토스페이";
+  return "결제수단 정보 없음";
+}
+
 function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -228,7 +235,20 @@ function Payment() {
         return;
       }
 
-      navigate("/payment/success", { state: { paymentData: verifyResult.data || verifyResult } });
+      const verifyData = verifyResult?.data || verifyResult || {};
+      const successPayload = {
+        ...verifyData,
+        merchantUid: merchantUid,
+        orderId: merchantUid,
+        itemName: formData.itemName,
+        payMethod: toPaymentMethodLabel(paymentMethod),
+        amount: Number(verifyData?.amount ?? finalAmount ?? 0),
+      };
+
+      // 새로고침으로 location.state가 사라져도 직전 결제 정보를 복구할 수 있게 저장합니다.
+      sessionStorage.setItem("lastPaymentSuccess", JSON.stringify(successPayload));
+
+      navigate("/payment/success", { state: { paymentData: successPayload } });
     } catch (error) {
       navigate("/payment/fail", { state: { message: error.message || "결제 처리 중 오류가 발생했습니다." } });
     } finally {
