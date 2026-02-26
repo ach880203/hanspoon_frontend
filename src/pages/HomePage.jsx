@@ -44,7 +44,7 @@ export default function HomePage() {
       try {
         // 홈 미리보기용: 6개 정도(3개씩 롤링 2페이지)
         const res = await getRecipeList({ keyword: "", category: "", page: 0, size: 6 });
-        const list = res?.data?.content ?? [];
+        const list = res?.data.data?.content ?? [];
 
         const mapped = list.map((r) => ({
           id: r.id,

@@ -1,56 +1,23 @@
 ﻿// src/pages/CartPage.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchMyCart, deleteMyCartItem, updateMyCartItem } from "../api/carts";
 import { createOrder } from "../api/orders";
 import { toErrorMessage } from "../api/http";
 import AddressSearch from "../components/AddressSearch";
+import {
+  fetchMyShippingAddresses,
+  fetchMyDefaultShippingAddress,
+  createMyShippingAddress,
+  updateMyShippingAddress,
+  deleteMyShippingAddress,
+  setDefaultMyShippingAddress,
+} from "../api/shippingAddresses";
 import "./CartPage.css";
 
 const fmt = (n) => (n ?? 0).toLocaleString();
 
-const LS_ADDR_KEY = "hs_shipping_addresses_v1";
-
-/** @typedef {{id:string,label:string,zipCode:string,address1:string,address2:string,isDefault:boolean}} ShippingAddress */
-
-function uid() {
-  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-function loadAddressesFallback() {
-  try {
-    const raw = localStorage.getItem(LS_ADDR_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
-    }
-  } catch (_) {}
-
-  // ✅ 최초 셋팅(회원정보 주소가 있다면 여기에 연결)
-  // TODO(백엔드): /me 또는 /members/me 같은 API로 기본 주소 받아서 여기 default로 넣기
-  const initial = [
-    {
-      id: uid(),
-      label: "기본배송지",
-      zipCode: "",
-      address1: "회원정보 기본 배송지(임시)",
-      address2: "",
-      isDefault: true,
-    },
-  ];
-  try {
-    localStorage.setItem(LS_ADDR_KEY, JSON.stringify(initial));
-  } catch (_) {}
-  return initial;
-}
-
-function saveAddresses(list) {
-  try {
-    localStorage.setItem(LS_ADDR_KEY, JSON.stringify(list));
-  } catch (_) {}
-}
-
-function Modal({ open, title, onClose, children, footer }) {
+function Modal({ open, title, onClose, children, footer, bodyScroll = true }) {
   if (!open) return null;
   return (
     <div className="modalOverlay" role="dialog" aria-modal="true" aria-label={title}>
@@ -61,7 +28,11 @@ function Modal({ open, title, onClose, children, footer }) {
             ×
           </button>
         </div>
-        <div className="modalBody">{children}</div>
+
+        <div className={`modalBody ${bodyScroll ? "modalBodyScroll" : "modalBodyNoScroll"}`}>
+          {children}
+        </div>
+
         {footer && <div className="modalFooter">{footer}</div>}
       </div>
     </div>
@@ -71,43 +42,66 @@ function Modal({ open, title, onClose, children, footer }) {
 export default function CartPage() {
   const nav = useNavigate();
 
+  // cart
   const [cart, setCart] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
-
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ===== 배송지 상태 (localStorage 기반) =====
-  const [addresses, setAddresses] = useState(() => loadAddressesFallback());
-  const [currentAddrId, setCurrentAddrId] = useState(() => {
-    const list = loadAddressesFallback();
-    const def = list.find((a) => a.isDefault) ?? list[0];
-    return def?.id ?? "";
-  });
+  // ui
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const currentAddress = useMemo(() => {
-    return addresses.find((a) => a.id === currentAddrId) || addresses.find((a) => a.isDefault) || addresses[0];
-  }, [addresses, currentAddrId]);
+  // shipping
+  const [addresses, setAddresses] = useState([]);
+  const [currentAddrId, setCurrentAddrId] = useState(null);
+  const [addrLoading, setAddrLoading] = useState(true);
 
-  // 배송지 관리 모달
+  // modals
   const [addrManageOpen, setAddrManageOpen] = useState(false);
-
-  // 새 배송지(추가/수정) 모달
   const [addrEditOpen, setAddrEditOpen] = useState(false);
-  const [editTargetId, setEditTargetId] = useState(null); // null이면 추가, 값이면 수정
+
+  // delete confirm modal
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // address object
+
+  // ship card pulse
+  const [shipFlash, setShipFlash] = useState(false);
+  const shipFlashTimer = useRef(null);
+
+  // edit draft
+  const [editTargetId, setEditTargetId] = useState(null); // null = add
   const [addrDraft, setAddrDraft] = useState({
     label: "새 배송지",
+    receiverName: "",
+    receiverPhone: "",
     zipCode: "",
     address1: "",
     address2: "",
+    isDefault: true,
   });
 
   const items = cart?.items ?? [];
   const allSelected = items.length > 0 && selected.size === items.length;
   const canOrder = selected.size > 0 && !busy;
 
-  const load = async () => {
+  const currentAddress = useMemo(() => {
+    if (!addresses.length) return null;
+    const found = addresses.find((a) => a.shippingAddressId === currentAddrId);
+    return found || addresses.find((a) => a.isDefault) || addresses[0];
+  }, [addresses, currentAddrId]);
+
+  const pulseShippingCard = () => {
+    // toggle 방식으로 애니메이션 재트리거
+    if (shipFlashTimer.current) clearTimeout(shipFlashTimer.current);
+    setShipFlash(false);
+    requestAnimationFrame(() => {
+      setShipFlash(true);
+      shipFlashTimer.current = setTimeout(() => setShipFlash(false), 650);
+    });
+  };
+
+  // ----- cart -----
+  const loadCart = async () => {
     setErr("");
     setLoading(true);
     try {
@@ -124,21 +118,36 @@ export default function CartPage() {
   };
 
   useEffect(() => {
-    load();
+    loadCart();
   }, []);
 
-  // 주소 목록 변경 시 localStorage 저장 + 기본 주소 보정
-  useEffect(() => {
-    if (!addresses.length) return;
-    saveAddresses(addresses);
+  // ----- shipping -----
+  const loadAddresses = async () => {
+    setAddrLoading(true);
+    try {
+      const list = await fetchMyShippingAddresses();
+      setAddresses(list ?? []);
 
-    // current가 삭제되었으면 default/첫 번째로 보정
-    if (!addresses.find((a) => a.id === currentAddrId)) {
-      const def = addresses.find((a) => a.isDefault) ?? addresses[0];
-      setCurrentAddrId(def.id);
+      const def = await fetchMyDefaultShippingAddress().catch(() => null);
+      if (def?.shippingAddressId) setCurrentAddrId(def.shippingAddressId);
+      else if (list?.[0]?.shippingAddressId) setCurrentAddrId(list[0].shippingAddressId);
+      else setCurrentAddrId(null);
+    } catch (e) {
+      setAddresses([]);
+      setCurrentAddrId(null);
+    } finally {
+      setAddrLoading(false);
     }
-  }, [addresses, currentAddrId]);
+  };
 
+  useEffect(() => {
+    loadAddresses();
+    return () => {
+      if (shipFlashTimer.current) clearTimeout(shipFlashTimer.current);
+    };
+  }, []);
+
+  // selection
   const toggleAll = () => {
     if (!items.length) return;
     setSelected(allSelected ? new Set() : new Set(items.map((it) => it.itemId)));
@@ -152,6 +161,7 @@ export default function CartPage() {
     });
   };
 
+  // cart actions
   const changeQty = async (itemId, nextQty) => {
     if (nextQty < 1) return;
     setBusy(true);
@@ -174,7 +184,7 @@ export default function CartPage() {
     setErr("");
     try {
       await deleteMyCartItem(itemId);
-      await load();
+      await loadCart();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -188,7 +198,7 @@ export default function CartPage() {
     setErr("");
     try {
       for (const id of selected) await deleteMyCartItem(id);
-      await load();
+      await loadCart();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -202,7 +212,7 @@ export default function CartPage() {
     setErr("");
     try {
       for (const it of items) await deleteMyCartItem(it.itemId);
-      await load();
+      await loadCart();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -210,6 +220,7 @@ export default function CartPage() {
     }
   };
 
+  // calc
   const calc = useMemo(() => {
     const selectedItems = items.filter((it) => selected.has(it.itemId));
     const productAmount = selectedItems.reduce((sum, it) => {
@@ -224,83 +235,156 @@ export default function CartPage() {
     return { productAmount, itemDiscount, shippingFee, payable };
   }, [items, selected]);
 
-  // ===== 배송지 관련 핸들러 =====
-  const openManageAddress = () => setAddrManageOpen(true);
+  // ----- shipping handlers -----
+  const openManageAddress = async () => {
+    setAddrManageOpen(true);
+    try {
+      const list = await fetchMyShippingAddresses();
+      setAddresses(list ?? []);
+    } catch (_) {}
+  };
 
   const openAddAddress = () => {
     setEditTargetId(null);
-    setAddrDraft({ label: "새 배송지", zipCode: "", address1: "", address2: "" });
+    setAddrDraft({
+      label: "새 배송지",
+      receiverName: currentAddress?.receiverName ?? "",
+      receiverPhone: currentAddress?.receiverPhone ?? "",
+      zipCode: "",
+      address1: "",
+      address2: "",
+      isDefault: true,
+    });
     setAddrEditOpen(true);
   };
 
   const openEditAddress = (addr) => {
-    setEditTargetId(addr.id);
+    setEditTargetId(addr.shippingAddressId);
     setAddrDraft({
       label: addr.label ?? "배송지",
+      receiverName: addr.receiverName ?? "",
+      receiverPhone: addr.receiverPhone ?? "",
       zipCode: addr.zipCode ?? "",
       address1: addr.address1 ?? "",
       address2: addr.address2 ?? "",
+      isDefault: !!addr.isDefault,
     });
     setAddrEditOpen(true);
   };
 
-  const applySelectedAddress = (addrId) => {
-    setCurrentAddrId(addrId);
+  const applySelectedAddress = (shippingAddressId) => {
+    setCurrentAddrId(shippingAddressId);
     setAddrManageOpen(false);
+    pulseShippingCard(); // ✅ 선택 시 우측 카드 강조
   };
 
-  const saveAddressDraft = () => {
+  const makeDefault = async (addr) => {
+    if (addr.isDefault) return; // 이미 기본이면 아무것도 안 함
+    setErr("");
+    try {
+      await setDefaultMyShippingAddress(addr.shippingAddressId);
+      const list = await fetchMyShippingAddresses();
+      setAddresses(list ?? []);
+      setCurrentAddrId(addr.shippingAddressId);
+      pulseShippingCard(); // (선택 사항) 기본 지정 후에도 강조
+    } catch (e) {
+      setErr(toErrorMessage(e));
+    }
+  };
+
+  const openDeleteConfirm = (addr) => {
+    setDeleteTarget(addr);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.shippingAddressId) return;
+    setErr("");
+    setBusy(true);
+    try {
+      await deleteMyShippingAddress(deleteTarget.shippingAddressId);
+
+      const list = await fetchMyShippingAddresses();
+      setAddresses(list ?? []);
+
+      const def = (list ?? []).find((a) => a.isDefault) || (list ?? [])[0];
+      setCurrentAddrId(def?.shippingAddressId ?? null);
+
+      setDeleteConfirmOpen(false);
+      setDeleteTarget(null);
+
+      // 삭제 후에도 우측 카드 업데이트 티나게(선택 사항)
+      pulseShippingCard();
+    } catch (e) {
+      setErr(toErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveAddressDraft = async () => {
+    if (!addrDraft.label.trim()) return;
+    if (!addrDraft.receiverName.trim()) return;
+    if (!addrDraft.receiverPhone.trim()) return;
     if (!addrDraft.address1.trim()) return;
 
-    setAddresses((prev) => {
-      const list = [...prev];
-
+    setErr("");
+    setBusy(true);
+    try {
+      let saved;
       if (editTargetId) {
-        const idx = list.findIndex((a) => a.id === editTargetId);
-        if (idx >= 0) {
-          list[idx] = { ...list[idx], ...addrDraft };
-          return list;
-        }
+        saved = await updateMyShippingAddress(editTargetId, {
+          label: addrDraft.label,
+          receiverName: addrDraft.receiverName,
+          receiverPhone: addrDraft.receiverPhone,
+          zipCode: addrDraft.zipCode,
+          address1: addrDraft.address1,
+          address2: addrDraft.address2,
+          isDefault: addrDraft.isDefault,
+        });
+      } else {
+        saved = await createMyShippingAddress({
+          label: addrDraft.label,
+          receiverName: addrDraft.receiverName,
+          receiverPhone: addrDraft.receiverPhone,
+          zipCode: addrDraft.zipCode,
+          address1: addrDraft.address1,
+          address2: addrDraft.address2,
+          isDefault: addrDraft.isDefault,
+        });
       }
 
-      const newAddr = {
-        id: uid(),
-        label: addrDraft.label.trim() || "배송지",
-        zipCode: addrDraft.zipCode ?? "",
-        address1: addrDraft.address1 ?? "",
-        address2: addrDraft.address2 ?? "",
-        isDefault: prev.length === 0, // 최초 1개면 default
-      };
-      const next = [newAddr, ...list];
+      const list = await fetchMyShippingAddresses();
+      setAddresses(list ?? []);
+      setCurrentAddrId(saved?.shippingAddressId ?? null);
 
-      // 새로 추가한 주소를 즉시 선택
-      setCurrentAddrId(newAddr.id);
-      return next;
-    });
+      setAddrEditOpen(false);
+      setAddrManageOpen(false);
 
-    setAddrEditOpen(false);
-    setAddrManageOpen(false);
+      pulseShippingCard();
+    } catch (e) {
+      setErr(toErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const makeDefault = (addrId) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === addrId }))
-    );
-  };
-
+  // ----- order -----
   const makeOrder = async () => {
     setBusy(true);
     setErr("");
     try {
-      const cartId = cart?.cartId;
-      if (!cartId) {
-        setErr("장바구니 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
+      if (!currentAddress) {
+        setErr("배송지를 선택해 주세요.");
         return;
       }
 
-      // TODO(백엔드 연동): 배송지 ID/주소를 주문에 포함시키고 싶으면 payload에 추가
-      // ex) createOrder({ cartId, shippingAddressId: currentAddress?.id })
-      const created = await createOrder({ cartId });
+      const created = await createOrder({
+        receiverName: currentAddress.receiverName,
+        receiverPhone: currentAddress.receiverPhone,
+        address1: currentAddress.address1,
+        address2: currentAddress.address2 ?? "",
+      });
 
       const firstName = created?.items?.[0]?.productName ?? "주문 상품";
       const itemCount = created?.items?.length ?? 1;
@@ -310,7 +394,7 @@ export default function CartPage() {
           orderId: created.orderId,
           itemName: itemCount > 1 ? `${firstName} 외 ${itemCount - 1}건` : firstName,
           amount: created.totalPrice,
-          shippingAddress: currentAddress, // 결제 페이지에서 필요하면 사용
+          shippingAddress: currentAddress,
         },
       });
     } catch (e) {
@@ -356,7 +440,7 @@ export default function CartPage() {
               <div className="muted">장바구니가 비어 있습니다.</div>
               <div className="row" style={{ marginTop: 10, gap: 8 }}>
                 <button className="btn" onClick={() => nav("/products")}>상품 보러가기</button>
-                <button className="btnGhost" onClick={load}>다시 불러오기</button>
+                <button className="btnGhost" onClick={loadCart}>다시 불러오기</button>
               </div>
             </div>
           ) : (
@@ -420,10 +504,9 @@ export default function CartPage() {
 
         {/* RIGHT */}
         <aside className="rightCol">
-          {/* sticky wrapper: 배송지 + 결제금액 같이 따라오게 */}
           <div className="sticky">
             {/* 배송지 카드 */}
-            <div className="card shipCard">
+            <div className={`card shipCard ${shipFlash ? "shipFlash" : ""}`}>
               <div className="shipHeader">
                 <div className="shipTitleRow">
                   <div className="shipTitle">배송지</div>
@@ -432,15 +515,30 @@ export default function CartPage() {
                 <button className="shipChangeBtn" onClick={openManageAddress}>변경</button>
               </div>
 
-              <div className="shipAddr">
-                <div className="shipAddrLine">{currentAddress?.address1 || "배송지를 설정해 주세요"}</div>
-                {(currentAddress?.zipCode || currentAddress?.address2) && (
+              {addrLoading ? (
+                <div className="shipAddr">
+                  <div className="muted">배송지 불러오는 중...</div>
+                </div>
+              ) : !currentAddress ? (
+                <div className="shipAddr">
+                  <div className="shipAddrLine">배송지를 설정해 주세요</div>
+                  <div className="shipAddrSub">변경 버튼을 눌러 배송지를 추가할 수 있어요.</div>
+                </div>
+              ) : (
+                <div className="shipAddr">
+                  <div className="shipAddrLine">{currentAddress.address1}</div>
                   <div className="shipAddrSub">
-                    {currentAddress?.zipCode ? `${currentAddress.zipCode}` : ""}
-                    {currentAddress?.address2 ? ` ${currentAddress.address2}` : ""}
+                    {currentAddress.receiverName} · {currentAddress.receiverPhone}
+                    {(currentAddress.zipCode || currentAddress.address2) && (
+                      <>
+                        {" "}
+                        / {currentAddress.zipCode ? `${currentAddress.zipCode}` : ""}
+                        {currentAddress.address2 ? ` ${currentAddress.address2}` : ""}
+                      </>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 결제금액 카드 */}
@@ -484,7 +582,7 @@ export default function CartPage() {
                 )}
               </div>
 
-              <button className="btnPrimary" disabled={!canOrder} onClick={makeOrder}>
+              <button className="btnPrimary" disabled={!canOrder || !currentAddress} onClick={makeOrder}>
                 {busy ? "처리중..." : "주문하기"}
               </button>
 
@@ -496,7 +594,7 @@ export default function CartPage() {
         </aside>
       </div>
 
-      {/* 배송지 관리 모달 (2번째 이미지 흐름) */}
+      {/* 배송지 관리 모달 */}
       <Modal
         open={addrManageOpen}
         title="배송지 관리"
@@ -509,47 +607,116 @@ export default function CartPage() {
         }
       >
         <div className="addressList">
-          {addresses.map((a) => (
-            <div key={a.id} className="addressItem">
-              <label className="addressRadio">
-                <input
-                  type="radio"
-                  name="addr"
-                  checked={a.id === currentAddrId}
-                  onChange={() => setCurrentAddrId(a.id)}
-                />
-                <span className="addressText">
-                  <div className="addressTopRow">
-                    <span className="addressLabel">{a.label}</span>
-                    {a.isDefault && <span className="addressDefault">기본배송지</span>}
-                  </div>
-                  <div className="addressLine">{a.address1}</div>
-                  {(a.zipCode || a.address2) && (
-                    <div className="addressSub">{a.zipCode ? `${a.zipCode}` : ""}{a.address2 ? ` ${a.address2}` : ""}</div>
-                  )}
-                </span>
-              </label>
+          {addresses.length === 0 ? (
+            <div className="muted">등록된 배송지가 없습니다. 새 배송지를 추가해 주세요.</div>
+          ) : (
+            addresses.map((a) => (
+              <div key={a.shippingAddressId} className="addressItem">
+                <label className="addressRadio">
+                  <input
+                    type="radio"
+                    name="addr"
+                    checked={a.shippingAddressId === currentAddrId}
+                    onChange={() => setCurrentAddrId(a.shippingAddressId)}
+                  />
+                  <span className="addressText">
+                    <div className="addressTopRow">
+                      <span className="addressLabel">{a.label}</span>
+                      {a.isDefault && <span className="addressDefault">기본배송지</span>}
+                    </div>
 
-              <div className="addressActions">
-                <button className="miniBtn" onClick={() => makeDefault(a.id)}>기본</button>
-                <button className="miniBtn" onClick={() => openEditAddress(a)}>수정</button>
-                <button className="miniBtn primary" onClick={() => applySelectedAddress(a.id)}>선택</button>
+                    <div className="addressLine">{a.address1}</div>
+
+                    <div className="addressSub">
+                      {a.receiverName} · {a.receiverPhone}
+                      {(a.zipCode || a.address2) && (
+                        <>
+                          {" "}
+                          / {a.zipCode ? `${a.zipCode}` : ""}
+                          {a.address2 ? ` ${a.address2}` : ""}
+                        </>
+                      )}
+                    </div>
+                  </span>
+                </label>
+
+                <div className="addressActions">
+                  <button
+                    className="miniBtn"
+                    disabled={a.isDefault}
+                    onClick={() => makeDefault(a)}
+                    title={a.isDefault ? "이미 기본 배송지입니다." : "기본 배송지로 설정"}
+                  >
+                    기본
+                  </button>
+                  <button className="miniBtn" onClick={() => openEditAddress(a)}>수정</button>
+                  <button className="miniBtn" onClick={() => openDeleteConfirm(a)}>삭제</button>
+                  <button className="miniBtn primary" onClick={() => applySelectedAddress(a.shippingAddressId)}>선택</button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Modal>
 
-      {/* 새 배송지 추가/수정 모달 (3번째 이미지 흐름: 주소 검색) */}
+      {/* 삭제 confirm 모달 */}
+      <Modal
+        open={deleteConfirmOpen}
+        title="배송지 삭제"
+        onClose={() => {
+          setDeleteConfirmOpen(false);
+          setDeleteTarget(null);
+        }}
+        footer={
+          <>
+            <button
+              className="btnGhost"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setDeleteTarget(null);
+              }}
+              disabled={busy}
+            >
+              취소
+            </button>
+            <button className="btnDanger" onClick={confirmDelete} disabled={busy}>
+              {busy ? "삭제중..." : "삭제"}
+            </button>
+          </>
+        }
+      >
+        <div className="confirmText">
+          <div className="confirmTitle">
+            정말 삭제할까요?
+          </div>
+          <div className="confirmDesc">
+            <b>{deleteTarget?.label ?? "선택한 배송지"}</b> 배송지가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+          </div>
+        </div>
+      </Modal>
+
+      {/* 새 배송지 추가/수정 모달 */}
+      {/* AddressSearch dropdown이 잘리지 않도록 bodyScroll=false */}
       <Modal
         open={addrEditOpen}
         title={editTargetId ? "배송지 수정" : "새 배송지 추가"}
         onClose={() => setAddrEditOpen(false)}
+        bodyScroll={false}
         footer={
           <>
-            <button className="btnGhost" onClick={() => setAddrEditOpen(false)}>취소</button>
-            <button className="btnPrimary" onClick={saveAddressDraft} disabled={!addrDraft.address1.trim()}>
-              저장
+            <button className="btnGhost" onClick={() => setAddrEditOpen(false)} disabled={busy}>취소</button>
+            <button
+              className="btnPrimary"
+              onClick={saveAddressDraft}
+              disabled={
+                busy ||
+                !addrDraft.label.trim() ||
+                !addrDraft.receiverName.trim() ||
+                !addrDraft.receiverPhone.trim() ||
+                !addrDraft.address1.trim()
+              }
+            >
+              {busy ? "저장중..." : "저장"}
             </button>
           </>
         }
@@ -562,13 +729,37 @@ export default function CartPage() {
             onChange={(e) => setAddrDraft((p) => ({ ...p, label: e.target.value }))}
           />
 
+          <div className="formGrid2" style={{ marginTop: 10 }}>
+            <input
+              className="input"
+              placeholder="받는 사람"
+              value={addrDraft.receiverName}
+              onChange={(e) => setAddrDraft((p) => ({ ...p, receiverName: e.target.value }))}
+            />
+            <input
+              className="input"
+              placeholder="연락처"
+              value={addrDraft.receiverPhone}
+              onChange={(e) => setAddrDraft((p) => ({ ...p, receiverPhone: e.target.value }))}
+            />
+          </div>
+
           <div style={{ marginTop: 10 }}>
             <AddressSearch
-              onSelect={({ zipCode, address1 }) =>
-                setAddrDraft((p) => ({ ...p, zipCode: zipCode ?? "", address1: address1 ?? "", address2: "" }))
+              onSelect={({ zipCode, address1, address2 }) =>
+                setAddrDraft((p) => ({
+                  ...p,
+                  zipCode: zipCode ?? "",
+                  address1: address1 ?? "",
+                  address2: address2 ?? "",
+                }))
               }
             />
           </div>
+
+          {addrDraft.zipCode && (
+            <input className="input" style={{ marginTop: 10 }} value={addrDraft.zipCode} readOnly />
+          )}
 
           <input
             className="input"
@@ -585,6 +776,15 @@ export default function CartPage() {
             value={addrDraft.address2}
             onChange={(e) => setAddrDraft((p) => ({ ...p, address2: e.target.value }))}
           />
+
+          <label className="checkbox" style={{ marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={!!addrDraft.isDefault}
+              onChange={(e) => setAddrDraft((p) => ({ ...p, isDefault: e.target.checked }))}
+            />
+            <span className="checkboxText">기본 배송지로 설정</span>
+          </label>
         </div>
       </Modal>
     </div>
