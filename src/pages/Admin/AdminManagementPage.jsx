@@ -5,9 +5,8 @@ import AdminDashboardPage from "./AdminDashboardPage";
 import AdminNoticeList from "./AdminNoticeList";
 import AdminFaqList from "./AdminFaqList";
 import { AdminReservationList } from "./AdminReservationList";
-import AdminOneDayClassManager from "./AdminOneDayClassManager";
+import AdminOneDayClassHub from "./AdminOneDayClassHub";
 import AdminInquiryList from "./AdminInquiryList";
-import AdminOneDayInstructorManager from "./AdminOneDayInstructorManager";
 import "./AdminList.css";
 
 const AdminManagementPage = () => {
@@ -22,13 +21,11 @@ const AdminManagementPage = () => {
       case "payments":
         return <AdminPaymentList />;
       case "classes":
-        // 핵심: 관리자 내부 전용 클래스 관리 화면
-        // 기존처럼 공용 OneDay 페이지로 이동하지 않고, 현재 관리자 탭 안에서만 동작합니다.
-        return <AdminOneDayClassManager />;
-      case "instructors":
-        return <AdminOneDayInstructorManager />;
+        // 핵심: 관리자 내부 전용 클래스 통합 관리 화면
+        // 클래스/강사/클래스문의/클래스리뷰를 하위 탭으로 한 곳에서 운영합니다.
+        return <AdminOneDayClassHub />;
       case "market":
-        return <AdminInquiryList />; // 상품 관리 탭에서도 문의를 볼 수 있도록 하거나, 아래 CS 탭에서 통합 관리
+        return <AdminInquiryList showOneDayTab={false} />; // 클래스 문의는 "클래스 관리" 내부에서 전용으로 관리
       case "reservations":
         return <AdminReservationList />;
       case "cs":
@@ -41,7 +38,7 @@ const AdminManagementPage = () => {
             <AdminFaqList />
             <hr style={{ margin: "40px 0" }} />
             <h3>1:1 문의 관리</h3>
-            <AdminInquiryList />
+            <AdminInquiryList showOneDayTab={false} />
           </div>
         );
       default:
@@ -63,9 +60,6 @@ const AdminManagementPage = () => {
         </button>
         <button className={`admin-tab-btn ${activeTab === "classes" ? "active" : ""}`} onClick={() => setActiveTab("classes")}>
           클래스 관리
-        </button>
-        <button className={`admin-tab-btn ${activeTab === "instructors" ? "active" : ""}`} onClick={() => setActiveTab("instructors")}>
-          강사 관리
         </button>
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리

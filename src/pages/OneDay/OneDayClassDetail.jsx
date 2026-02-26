@@ -58,6 +58,7 @@ export const OneDayClassDetail = () => {
   const [reservingSessionId, setReservingSessionId] = useState(null);
   const [reservingAction, setReservingAction] = useState(null); // "hold" | "pay" | null
 
+  const [selectedSessionDate, setSelectedSessionDate] = useState("");
   const [selectedReservationId, setSelectedReservationId] = useState("");
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -156,6 +157,36 @@ export const OneDayClassDetail = () => {
     }
     return detail.detailImageData ? [detail.detailImageData] : [];
   }, [detail]);
+
+  const sessionDateOptions = useMemo(() => {
+    const dateSet = new Set(
+      sessions
+        .map((session) => toIsoDateKey(session?.startAt))
+        .filter(Boolean)
+    );
+    return Array.from(dateSet).sort((a, b) => a.localeCompare(b));
+  }, [sessions]);
+
+  useEffect(() => {
+    if (sessionDateOptions.length === 0) {
+      setSelectedSessionDate("");
+      return;
+    }
+
+    setSelectedSessionDate((prev) => {
+      if (prev && sessionDateOptions.includes(prev)) return prev;
+
+      const today = toIsoDateKey(new Date());
+      if (today && sessionDateOptions.includes(today)) return today;
+
+      return sessionDateOptions[0];
+    });
+  }, [sessionDateOptions]);
+
+  const sessionsForSelectedDate = useMemo(() => {
+    if (!selectedSessionDate) return [];
+    return sessions.filter((session) => toIsoDateKey(session?.startAt) === selectedSessionDate);
+  }, [sessions, selectedSessionDate]);
 
   const reviewStats = useMemo(() => {
     const total = reviews.length;
@@ -487,58 +518,79 @@ export const OneDayClassDetail = () => {
         {sessions.length === 0 ? (
           <div className="od-muted">등록된 세션이 없습니다.</div>
         ) : (
-          <div className="od-session-grid">
-            {sessions.map((session) => {
-              const startAt = session.startAt;
-              const remainingSeats =
-                session.remainingSeats ?? Math.max((session.capacity ?? 0) - (session.reservedCount ?? 0), 0);
-              const sessionId = session.id ?? session.sessionId;
-              const completed = Boolean(session.completed) || isSessionCompleted(startAt);
-              const full = Boolean(session.full) || remainingSeats <= 0;
+          <>
+            <div className="od-session-date-filter">
+              <label htmlFor="od-session-date">날짜 선택</label>
+              <input
+                id="od-session-date"
+                type="date"
+                value={selectedSessionDate}
+                onChange={(e) => setSelectedSessionDate(e.target.value)}
+                min={sessionDateOptions[0]}
+                max={sessionDateOptions[sessionDateOptions.length - 1]}
+              />
+              <span className="od-meta">
+                선택 날짜: {selectedSessionDate ? fmtDateOnly(selectedSessionDate) : "날짜를 선택해 주세요"}
+              </span>
+            </div>
 
-              return (
-                <article key={sessionId} className="od-session-card">
-                  <div className="od-session-text">
-                    <strong>
-                      {fmtDate(startAt)} ({session.slotLabel ?? toSlotLabel(session.slot)})
-                    </strong>
-                    <span>정원 {session.capacity} / 예약 {session.reservedCount} / 잔여 {remainingSeats}</span>
-                  </div>
-                  <div className="od-session-actions">
-                    <span className="od-chip od-price-chip">{Number(session.price ?? 0).toLocaleString("ko-KR")}원</span>
-                    {completed ? <span className="od-badge od-badge-done">종료</span> : null}
-                    {!completed && full ? <span className="od-badge od-badge-closed">정원 마감</span> : null}
-                    <button
-                      className="od-btn od-btn-ghost"
-                      onClick={() => handleHoldOnly(sessionId)}
-                      disabled={reservingSessionId === sessionId || completed || full}
-                    >
-                      {reservingSessionId === sessionId && reservingAction === "hold"
-                        ? "홀딩 중..."
-                        : completed
-                        ? "종료"
-                        : full
-                        ? "마감"
-                        : "예약 홀딩"}
-                    </button>
-                    <button
-                      className="od-btn od-btn-primary"
-                      onClick={() => handleDirectPayment(sessionId, session.price)}
-                      disabled={reservingSessionId === sessionId || completed || full}
-                    >
-                      {reservingSessionId === sessionId && reservingAction === "pay"
-                        ? "결제 이동 중..."
-                        : completed
-                        ? "종료"
-                        : full
-                        ? "마감"
-                        : "바로 결제"}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+            {sessionsForSelectedDate.length === 0 ? (
+              <div className="od-muted">선택한 날짜에 세션이 없습니다.</div>
+            ) : (
+              <div className="od-session-grid">
+                {sessionsForSelectedDate.map((session) => {
+                  const startAt = session.startAt;
+                  const remainingSeats =
+                    session.remainingSeats ?? Math.max((session.capacity ?? 0) - (session.reservedCount ?? 0), 0);
+                  const sessionId = session.id ?? session.sessionId;
+                  const completed = Boolean(session.completed) || isSessionCompleted(startAt);
+                  const full = Boolean(session.full) || remainingSeats <= 0;
+
+                  return (
+                    <article key={sessionId} className="od-session-card">
+                      <div className="od-session-text">
+                        <strong>
+                          {fmtDate(startAt)} ({session.slotLabel ?? toSlotLabel(session.slot)})
+                        </strong>
+                        <span>정원 {session.capacity} / 예약 {session.reservedCount} / 잔여 {remainingSeats}</span>
+                      </div>
+                      <div className="od-session-actions">
+                        <span className="od-chip od-price-chip">{Number(session.price ?? 0).toLocaleString("ko-KR")}원</span>
+                        {completed ? <span className="od-badge od-badge-done">종료</span> : null}
+                        {!completed && full ? <span className="od-badge od-badge-closed">정원 마감</span> : null}
+                        <button
+                          className="od-btn od-btn-ghost"
+                          onClick={() => handleHoldOnly(sessionId)}
+                          disabled={reservingSessionId === sessionId || completed || full}
+                        >
+                          {reservingSessionId === sessionId && reservingAction === "hold"
+                            ? "홀딩 중..."
+                            : completed
+                            ? "종료"
+                            : full
+                            ? "마감"
+                            : "예약 홀딩"}
+                        </button>
+                        <button
+                          className="od-btn od-btn-primary"
+                          onClick={() => handleDirectPayment(sessionId, session.price)}
+                          disabled={reservingSessionId === sessionId || completed || full}
+                        >
+                          {reservingSessionId === sessionId && reservingAction === "pay"
+                            ? "결제 이동 중..."
+                            : completed
+                            ? "종료"
+                            : full
+                            ? "마감"
+                            : "바로 결제"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -894,4 +946,20 @@ function fmtDate(value) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("ko-KR");
+}
+
+function fmtDateOnly(value) {
+  if (!value) return "-";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("ko-KR");
+}
+
+function toIsoDateKey(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = String(date.getFullYear());
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

@@ -4,8 +4,9 @@ import * as onedayApi from "../../api/onedayApi";
 import { answerInquiry } from "../../api/productInquiries";
 import "./AdminList.css";
 
-const AdminInquiryList = () => {
-    const [activeTab, setActiveTab] = useState("product"); // "product" or "oneday"
+const AdminInquiryList = ({ defaultTab = "product", showOneDayTab = true }) => {
+    const initialTab = defaultTab === "oneday" && showOneDayTab ? "oneday" : "product";
+    const [activeTab, setActiveTab] = useState(initialTab); // "product" or "oneday"
     const [loading, setLoading] = useState(false);
     const [inquiries, setInquiries] = useState([]);
     const [pagination, setPagination] = useState({ page: 0, totalPages: 0 });
@@ -14,9 +15,10 @@ const AdminInquiryList = () => {
     const [showAnswerForm, setShowAnswerForm] = useState(null); // 펼쳐진 답변 폼 ID
 
     const fetchInquiries = async (page = 0) => {
+        const tab = showOneDayTab ? activeTab : "product";
         setLoading(true);
         try {
-            if (activeTab === "product") {
+            if (tab === "product") {
                 const res = await adminApi.getProductInquiriesAdmin(page);
                 // Backend returns Page<InquiryResponseDto> directly via ResponseEntity.ok(data)
                 // Check if it's wrapped in ApiResponse
@@ -42,7 +44,13 @@ const AdminInquiryList = () => {
 
     useEffect(() => {
         fetchInquiries(0);
-    }, [activeTab]);
+    }, [activeTab, showOneDayTab]);
+
+    useEffect(() => {
+        if (!showOneDayTab && activeTab !== "product") {
+            setActiveTab("product");
+        }
+    }, [activeTab, showOneDayTab]);
 
     const handleAnswerChange = (id, value) => {
         setAnswerInputs(prev => ({ ...prev, [id]: value }));
@@ -53,7 +61,7 @@ const AdminInquiryList = () => {
         if (!answer) return alert("답변 내용을 입력해주세요.");
 
         try {
-            if (activeTab === "product") {
+            if (activeTab === "product" || !showOneDayTab) {
                 await answerInquiry(inqId, { answer });
             } else {
                 await onedayApi.answerOneDayInquiry(inqId, { answerContent: answer });
@@ -70,7 +78,7 @@ const AdminInquiryList = () => {
 
     const formatDate = (dateStr) => {
         if (!dateStr) return "-";
-        return new Date(dateStr).toLocaleDateString();
+        return new Date(dateStr).toLocaleDateString("ko-KR");
     };
 
     return (
@@ -82,12 +90,14 @@ const AdminInquiryList = () => {
                 >
                     상품 문의
                 </button>
-                <button
-                    className={`admin-tab-btn ${activeTab === "oneday" ? "active" : ""}`}
-                    onClick={() => setActiveTab("oneday")}
-                >
-                    원데이 클래스 문의
-                </button>
+                {showOneDayTab && (
+                    <button
+                        className={`admin-tab-btn ${activeTab === "oneday" ? "active" : ""}`}
+                        onClick={() => setActiveTab("oneday")}
+                    >
+                        원데이 클래스 문의
+                    </button>
+                )}
             </div>
 
             {loading ? (
@@ -111,10 +121,10 @@ const AdminInquiryList = () => {
                                 </tr>
                             ) : (
                                 inquiries.map((inq) => {
-                                    const id = activeTab === "product" ? inq.inqId : inq.id;
+                                    const id = activeTab === "product" ? inq.inqId : (inq.inquiryId ?? inq.id);
                                     const answered = activeTab === "product" ? inq.answeredYn : inq.answered;
                                     const content = activeTab === "product" ? inq.content : inq.content;
-                                    const writer = activeTab === "product" ? inq.userId : inq.writerName;
+                                    const writer = activeTab === "product" ? inq.userId : (inq.writerName || inq.userId);
 
                                     return (
                                         <React.Fragment key={id}>
