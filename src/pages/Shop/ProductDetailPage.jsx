@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchProductDetail } from "../../api/products";
 import { addMyCartItem, fetchMyCart } from "../../api/carts";
@@ -152,7 +152,7 @@ export default function ProductDetailPage() {
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
   if (!data) return <div className="pdContainer">불러오는 중...</div>;
-
+  
   return (
     <div className="pdPage">
       <div className="pdContainer">

@@ -27,7 +27,10 @@ export async function updateMyShippingAddress(id, payload) {
 
 // 배송지 삭제
 export async function deleteMyShippingAddress(id) {
-  await http.delete(`/api/my/shipping-addresses/${id}`);
+  const fn = http.delete ?? http.del;   // ✅ 둘 중 있는 걸 사용
+  if (!fn) throw new Error("HTTP delete method is not available");
+  await fn(`/api/my/shipping-addresses/${id}`);
+
 }
 
 // 기본 배송지 지정
