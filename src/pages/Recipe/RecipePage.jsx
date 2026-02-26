@@ -51,10 +51,10 @@ const RecipePage = () => {
         instructions: [
           { id: 1 + 3, 
             content: '', 
-            stepImg: '', 
+            instImg: '',
             stepOrder: 1,
-            stepImgName: '',
-            stepImgFile: ''}
+            instImgName: '',
+            instImgFile: ''}
           ] 
         }],
     subRecipes: []
@@ -66,12 +66,23 @@ const RecipePage = () => {
       try {
         const response = await api.get(`/api/recipe/edit/${id}`);
         const data = response.data.data;
+        console.log("레시피",data);
+
+        const mappedInstructionGroup = data.instructionGroup.map(group => ({
+          ...group,
+          instructions: group.instructions.map(step => ({
+            ...step,
+            instImg: step.instImg ? toBackendUrl(`/images/recipe/${step.instImg}`) : '',
+            instImgName: step.instImg || ''
+          }))
+        }));
 
         setRecipe({
           ...data,
           recipeMainImg: data.recipeMainImg ? toBackendUrl(`/images/recipe/${data.recipeMainImg}`) : null,
           recipeMainImgName: data.recipeMainImg || '기존 이미지',
-          recipeMainImgFile: null
+          recipeMainImgFile: null,
+          instructionGroup: mappedInstructionGroup
         });
       } catch (error) {
         console.error("레시피 로드 실패:", error);
@@ -97,9 +108,9 @@ const RecipePage = () => {
             });
         } else if (type === 'step') {
           const newGroups = [...recipe.instructionGroup];
-          newGroups[gIdx].instructions[sIdx].stepImg = reader.result;
-          newGroups[gIdx].instructions[sIdx].stepImgName = file.name;
-          newGroups[gIdx].instructions[sIdx].stepImgFile = file;
+          newGroups[gIdx].instructions[sIdx].instImg = reader.result;
+          newGroups[gIdx].instructions[sIdx].instImgName = file.name;
+          newGroups[gIdx].instructions[sIdx].instImgFile = file;
           setRecipe({ ...recipe, instructionGroup: newGroups });
         }
       };
@@ -117,8 +128,16 @@ const RecipePage = () => {
     try {
       const formData = new FormData();
       const pureRecipeData = { ...recipe };
+
       delete pureRecipeData.recipeMainImg;
       delete pureRecipeData.recipeMainImgFile;
+
+      pureRecipeData.instructionGroup.forEach((group) => {
+        group.instructions.forEach((step) => {
+          step.instImg = step.instImgName || "";
+          delete step.instImgFile;
+        });
+      });
 
       formData.append("recipe", new Blob([JSON.stringify(pureRecipeData)], {type: "application/json"}));
 
@@ -130,13 +149,13 @@ const RecipePage = () => {
       }
       recipe.instructionGroup.forEach((group) => {
         group.instructions.forEach((step) => {
-          if (step.stepImgFile instanceof File) {
-            formData.append("instructionImages", step.stepImgFile);
-            console.log("단계 파일 전송:", step.stepImgFile.name);
+          if (step.instImgFile instanceof File) {
+            formData.append("instructionImages", step.instImgFile);
+            console.log("단계 파일 전송:", step.instImgFile.name);
           }
           else {
       // 기존 단계 이미지는 파일 전송 없이 이름만 유지합니다.
-           console.log("기존 파일 유지:", step.stepImgName);
+           console.log("기존 파일 유지:", step.instImgName);
           }
         });
       });
@@ -220,9 +239,9 @@ const RecipePage = () => {
           instructions: [
             { id: nextId()+1, 
               content: '', 
-              stepImg: '', 
-              stepOrder: 1,
-              stepImgName: '' }] }]
+              instImg: '',
+              instOrder: 1,
+              instImgName: '' }] }]
     });
   };
 
@@ -234,9 +253,9 @@ const RecipePage = () => {
     newGroups[gIdx].instructions.push(
       { id: nextId(), 
         content: '', 
-        stepImg: '', 
-        stepOrder: nextOrder,
-        stepImgName: '' }
+        instImg: '',
+        instOrder: nextOrder,
+        instImgName: '' }
       );
     setRecipe({ ...recipe, instructionGroup: newGroups });
   };
@@ -407,7 +426,7 @@ const RecipePage = () => {
           <div className="section-title"><i className="fa-solid fa-fire-burner" style={{color:'#ff6b6b'}}></i> 조리 순서</div>
           <button className="add-step-btn" onClick={addInstructionGroup}>단계 그룹 추가</button>
           {recipe.instructionGroup.map((group, gIdx) => (
-            <div className="group-box" key={`inst-group-${gIdx}`} style={{paddingBottom: '40px'}}>
+            <div className="group-box" key={`inst-group-${group.id || gIdx}`} style={{paddingBottom: '40px'}}>
               <i className="fa-solid fa-trash-can remove-icon-btn group-remove-pos" onClick={() => removeElement('instructionGroup', gIdx)}></i>
               <input type="text" className="custom-input" style={{width: '300px', fontWeight: 'bold'}} placeholder="순서 제목 (예: 고기 밑간하기)" value={group.title} onChange={(e) => {
                 const newGroups = [...recipe.instructionGroup];
@@ -415,7 +434,7 @@ const RecipePage = () => {
                 setRecipe({...recipe, instructionGroup: newGroups});
               }} />
               {group.instructions.map((step, sIdx) => (
-                <div className="step-box" key={step.id}>
+                <div className="step-box" key={`step-${step.id || `${gIdx}-${sIdx}`}`}>
                   <div className="step-text">
                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                       <div style={{fontSize:'11px', fontWeight:'bold', background:'#0f0e0e', color:'#fff', display:'inline-block', padding:'2px 10px', borderRadius:'4px'}}>조리 단계 {sIdx + 1}</div>
@@ -431,12 +450,12 @@ const RecipePage = () => {
                     <label className="input-label">과정 사진</label>
                     <div className="file-select-box" onClick={() => stepFileRefs.current[`${gIdx}-${sIdx}`].click()}>
                       <div className="file-btn">파일 선택</div>
-                      <div className="file-name">{step.stepImgName || "선택한 파일 없음"}</div>
+                      <div className="file-name">{step.instImgName || "선택한 파일 없음"}</div>
                     </div>
-                    <input type="file" ref={el => stepFileRefs.current[`${gIdx}-${sIdx}`] = el} style={{display:'none'}} onChange={(e) => handleImageChange(e, 'step', gIdx, sIdx)} />
+                    <input type="file" ref={el => stepFileRefs.current[`${gIdx}-${sIdx}`] = el} style={{display:'none'}} onChange={(e)=> handleImageChange(e, 'step', gIdx, sIdx)} />
                     
-                    {step.stepImg ? (
-                      <img src={step.stepImg} className="preview-box" alt="Step Preview" />
+                    {step.instImg ? (
+                      <img src={step.instImg} className="preview-box" alt="Step Preview" />
                     ) : (
                       <div className="preview-placeholder">미리보기</div>
                     )}
