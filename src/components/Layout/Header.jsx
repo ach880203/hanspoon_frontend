@@ -19,6 +19,7 @@ function Header() {
           <nav className="nav">
             <Link to="/" className="nav-link">홈</Link>
             <Link to="/notice" className="nav-link">공지사항</Link>
+            <Link to="/event" className="nav-link">이벤트</Link>
             <Link to="/faq" className="nav-link">자주 묻는 질문</Link>
             <Link to="/payment" className="nav-link">결제</Link>
           </nav>
