@@ -197,6 +197,7 @@ export default function HomePage() {
         title="MARKET"
         moreTo="/products"
         perPage={4}
+        variant="market"
         items={marketItems}
         loading={loading.market}
         error={error.market}
