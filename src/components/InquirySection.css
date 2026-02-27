@@ -193,6 +193,15 @@
   background: rgba(0,0,0,0.02);
 }
 
+.iqTrBtn.disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.iqTrBtn.disabled:hover {
+  background: transparent;
+}
+
 .iqStatus {
   display: inline-flex;
   align-items: center;

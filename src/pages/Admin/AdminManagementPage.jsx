@@ -8,9 +8,11 @@ import AdminEventList from "./AdminEventList";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassHub from "./AdminOneDayClassHub";
 import AdminInquiryList from "./AdminInquiryList";
-import AdminRecipeFeedbackHub from "./AdminRecipeFeedbackHub";
+import AdminBannerManager from "./AdminBannerManager.jsx";
+import AdminOrderManager from "./AdminOrderManager.jsx";
 import "./AdminList.css";
 import AdminRecipeHub from "./AdminRecipeHub.jsx";
+import AdminProductHub from "./AdminProductHub.jsx";
 
 const AdminManagementPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -23,20 +25,14 @@ const AdminManagementPage = () => {
         return <AdminUserList />;
       case "payments":
         return <AdminPaymentList />;
+      case "orders":
+        return <AdminOrderManager />;
       case "classes":
         // 핵심: 관리자 내부 전용 클래스 통합 관리 화면
         // 클래스/강사/클래스문의/클래스리뷰를 하위 탭으로 한 곳에서 운영합니다.
         return <AdminOneDayClassHub />;
       case "market":
-        return (
-          <div className="admin-cs-container">
-            <h3>상품 문의 관리</h3>
-            <AdminInquiryList showOneDayTab={false} />
-            <hr style={{ margin: "40px 0" }} />
-            <h3>레시피 문의/리뷰 관리</h3>
-            <AdminRecipeFeedbackHub />
-          </div>
-        );
+        return <AdminProductHub />;
       case "reservations":
         return <AdminReservationList />;
       case "recipe":
@@ -49,6 +45,9 @@ const AdminManagementPage = () => {
             <hr style={{ margin: "40px 0" }} />
             <h3>이벤트 관리</h3>
             <AdminEventList />
+            <hr style={{ margin: "40px 0" }} />
+            <h3>배너 관리</h3>
+            <AdminBannerManager />
             <hr style={{ margin: "40px 0" }} />
             <h3>자주 묻는 질문 관리</h3>
             <AdminFaqList />
@@ -74,15 +73,18 @@ const AdminManagementPage = () => {
         <button className={`admin-tab-btn ${activeTab === "payments" ? "active" : ""}`} onClick={() => setActiveTab("payments")}>
           결제 관리
         </button>
+        <button className={`admin-tab-btn ${activeTab === "orders" ? "active" : ""}`} onClick={() => setActiveTab("orders")}>
+          주문 관리
+        </button>
         <button className={`admin-tab-btn ${activeTab === "classes" ? "active" : ""}`} onClick={() => setActiveTab("classes")}>
           클래스 관리
         </button>
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
-          레시피 관리
-        </button>
+         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("recipe")}>
+           레시피 관리
+         </button>
         <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
           예약 관리
         </button>

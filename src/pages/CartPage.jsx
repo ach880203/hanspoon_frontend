@@ -15,6 +15,7 @@ import {
 } from "../api/shippingAddresses";
 import "./CartPage.css";
 import { loadAuth } from "../utils/authStorage";
+import { useCart } from "../contexts/CartContext";
 
 const fmt = (n) => (n ?? 0).toLocaleString();
 
@@ -45,6 +46,7 @@ function Modal({ open, title, onClose, children, footer, bodyScroll = true }) {
 
 export default function CartPage() {
   const nav = useNavigate();
+  const { refreshCount } = useCart();
 
   // =========================
   // Cart
@@ -130,6 +132,7 @@ export default function CartPage() {
       const c = await fetchMyCart();
       setCart(c);
       setSelected(new Set((c?.items ?? []).map((it) => it.itemId)));
+      await refreshCount();
     } catch (e) {
       setErr(toErrorMessage(e));
       setCart(null);
@@ -198,6 +201,7 @@ export default function CartPage() {
       // 업데이트 후 선택 유지(존재하는 것만)
       const updatedIds = new Set((updated?.items ?? []).map((it) => it.itemId));
       setSelected((prev) => new Set([...prev].filter((id) => updatedIds.has(id))));
+      await refreshCount();
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -414,6 +418,7 @@ export default function CartPage() {
         address1: currentAddress.address1,
         address2: currentAddress.address2 ?? "",
       });
+      await refreshCount();
 
       const firstName = created?.items?.[0]?.productName ?? "주문 상품";
       const itemCount = created?.items?.length ?? 1;
@@ -483,6 +488,8 @@ export default function CartPage() {
                 {items.map((it) => {
                   const line = it.lineTotal ?? it.price * it.quantity;
                   const checked = selected.has(it.itemId);
+                  const itemStock = Math.max(0, Number(it.stock ?? 0));
+                  const disableIncrease = busy || itemStock <= 0 || it.quantity >= itemStock;
 
                   return (
                     <div key={it.itemId} className="item">
@@ -531,7 +538,11 @@ export default function CartPage() {
                               −
                             </button>
                             <div className="qtyNum">{it.quantity}</div>
-                            <button className="qtyBtn" disabled={busy} onClick={() => changeQty(it.itemId, it.quantity + 1)}>
+                            <button
+                              className="qtyBtn"
+                              disabled={disableIncrease}
+                              onClick={() => changeQty(it.itemId, it.quantity + 1)}
+                            >
                               +
                             </button>
                           </div>
