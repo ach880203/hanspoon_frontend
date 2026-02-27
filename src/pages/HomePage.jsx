@@ -7,6 +7,7 @@ import RollingGridSection from "../components/RollingGridSection";
 import { getOneDayClasses } from "../api/onedayApi";
 import { fetchProducts } from "../api/products";
 import { getRecipeList } from "../api/recipeApi";
+import EventPopup from "../components/EventPopup/EventPopup";
 
 
 const FALLBACK_RECIPE_IMG = "/img/banner-chicken.png";
@@ -141,6 +142,7 @@ export default function HomePage() {
 
   return (
     <div className="home-container">
+      <EventPopup />
 
       {/* 배너 섹션 */}
       <BannerSection slides={marketBannerSlides} interval={4500} />

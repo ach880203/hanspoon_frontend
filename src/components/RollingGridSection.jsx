@@ -70,7 +70,7 @@ export default function RollingGridSection({
         <div className={`rg-grid rg-grid-${perPage}`}>
           {loading
             ? Array.from({ length: perPage }).map((_, i) => <div key={i} className="rg-skeleton" />)
-            : visible.map((it) => <CardItem key={it.id} item={it} />)}
+            : visible.map((it, i) => <CardItem key={`${it.id}-${i}`} item={it} />)}
         </div>
       </div>
     </section>

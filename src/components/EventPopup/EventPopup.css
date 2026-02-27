@@ -1,0 +1,188 @@
+.event-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.65);
+    /* 기존보다 살짝 어둡게 처리하여 팝업 집중도 상승 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    padding: 20px;
+    backdrop-filter: blur(2px);
+}
+
+.event-popup {
+    background-color: #fff;
+    border-radius: 20px;
+    /* 라운드를 둥글게하여 부드럽고 모던한 느낌 */
+    width: 100%;
+    max-width: 440px;
+    /* 데스크탑에서 적절한 크기 */
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    animation: popupFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.event-popup-hero {
+    position: relative;
+    width: 100%;
+    cursor: pointer;
+}
+
+.event-popup-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    /* 반응형 높이를 위해 비율 사용 */
+    object-fit: cover;
+    display: block;
+}
+
+.event-popup-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.event-popup-icon {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+/* X 닫기 아이콘 */
+.btn-close-icon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.35);
+    color: white;
+    border: none;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.btn-close-icon:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.event-popup-body {
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.event-popup-headline {
+    margin: 0 0 10px 0;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.4;
+    word-break: keep-all;
+}
+
+.event-popup-subtext {
+    margin: 0 0 24px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #4b5563;
+    line-height: 1.5;
+    word-break: keep-all;
+}
+
+/* 전환율을 높이는 메인 CTA 버튼 (Primary Button) */
+.btn-cta-primary {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background-color: #ef4444;
+    /* 스푼 브랜드 톤 붉은색 메인 컬러 */
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.btn-cta-primary:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.45);
+}
+
+.btn-cta-primary:active {
+    transform: translateY(0);
+}
+
+/* 오늘 하루 보지 않기 - 보조 링크 (Ghost Action) */
+.event-popup-footer {
+    display: flex;
+    justify-content: center;
+    padding: 0 20px 20px;
+    background-color: #fff;
+}
+
+.btn-hide-today {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding: 6px 10px;
+    transition: color 0.2s;
+}
+
+.btn-hide-today:hover {
+    color: #4b5563;
+}
+
+/* 모바일 디바이스 최적화 */
+@media (max-width: 480px) {
+    .event-popup-headline {
+        font-size: 1.25rem;
+    }
+
+    .event-popup-subtext {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+
+    .btn-cta-primary {
+        padding: 14px 18px;
+        font-size: 1.05rem;
+    }
+}
