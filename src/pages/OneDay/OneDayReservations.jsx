@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   cancelOneDayReservation,
@@ -177,9 +177,9 @@ export const OneDayReservations = () => {
     }
   };
 
-  const status = detail?.status;
-  const canPay = status === "HOLD";
-  const canCancel = status === "HOLD" || status === "PAID";
+  const statusCode = normalizeReservationStatus(detail?.status);
+  const canPay = statusCode === "HOLD";
+  const canCancel = statusCode === "HOLD" || statusCode === "PAID";
   const totalPages = Math.max(pageInfo.totalPages, 1);
 
   return (
@@ -307,6 +307,17 @@ function fmtDate(value) {
   if (!value) return "-";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("ko-KR");
+}
+
+function normalizeReservationStatus(value) {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+  if (raw === "HOLD" || raw === "예약 대기") return "HOLD";
+  if (raw === "PAID" || raw === "예약 확정") return "PAID";
+  if (raw === "CANCELED" || raw === "예약 취소") return "CANCELED";
+  if (raw === "EXPIRED" || raw === "기간 만료") return "EXPIRED";
+  if (raw === "COMPLETED" || raw === "수강 완료") return "COMPLETED";
+  return raw;
 }
 
 const panel = { border: "1px solid #e5e7eb", borderRadius: 16, padding: 14, background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" };

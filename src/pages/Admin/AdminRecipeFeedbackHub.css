@@ -1,0 +1,102 @@
+.admin-recipe-feedback {
+  margin-top: 24px;
+  border: 1px solid #f3f4f6;
+  border-radius: 20px;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.admin-recipe-feedback-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-recipe-feedback-head h3 {
+  margin: 0;
+  color: #111827;
+}
+
+.admin-recipe-feedback-tabs {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.admin-recipe-feedback-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-recipe-feedback-controls .admin-input {
+  flex: 1;
+}
+
+.admin-recipe-feedback-msg {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.admin-recipe-feedback-msg.error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-recipe-feedback-msg.ok {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #047857;
+}
+
+.admin-recipe-feedback-empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 20px 0;
+}
+
+.admin-recipe-feedback-ellipsis {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-recipe-feedback-answer-row td {
+  background: #fafafa;
+}
+
+.admin-recipe-feedback-answer-box {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-recipe-feedback-answer-box strong {
+  color: #111827;
+}
+
+.admin-recipe-feedback-answer-box p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  color: #374151;
+}
+
+.admin-recipe-feedback-answer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .admin-recipe-feedback-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-recipe-feedback-controls {
+    flex-direction: column;
+  }
+}

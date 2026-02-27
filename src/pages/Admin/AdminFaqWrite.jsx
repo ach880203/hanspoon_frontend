@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
+import './AdminList.css';
 
 function AdminFaqWrite() {
     const { id } = useParams();
@@ -61,59 +62,47 @@ function AdminFaqWrite() {
     };
 
     return (
-        <div className="container mt-5">
-            <h2>{isEdit ? '자주 묻는 질문 수정' : '자주 묻는 질문 등록'}</h2>
-            <form onSubmit={handleSubmit} className="mt-4">
-                <div className="mb-3">
-                    <label htmlFor="category" className="form-label">카테고리</label>
-                    <select
-                        className="form-select"
-                        id="category"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">선택해 주세요</option>
-                        <option value="PAYMENT">결제</option>
-                        <option value="CLASS">클래스</option>
-                        <option value="MEMBER">회원</option>
-                        <option value="ETC">기타</option>
-                    </select>
+        <div className="admin-list-container">
+            <div className="admin-list-header">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div className="admin-list-title">{isEdit ? '자주 묻는 질문 수정' : '자주 묻는 질문 등록'}</div>
+                        <div style={{ color: '#6B7280', marginTop: 6 }}>카테고리와 질문/답변을 입력하세요.</div>
+                    </div>
                 </div>
-                <div className="mb-3">
-                    <label htmlFor="question" className="form-label">질문</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="question"
-                        name="question"
-                        value={formData.question}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label htmlFor="answer" className="form-label">답변</label>
-                    <textarea
-                        className="form-control"
-                        id="answer"
-                        name="answer"
-                        rows="5"
-                        value={formData.answer}
-                        onChange={handleChange}
-                        required
-                    ></textarea>
-                </div>
-                <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={() => navigate('/admin/faq')}>
-                        취소
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                        {isEdit ? '수정' : '등록'}
-                    </button>
-                </div>
-            </form>
+            </div>
+
+            <div className="admin-table-card" style={{ padding: 20 }}>
+                <form onSubmit={handleSubmit}>
+                    <div style={{ display: 'grid', gap: 14 }}>
+                        <div>
+                            <label className="form-label" style={{ fontWeight: 800 }}>카테고리</label>
+                            <select className="admin-select" id="category" name="category" value={formData.category} onChange={handleChange} required>
+                                <option value="">선택해 주세요</option>
+                                <option value="PAYMENT">결제</option>
+                                <option value="CLASS">클래스</option>
+                                <option value="MEMBER">회원</option>
+                                <option value="ETC">기타</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="form-label" style={{ fontWeight: 800 }}>질문</label>
+                            <input className="admin-input" type="text" id="question" name="question" value={formData.question} onChange={handleChange} required />
+                        </div>
+
+                        <div>
+                            <label className="form-label" style={{ fontWeight: 800 }}>답변</label>
+                            <textarea className="admin-input" id="answer" name="answer" rows={6} value={formData.answer} onChange={handleChange} required />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button type="button" className="admin-btn-sm" onClick={() => navigate('/admin/faq')}>취소</button>
+                            <button type="submit" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>{isEdit ? '수정' : '등록'}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

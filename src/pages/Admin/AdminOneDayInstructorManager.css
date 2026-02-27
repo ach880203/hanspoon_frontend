@@ -1,0 +1,151 @@
+.admin-inst-wrap {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-inst-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-inst-head h2 {
+  margin: 0;
+}
+
+.admin-inst-head p {
+  margin: 6px 0 0;
+  color: #4b5563;
+}
+
+.admin-inst-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-inst-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.admin-inst-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-inst-panel h3 {
+  margin: 0;
+}
+
+.inst-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(720px, calc(100vh - 260px));
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.inst-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #fcfcfd;
+  cursor: pointer;
+}
+
+.inst-row.is-active {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.2);
+  background: #f8fbff;
+}
+
+.inst-row-main {
+  display: grid;
+  gap: 4px;
+}
+
+.inst-row-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.inst-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.inst-form {
+  display: grid;
+  gap: 10px;
+}
+
+.inst-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.inst-form label span {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 700;
+}
+
+.inst-form input,
+.inst-form select,
+.inst-form textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
+.inst-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.inst-user-search {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.inst-selected-user {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.inst-preview img {
+  width: 100%;
+  max-width: 260px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 1100px) {
+  .admin-inst-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -149,7 +149,50 @@
     line-height: 1.8;
     color: var(--text-color);
     margin-bottom: 40px;
-    white-space: pre-wrap;
+    white-space: normal;
+    /* Changed from pre-wrap to support HTML layout properly */
+}
+
+/* Rich text styles for HTML content */
+.notice-detail-content h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-top: 32px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.notice-detail-content p {
+    margin-bottom: 16px;
+}
+
+.notice-detail-content ul {
+    margin: 20px 0;
+    padding: 24px;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    list-style-type: none;
+}
+
+.notice-detail-content li {
+    margin-bottom: 12px;
+    position: relative;
+    padding-left: 20px;
+}
+
+.notice-detail-content li::before {
+    content: "•";
+    color: var(--primary-color);
+    position: absolute;
+    left: 4px;
+    font-weight: bold;
+}
+
+.notice-detail-content strong {
+    color: var(--dark-color);
+    font-weight: 700;
 }
 
 .notice-detail-footer {

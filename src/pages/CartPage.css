@@ -1,0 +1,1070 @@
+/* src/pages/CartPage.css (scoped: applies ONLY inside .cartPage) */
+
+.cartPage {
+  background: #f5f5f5;
+  padding: 28px 0 60px;
+}
+
+.cartPage .cartTitle {
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  margin: 8px 0 18px;
+  letter-spacing: -0.2px;
+}
+
+.cartPage .cartLayout {
+  width: min(1050px, calc(100% - 32px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.cartPage .card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  border: 1px solid #eee;
+  padding: 16px;
+}
+
+/* RIGHT */
+.cartPage .rightCol {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch; /* ✅ sticky 동작 핵심 */
+  position: relative;
+}
+
+/* ✅ 결제금액 박스 sticky */
+.cartPage .card.sticky {
+  position: sticky;
+  top: 84px;
+  z-index: 20;
+
+  /* 전역 card가 hover/transition을 줄 수 있어서 결제박스는 고정 */
+  transition: none;
+  transform: none;
+  cursor: default;
+}
+
+/* SELECT BAR */
+.cartPage .selectBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.cartPage .selectActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* CHECKBOX */
+.cartPage .checkbox {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  user-select: none;
+}
+
+.cartPage .checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: #5f0080;
+}
+
+.cartPage .checkboxText {
+  font-size: 14px;
+  color: #333;
+}
+
+/* ITEMS */
+.cartPage .items {
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cartPage .item {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+  position: relative;
+}
+
+/* itemTop: checkbox + name (X는 absolute) */
+.cartPage .itemTop {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding-right: 28px; /* X 버튼 영역 확보 */
+}
+
+.cartPage .itemName {
+  font-weight: 700;
+  color: #222;
+  line-height: 1.25;
+}
+
+/* X Button (global button padding 방지) */
+.cartPage .xBtn {
+  padding: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+
+  position: absolute;
+  top: 10px;
+  right: 0px;
+
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #999;
+}
+
+.cartPage .xBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cartPage .itemBody {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 12px;
+  padding-left: 22px;
+  margin-top: 10px;
+}
+
+.cartPage .thumb {
+  width: 74px;
+  height: 74px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cartPage .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cartPage .thumbPlaceholder {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* PRICE */
+.cartPage .priceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cartPage .priceMain {
+  font-weight: 900;
+  color: #222;
+}
+
+.cartPage .priceSub {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.cartPage .lineTotal {
+  font-weight: 800;
+  color: #222;
+}
+
+/* QTY */
+.cartPage .qty {
+  margin-top: 6px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e6e6e6;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.cartPage .qtyBtn {
+  width: 34px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
+}
+
+.cartPage .qtyBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cartPage .qtyNum {
+  width: 36px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #222;
+}
+
+/* TOTAL */
+.cartPage .bottomTotal {
+  margin-top: 14px;
+  padding: 14px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.cartPage .bottomPay {
+  font-size: 18px;
+  font-weight: 900;
+  color: #222;
+}
+
+.cartPage .smallMeta {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+/* PAY BOX */
+.cartPage .payTitle {
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.cartPage .payRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.cartPage .payBig {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.cartPage .divider {
+  height: 1px;
+  background: #eee;
+  margin: 8px 0;
+}
+
+.cartPage .hint {
+  margin-top: 8px;
+  background: #f5f5f5;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.cartPage .freeShip {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #d22;
+}
+
+/* BUTTONS */
+.cartPage .btnPrimary {
+  margin-top: 12px;
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: #5f0080;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cartPage .btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cartPage .btnGhostFull {
+  margin-top: 8px;
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cartPage .btn {
+  height: 38px;
+  border-radius: 12px;
+  border: none;
+  background: #5f0080;
+  color: #fff;
+  font-weight: 800;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.cartPage .btnGhost {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.cartPage .btnGhost:disabled,
+.cartPage .btnGhostFull:disabled,
+.cartPage .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* UTIL */
+.cartPage .muted {
+  color: #666;
+}
+
+.cartPage .minus {
+  color: #d22;
+}
+
+.cartPage .errorBox {
+  margin-top: 12px;
+  background: #fff2f2;
+  border: 1px solid #ffd7d7;
+  color: #b30000;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.cartPage .empty {
+  padding: 22px 0 10px;
+  text-align: center;
+}
+
+.cartPage .row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Hover effects OFF (Cart only) ===== */
+.cartPage .card,
+.cartPage .item,
+.cartPage .thumb img {
+  transition: none !important;
+  transform: none !important;
+}
+
+.cartPage .card:hover,
+.cartPage .item:hover {
+  transform: none !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+}
+
+.cartPage .thumb img:hover {
+  transform: none !important;
+}
+
+/* responsive */
+@media (max-width: 920px) {
+  .cartPage .cartLayout {
+    grid-template-columns: 1fr;
+  }
+  .cartPage .card.sticky {
+    position: static;
+  }
+}
+
+/* ====== Right sticky wrapper (배송지+결제금액 함께 sticky) ====== */
+.cartPage .sticky {
+  position: sticky;
+  top: 84px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* responsive에서 sticky 해제 */
+@media (max-width: 920px) {
+  .cartPage .sticky {
+    position: static;
+  }
+}
+
+/* ====== Shipping card ====== */
+.cartPage .shipCard {
+  padding: 16px;
+}
+
+.cartPage .shipHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cartPage .shipTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cartPage .shipTitle {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.cartPage .shipBadge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #e5d8ff;
+  background: #f3edff;
+  color: #5f0080;
+  font-weight: 800;
+}
+
+.cartPage .shipChangeBtn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.cartPage .shipAddr {
+  margin-top: 10px;
+  line-height: 1.35;
+  color: #222;
+}
+
+.cartPage .shipAddrLine {
+  font-weight: 700;
+}
+
+.cartPage .shipAddrSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* ====== Modal ====== */
+.cartPage .modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.cartPage .modal {
+  width: min(720px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #eee;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.cartPage .modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.cartPage .modalTitle {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.cartPage .modalClose {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  background: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+
+.cartPage .modalBody {
+  padding: 16px;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+}
+
+.cartPage .modalFooter {
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 배송지 리스트 */
+.cartPage .addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cartPage .addressItem {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.cartPage .addressRadio {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.cartPage .addressRadio input {
+  margin-top: 4px;
+  accent-color: #5f0080;
+}
+
+.cartPage .addressTopRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cartPage .addressLabel {
+  font-weight: 900;
+  color: #222;
+}
+
+.cartPage .addressDefault {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f5f5f5;
+  border: 1px solid #eee;
+  color: #666;
+  font-weight: 800;
+}
+
+.cartPage .addressLine {
+  margin-top: 4px;
+  color: #222;
+  font-weight: 700;
+}
+
+.cartPage .addressSub {
+  margin-top: 3px;
+  color: #666;
+  font-size: 12px;
+}
+
+.cartPage .addressActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.cartPage .miniBtn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.cartPage .miniBtn.primary {
+  border-color: #5f0080;
+  color: #5f0080;
+}
+
+/* 새 배송지 폼 */
+.cartPage .addrForm {
+  display: flex;
+  flex-direction: column;
+}
+
+/* modal body scroll 옵션 */
+.cartPage .modalBodyScroll {
+  padding: 16px;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+}
+
+.cartPage .modalBodyNoScroll {
+  padding: 16px;
+  overflow: visible; /* AddressSearch dropdown 안 잘리게 */
+}
+
+/* =========================
+   Address Manage Modal (Kurly-like)
+   - keep existing JSX/handlers
+   ========================= */
+
+.cartPage .modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.cartPage .modal {
+  width: min(920px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+  overflow: hidden;
+}
+
+.cartPage .modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.cartPage .modalTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.cartPage .modalClose {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+
+.cartPage .modalBody {
+  padding: 18px 22px;
+  max-height: min(72vh, 640px);
+  overflow: auto;
+  background: #fafafa;
+}
+
+/* AddressSearch 모달(새 배송지 추가)에서 dropdown 잘리면
+   bodyScroll=false를 쓰고 있었지? 그 경우 이 클래스도 유지 */
+.cartPage .modalBodyNoScroll {
+  padding: 18px 22px;
+  overflow: visible;
+  background: #fafafa;
+}
+
+.cartPage .modalFooter {
+  padding: 14px 22px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+  display: grid;
+  grid-template-columns: 110px 1fr; /* 닫기 + 큰 버튼 */
+  gap: 12px;
+  align-items: center;
+}
+
+/* footer 안의 버튼을 Kurly처럼 */
+.cartPage .modalFooter .btnGhost {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.cartPage .modalFooter .btnPrimary {
+  height: 44px;
+  border-radius: 12px;
+  width: 100%;
+  margin-top: 0; /* 기존 btnPrimary margin-top 제거 효과 */
+}
+
+/* =========================
+   Address list cards
+   ========================= */
+
+.cartPage .addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cartPage .addressItem {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 18px 18px;
+  display: grid;
+  grid-template-columns: 30px 1fr 96px; /* radio / content / actions */
+  gap: 14px;
+  align-items: start;
+}
+
+/* 선택된 항목 강조(Chrome :has 지원) */
+.cartPage .addressItem:has(input[type="radio"]:checked) {
+  border-color: rgba(95,0,128,0.55);
+  box-shadow: 0 0 0 3px rgba(95,0,128,0.10);
+}
+
+.cartPage .addressRadio {
+  display: contents; /* grid 칸을 자연스럽게 씀 */
+}
+
+.cartPage .addressRadio input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 6px;
+  accent-color: #5f0080;
+  cursor: pointer;
+}
+
+.cartPage .addressText {
+  display: block;
+}
+
+/* 제목(라벨) + 기본 뱃지 */
+.cartPage .addressTopRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.cartPage .addressLabel {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.cartPage .addressDefault {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #f5f5f5;
+  color: #444;
+}
+
+/* 주소 라인(굵게) */
+.cartPage .addressLine {
+  font-size: 15px;
+  font-weight: 800;
+  color: #222;
+  line-height: 1.35;
+}
+
+/* 수령인/연락처/우편번호 */
+.cartPage .addressSub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.35;
+}
+
+/* =========================
+   Right side actions
+   ========================= */
+
+.cartPage .addressActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.cartPage .miniBtn {
+  width: 72px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 12px;
+  color: #333;
+}
+
+.cartPage .miniBtn:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+.cartPage .miniBtn.primary {
+  width: 72px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(95,0,128,0.60);
+  color: #5f0080;
+  background: #fff;
+}
+
+.cartPage .miniBtn.primary:hover {
+  background: rgba(95,0,128,0.06);
+}
+
+/* =========================
+   Mobile
+   ========================= */
+
+@media (max-width: 640px) {
+  .cartPage .modal {
+    border-radius: 14px;
+  }
+
+  .cartPage .modalFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .cartPage .addressItem {
+    grid-template-columns: 26px 1fr;
+  }
+
+  .cartPage .addressActions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .cartPage .miniBtn,
+  .cartPage .miniBtn.primary {
+    width: auto;
+    padding: 0 12px;
+  }
+}
+
+/* ===== modal body scroll 옵션 (없으면 추가) ===== */
+.cartPage .modalBodyScroll {
+  padding: 18px 22px;
+  max-height: min(72vh, 640px);
+  overflow: auto;
+  background: #fafafa;
+}
+.cartPage .modalBodyNoScroll {
+  padding: 18px 22px;
+  overflow: visible;
+  background: #fafafa;
+}
+
+/* ===== 기본 뱃지 강화 ===== */
+.cartPage .addressDefault {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 0, 128, 0.35);
+  background: rgba(95, 0, 128, 0.08);
+  color: #5f0080;
+}
+
+/* ===== 기본 버튼 disabled 처리 ===== */
+.cartPage .miniBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f7f7f7;
+}
+
+/* ===== 삭제(confirm) 버튼 ===== */
+.cartPage .btnDanger {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(220, 0, 0, 0.35);
+  background: #fff;
+  color: #d10000;
+  font-weight: 900;
+  cursor: pointer;
+}
+.cartPage .btnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* confirm modal text */
+.cartPage .confirmText {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 14px;
+}
+.cartPage .confirmTitle {
+  font-weight: 900;
+  font-size: 16px;
+  color: #111;
+  margin-bottom: 6px;
+}
+.cartPage .confirmDesc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.45;
+}
+
+/* ===== 우측 배송지 카드 강조 애니메이션 ===== */
+.cartPage .shipCard.shipFlash {
+  animation: shipFlash 650ms ease;
+  border-color: rgba(95, 0, 128, 0.55);
+}
+@keyframes shipFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0.00); background: #fff; }
+  35%  { box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.14); background: rgba(95, 0, 128, 0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0.00); background: #fff; }
+}
+
+/* 배송지 카드 상세 표시 */
+.cartPage .shipInfoList {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cartPage .shipInfoRow {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.cartPage .shipInfoKey {
+  color: #777;
+  font-weight: 800;
+}
+
+.cartPage .shipInfoVal {
+  color: #222;
+  font-weight: 700;
+}
+
+/* 기본배송지 뱃지 강화(이미 있으면 덮어쓰기) */
+.cartPage .addressDefault.strong {
+  border-color: rgba(95, 0, 128, 0.45);
+  background: rgba(95, 0, 128, 0.10);
+  color: #5f0080;
+}
+
+
+.cartPage .shipInfoList {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cartPage .shipInfoRow {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.cartPage .shipInfoKey { color: #777; font-weight: 800; }
+.cartPage .shipInfoVal { color: #222; font-weight: 700; }
+
+/* 배송지 관리 모달 footer: 2분할 버튼 */
+.cartPage .modalFooter {
+  padding: 14px 22px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  background: #fff;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* ✅ 2분할 */
+  gap: 12px;
+  align-items: center;
+}
+
+/* 공통 */
+.cartPage .btnFooterHalf {
+  height: 48px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* 왼쪽: 선택(아웃라인) */
+.cartPage .btnFooterOutline {
+  border: 1px solid rgba(95,0,128,0.55);
+  background: #fff;
+  color: #5f0080;
+}
+
+.cartPage .btnFooterOutline:hover {
+  background: rgba(95,0,128,0.06);
+}
+
+/* 오른쪽: 새 배송지 추가(프라이머리) */
+.cartPage .btnFooterPrimary {
+  border: none;
+  background: #5f0080;
+  color: #fff;
+}
+
+.cartPage .btnFooterPrimary:hover {
+  filter: brightness(0.98);
+}
+
+.cartPage .btnFooterHalf:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

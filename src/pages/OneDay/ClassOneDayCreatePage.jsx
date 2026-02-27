@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createOneDayClass, isOneDayAdmin } from "../../api/onedayApi";
 import { OneDayTopTabs } from "./OneDayTopTabs";
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export const ClassOneDayCreatePage = () => {
   const navigate = useNavigate();
@@ -30,6 +30,9 @@ export const ClassOneDayCreatePage = () => {
 
   const payload = useMemo(() => {
     const instructorId = Number(form.instructorId);
+
+    // 화면 입력값을 서버 DTO 형태로 변환합니다.
+    // 숫자/시간 형식을 이 단계에서 맞춰두면 submit 로직이 단순해집니다.
     return {
       title: form.title.trim(),
       description: form.description.trim(),
@@ -72,7 +75,7 @@ export const ClassOneDayCreatePage = () => {
       return;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      setError("이미지는 2MB 이하로 업로드해 주세요.");
+      setError("이미지는 50MB 이하로 업로드해 주세요.");
       return;
     }
 
@@ -84,11 +87,12 @@ export const ClassOneDayCreatePage = () => {
     if (!admin) return "관리자만 원데이 클래스를 등록할 수 있습니다.";
     if (!payload.title) return "클래스 제목을 입력해 주세요.";
     if (!payload.description) return "클래스 요약 설명을 입력해 주세요.";
-    if (!payload.detailDescription) return "상세 설명을 입력해 주세요.";
+    if (!payload.detailDescription) return "클래스 상세 설명을 입력해 주세요.";
     if (!payload.instructorId) return "강사 ID를 입력해 주세요.";
     if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) {
       return "세션은 최소 1개 이상 필요합니다.";
     }
+
     for (let i = 0; i < payload.sessions.length; i += 1) {
       const row = payload.sessions[i];
       const prefix = `세션 ${i + 1}`;
@@ -97,6 +101,7 @@ export const ClassOneDayCreatePage = () => {
       if (!Number.isInteger(row.capacity) || row.capacity <= 0) return `${prefix} 정원은 1 이상이어야 합니다.`;
       if (!Number.isInteger(row.price) || row.price < 0) return `${prefix} 가격은 0 이상이어야 합니다.`;
     }
+
     return "";
   };
 
@@ -135,7 +140,7 @@ export const ClassOneDayCreatePage = () => {
           클래스 기본 정보, 상세 설명, 세션 정보를 입력해 등록할 수 있습니다.
         </p>
 
-        {!admin ? <div style={warnBox}>현재 계정은 관리자 권한이 아닙니다. 등록 시 서버에서 거부됩니다.</div> : null}
+        {!admin ? <div style={warnBox}>현재 계정은 관리자 권한이 아닙니다. 등록 요청은 서버에서 거절됩니다.</div> : null}
         {error ? <div style={errorBox}>{error}</div> : null}
         {message ? <div style={okBox}>{message}</div> : null}
 
@@ -170,7 +175,7 @@ export const ClassOneDayCreatePage = () => {
               style={textarea}
               value={form.description}
               onChange={(e) => setField("description", e.target.value)}
-              placeholder="클래스 카드에 보여줄 요약 설명을 입력하세요."
+              placeholder="클래스 카드에 표시할 짧은 설명을 입력해 주세요."
             />
           </Field>
 
@@ -179,7 +184,7 @@ export const ClassOneDayCreatePage = () => {
               style={{ ...textarea, minHeight: 180 }}
               value={form.detailDescription}
               onChange={(e) => setField("detailDescription", e.target.value)}
-              placeholder="상세 페이지에서 세션 아래에 보여줄 설명을 입력하세요."
+              placeholder="상세 페이지에서 보여줄 설명을 입력해 주세요."
             />
           </Field>
 
@@ -193,9 +198,7 @@ export const ClassOneDayCreatePage = () => {
                     alt="상세 이미지 미리보기"
                     style={{ width: "100%", maxHeight: 360, objectFit: "cover", borderRadius: 12, border: "1px solid #e5e7eb" }}
                   />
-                  <button type="button" style={btnGhost} onClick={() => setField("detailImageData", "")}>
-                    이미지 제거
-                  </button>
+                  <button type="button" style={btnGhost} onClick={() => setField("detailImageData", "")}>이미지 제거</button>
                 </div>
               ) : (
                 <span style={{ color: "#6b7280", fontSize: 13 }}>이미지를 선택하면 상세 페이지 상단에 표시됩니다.</span>
@@ -204,7 +207,7 @@ export const ClassOneDayCreatePage = () => {
           </Field>
 
           <div style={grid3}>
-            <Field label="난이도">
+            <Field label="레벨">
               <select style={input} value={form.level} onChange={(e) => setField("level", e.target.value)}>
                 <option value="BEGINNER">입문</option>
                 <option value="INTERMEDIATE">중급</option>
@@ -308,6 +311,8 @@ function Field({ label, children }) {
 
 function toIsoWithSeconds(value) {
   if (!value) return "";
+
+  // datetime-local은 초가 없는 경우가 많아서 서버 검증 포맷(초 포함)에 맞춰 보정합니다.
   return value.length === 16 ? `${value}:00` : value;
 }
 

@@ -1,8 +1,21 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { paymentApi } from "../../api";
 import { formatPhoneNumber } from "../../utils/format";
 import "./Payment.css";
+
+function formatDateOnly(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString("ko-KR");
+}
+
+function toPaymentMethodLabel(method) {
+  if (method === "card") return "신용/체크카드";
+  if (method === "kakaopay") return "카카오페이";
+  if (method === "tosspay") return "토스페이";
+  return "결제수단 정보 없음";
+}
 
 function Payment() {
   const navigate = useNavigate();
@@ -22,18 +35,32 @@ function Payment() {
     amount,
     reservationId,
     classId,
+    orderId, // ✅ 상품 주문 시 전달받은 ID
     buyerName: initialBuyerName,
     buyerEmail: initialBuyerEmail,
     buyerTel: initialBuyerTel,
   } = location.state || {};
 
   const [formData, setFormData] = useState({
-    itemName: itemName || "원데이 클래스",
-    amount: amount || 50000,
+    itemName: itemName || "상품 결제",
+    amount: amount || 0,
     buyerName: initialBuyerName || "",
     buyerEmail: initialBuyerEmail || "",
     buyerTel: initialBuyerTel ? formatPhoneNumber(initialBuyerTel) : "",
   });
+
+  const isNumeric = (v) => /^\d+$/.test(String(v));
+
+  const makePaymentId = (orderId) => {
+    // 클래스: 이미 ORDER_... 형태면 그대로 사용(길이/문자 OK)
+    if (orderId && String(orderId).startsWith("ORDER_")) return String(orderId);
+
+    // 상품 주문: 내부 주문 PK(숫자)를 PG 규칙 맞는 paymentId로 변환 (6~64, [-,_] 허용) :contentReference[oaicite:1]{index=1}
+    if (orderId && isNumeric(orderId)) return `PAY_${orderId}_${Date.now()}`;
+
+    // 그 외(혹시 orderId가 없거나 예상 밖): 랜덤 paymentId 생성
+    return `PAY_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,12 +125,34 @@ function Payment() {
   };
 
   const handlePointInput = (e) => {
-    const value = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
+    const rawValue = e.target.value;
+    if (rawValue === "") {
+      setUsedPoints(0);
+      return;
+    }
+
+    const value = parseInt(rawValue, 10);
     if (Number.isNaN(value)) return;
 
-    let targetPoint = Math.max(0, Math.min(value, pointBalance));
+    if (pointBalance === 0 && value > 0) {
+      alert("보유하신 포인트(스푼)가 없습니다.");
+      setUsedPoints(0);
+      return;
+    }
+
+    if (value > pointBalance) {
+      alert(`보유 포인트(${pointBalance.toLocaleString()}P)를 초과하여 입력할 수 없습니다.`);
+      setUsedPoints(pointBalance);
+      return;
+    }
+
     const remainingAmountAfterCoupon = Number(formData.amount) - discountAmount;
-    targetPoint = Math.min(targetPoint, remainingAmountAfterCoupon);
+    let targetPoint = Math.min(value, remainingAmountAfterCoupon);
+
+    if (value > remainingAmountAfterCoupon) {
+      alert("결제 금액을 초과하여 포인트를 사용할 수 없습니다.");
+    }
+
     setUsedPoints(targetPoint);
   };
 
@@ -143,12 +192,16 @@ function Payment() {
         return;
       }
 
-      const merchantUid = `PAY-${Date.now()}`;
+      // ✅ 상품 주문 번호가 있으면 그것을 결제 고유 ID로 사용, 없으면 새로 생성 (클래스 등)
+      const merchantUid = orderId ? String(orderId) : `PAY-${Date.now()}`;
+
+      const internalOrderId = orderId != null ? String(orderId) : null;
+      const paymentId = makePaymentId(internalOrderId);
 
       const response = await window.PortOne.requestPayment({
         storeId: config.storeId,
         channelKey,
-        paymentId: merchantUid,
+        paymentId,
         orderName: formData.itemName,
         totalAmount: finalAmount,
         currency: "CURRENCY_KRW",
@@ -167,7 +220,7 @@ function Payment() {
 
       const verifyResult = await paymentApi.verifyPayment({
         paymentId: response.paymentId,
-        orderId: merchantUid,
+        orderId: internalOrderId, // 서버에서 조회 시 사용
         amount: Number(formData.amount),
         productId: null,
         classId: classId ? Number(classId) : null,
@@ -182,7 +235,20 @@ function Payment() {
         return;
       }
 
-      navigate("/payment/success", { state: { paymentData: verifyResult.data || verifyResult } });
+      const verifyData = verifyResult?.data || verifyResult || {};
+      const successPayload = {
+        ...verifyData,
+        merchantUid: merchantUid,
+        orderId: merchantUid,
+        itemName: formData.itemName,
+        payMethod: toPaymentMethodLabel(paymentMethod),
+        amount: Number(verifyData?.amount ?? finalAmount ?? 0),
+      };
+
+      // 새로고침으로 location.state가 사라져도 직전 결제 정보를 복구할 수 있게 저장합니다.
+      sessionStorage.setItem("lastPaymentSuccess", JSON.stringify(successPayload));
+
+      navigate("/payment/success", { state: { paymentData: successPayload } });
     } catch (error) {
       navigate("/payment/fail", { state: { message: error.message || "결제 처리 중 오류가 발생했습니다." } });
     } finally {
@@ -203,11 +269,27 @@ function Payment() {
                 <h3 className="section-title">상품 정보</h3>
                 <div className="form-group">
                   <label className="form-label">상품명</label>
-                  <input type="text" name="itemName" className="form-input" value={formData.itemName} readOnly />
+                  <input
+                    type="text"
+                    name="itemName"
+                    className="form-input"
+                    value={formData.itemName}
+                    onChange={handleChange}
+                    readOnly={!!itemName}
+                    placeholder="상품명을 입력해 주세요"
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">결제 금액</label>
-                  <input type="number" name="amount" className="form-input" value={formData.amount} readOnly />
+                  <input
+                    type="number"
+                    name="amount"
+                    className="form-input"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    readOnly={!!amount}
+                    placeholder="0"
+                  />
                 </div>
               </div>
 
@@ -266,7 +348,7 @@ function Payment() {
                     <option value="">적용할 쿠폰을 선택해 주세요</option>
                     {coupons.map((c) => (
                       <option key={c.userCouponId} value={c.userCouponId}>
-                        {c.name} ({c.discountType === "FIXED" ? `${c.discountValue.toLocaleString()}원` : `${c.discountValue}%`} 할인)
+                        {c.name} ({c.discountType === "FIXED" ? `${c.discountValue.toLocaleString()}원` : `${c.discountValue}%`} 할인, 발급일로부터 6개월 유효, 만료 {formatDateOnly(c.expiresAt)})
                       </option>
                     ))}
                   </select>
@@ -275,7 +357,7 @@ function Payment() {
                 <div className="form-group">
                   <label className="form-label">포인트 사용 (보유: {pointBalance.toLocaleString()}P)</label>
                   <div className="point-input-group">
-                    <input type="number" className="form-input" value={usedPoints} onChange={handlePointInput} placeholder="0" />
+                    <input type="number" className="form-input" value={usedPoints === 0 ? "" : usedPoints} onChange={handlePointInput} placeholder="0" />
                     <button type="button" className="btn-point-all" onClick={applyAllPoints}>
                       전액 사용
                     </button>

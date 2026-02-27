@@ -1,5 +1,5 @@
-﻿/**
- * JWT ?좏겙??localStorage?????議고쉶/삭제?섎뒗 ?좏떥由ы떚
+/**
+ * JWT 토큰과 사용자 정보를 localStorage에 저장/조회/삭제하는 유틸리티입니다.
  */
 
 const TOKEN_KEY = 'hanspoon_token';
@@ -7,30 +7,30 @@ const USER_KEY = 'hanspoon_user';
 
 export const tokenStorage = {
     /**
-     * ?좏겙 ???
-     * @param {string} token - JWT ?좏겙
+     * 토큰 저장
+     * @param {string} token - JWT 토큰
      */
     setToken: (token) => {
         localStorage.setItem(TOKEN_KEY, token);
     },
 
     /**
-     * ?좏겙 議고쉶
-     * @returns {string|null} JWT ?좏겙 ?먮뒗 null
+     * 토큰 조회
+     * @returns {string|null} JWT 토큰 또는 null
      */
     getToken: () => {
         return localStorage.getItem(TOKEN_KEY);
     },
 
     /**
-     * ?좏겙 삭제 (濡쒓렇?꾩썐 ??
+     * 토큰 삭제 (로그아웃 시 호출)
      */
     removeToken: () => {
         localStorage.removeItem(TOKEN_KEY);
     },
 
     /**
-     * ?좏겙 議댁옱 ?щ? ?뺤씤
+     * 토큰 존재 여부 확인
      * @returns {boolean}
      */
     hasToken: () => {
@@ -38,15 +38,15 @@ export const tokenStorage = {
     },
 
     /**
-     * ?ъ슜???뺣낫 ???
-     * @param {Object} user - ?ъ슜??媛앹껜
+     * 사용자 정보 저장
+     * @param {Object} user - 사용자 객체
      */
     setUser: (user) => {
         localStorage.setItem(USER_KEY, JSON.stringify(user));
     },
 
     /**
-     * ?ъ슜???뺣낫 議고쉶
+     * 사용자 정보 조회
      * @returns {Object|null}
      */
     getUser: () => {
@@ -55,14 +55,14 @@ export const tokenStorage = {
     },
 
     /**
-     * ?ъ슜???뺣낫 삭제
+     * 사용자 정보 삭제
      */
     removeUser: () => {
         localStorage.removeItem(USER_KEY);
     },
 
     /**
-     * 愿由ъ옄 ?щ? ?뺤씤
+     * 관리자 여부 확인
      * @returns {boolean}
      */
     isAdmin: () => {
@@ -70,11 +70,10 @@ export const tokenStorage = {
         if (!userStr) return false;
         try {
             const user = JSON.parse(userStr);
-            // Backend returns role as string representation of list, e.g. "[ROLE_USER, ROLE_ADMIN]"
+            // 로그인 응답 role이 문자열 배열 형태("[ROLE_USER, ROLE_ADMIN]")로 올 수 있어 includes로 확인합니다.
             return user.role && user.role.includes('ROLE_ADMIN');
         } catch {
             return false;
         }
     }
 };
-

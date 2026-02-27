@@ -4,10 +4,13 @@ import AdminPaymentList from "./AdminPaymentList";
 import AdminDashboardPage from "./AdminDashboardPage";
 import AdminNoticeList from "./AdminNoticeList";
 import AdminFaqList from "./AdminFaqList";
-import PlaceholderPage from "../PlaceholderPage";
+import AdminEventList from "./AdminEventList";
 import { AdminReservationList } from "./AdminReservationList";
-import AdminOneDayClassManager from "./AdminOneDayClassManager";
+import AdminOneDayClassHub from "./AdminOneDayClassHub";
+import AdminInquiryList from "./AdminInquiryList";
+import AdminRecipeFeedbackHub from "./AdminRecipeFeedbackHub";
 import "./AdminList.css";
+import AdminRecipeHub from "./AdminRecipeHub.jsx";
 
 const AdminManagementPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -21,24 +24,37 @@ const AdminManagementPage = () => {
       case "payments":
         return <AdminPaymentList />;
       case "classes":
-        // 핵심: 관리자 내부 전용 클래스 관리 화면
-        // 기존처럼 공용 OneDay 페이지로 이동하지 않고, 현재 관리자 탭 안에서만 동작합니다.
-        return <AdminOneDayClassManager />;
+        // 핵심: 관리자 내부 전용 클래스 통합 관리 화면
+        // 클래스/강사/클래스문의/클래스리뷰를 하위 탭으로 한 곳에서 운영합니다.
+        return <AdminOneDayClassHub />;
       case "market":
-        return <PlaceholderPage title="마켓 관리(상품 목록)" />;
+        return (
+          <div className="admin-cs-container">
+            <h3>상품 문의 관리</h3>
+            <AdminInquiryList showOneDayTab={false} />
+            <hr style={{ margin: "40px 0" }} />
+            <h3>레시피 문의/리뷰 관리</h3>
+            <AdminRecipeFeedbackHub />
+          </div>
+        );
       case "reservations":
         return <AdminReservationList />;
+      case "recipe" :
+        return <AdminRecipeHub/>;
       case "cs":
         return (
           <div className="admin-cs-container">
             <h3>공지사항 관리</h3>
             <AdminNoticeList />
             <hr style={{ margin: "40px 0" }} />
+            <h3>이벤트 관리</h3>
+            <AdminEventList />
+            <hr style={{ margin: "40px 0" }} />
             <h3>자주 묻는 질문 관리</h3>
             <AdminFaqList />
             <hr style={{ margin: "40px 0" }} />
             <h3>1:1 문의 관리</h3>
-            <PlaceholderPage title="1:1 문의 목록" />
+            <AdminInquiryList showOneDayTab={false} />
           </div>
         );
       default:
@@ -64,6 +80,9 @@ const AdminManagementPage = () => {
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리
         </button>
+         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
+           레시피 관리
+         </button>
         <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
           예약 관리
         </button>

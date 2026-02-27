@@ -5,7 +5,7 @@ import { mypageApi } from "../../api/mypage";
 import "./MyPageDropdown.css";
 
 export default function MyPageDropdown() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserBalance } = useAuth();
   const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function MyPageDropdown() {
     const fetchStats = async () => {
       setStatsLoading(true);
       try {
-        // Load summary and coupons in parallel to reduce dropdown open latency.
+        // 드롭다운 오픈 시 지연을 줄이기 위해 요약/쿠폰 정보를 병렬 조회합니다.
         const [summaryRes, couponRes] = await Promise.allSettled([
           mypageApi.getSummary(),
           mypageApi.getMyCoupons(),
@@ -32,7 +32,13 @@ export default function MyPageDropdown() {
         if (!alive) return;
 
         if (summaryRes.status === "fulfilled" && summaryRes.value?.success) {
-          setSummary(summaryRes.value.data);
+          const summaryData = summaryRes.value.data;
+          setSummary(summaryData);
+
+          // 최신 포인트 잔액을 AuthContext에도 반영해 다른 화면과 동기화합니다.
+          if (summaryData && typeof summaryData.spoonBalance === "number") {
+            updateUserBalance(summaryData.spoonBalance);
+          }
         }
 
         if (couponRes.status === "fulfilled" && couponRes.value?.success) {
@@ -53,7 +59,7 @@ export default function MyPageDropdown() {
     return () => {
       alive = false;
     };
-  }, [isOpen, user]);
+  }, [isOpen]); // user 객체 전체를 의존성에 넣으면 업데이트 시 무한 루프 위험이 있어 제거
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -124,11 +130,11 @@ export default function MyPageDropdown() {
           <div className="dropdown-stats-grid">
             <Link to="/mypage/points" className="stat-box" onClick={() => setIsOpen(false)}>
               <div className="stat-icon-wrapper">
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-                  <circle cx="17" cy="17" r="16" fill="#8E44AD" />
-                  <path d="M12 17H22M17 12V22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                  <circle cx="23" cy="23" r="7" fill="#8E44AD" stroke="white" strokeWidth="1.5" />
-                  <text x="21" y="26" fill="white" fontSize="10" fontWeight="900" fontFamily="Arial">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <circle cx="20" cy="20" r="18" fill="var(--primary-light)" />
+                  <path d="M14 20H26M20 14V26" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="28" cy="28" r="8" fill="var(--primary)" stroke="white" strokeWidth="1.5" />
+                  <text x="26" y="31.5" fill="white" fontSize="11" fontWeight="900" fontFamily="Arial" textAnchor="middle">
                     P
                   </text>
                 </svg>
@@ -136,29 +142,25 @@ export default function MyPageDropdown() {
               <div className="stat-label">
                 <span className="label-text">포인트</span>
                 <span className="stat-value">
-                  {statsLoading ? "..." : (summary?.spoonBalance ?? 0).toLocaleString()}
+                  {statsLoading && user?.spoonBalance === undefined ? "..." : (user?.spoonBalance ?? 0).toLocaleString()}
                 </span>
               </div>
             </Link>
 
-            <Link
-              to="/classes/oneday/coupons"
-              className="stat-box"
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/classes/oneday/coupons" className="stat-box" onClick={() => setIsOpen(false)}>
               <div className="stat-icon-wrapper">
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-                  <rect x="4" y="8" width="26" height="18" rx="3" fill="#9B59B6" />
-                  <circle cx="10" cy="17" r="2" fill="white" />
-                  <line x1="15" y1="10" x2="15" y2="24" stroke="white" strokeDasharray="3 3" />
-                  <text x="20" y="21" fill="white" fontSize="12" fontWeight="900" fontFamily="Arial">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <rect x="5" y="10" width="30" height="20" rx="4" fill="var(--primary)" />
+                  <circle cx="12" cy="20" r="2.5" fill="white" />
+                  <line x1="18" y1="12" x2="18" y2="28" stroke="white" strokeDasharray="2 2" />
+                  <text x="26" y="24" fill="white" fontSize="13" fontWeight="900" fontFamily="Arial" textAnchor="middle">
                     %
                   </text>
                 </svg>
               </div>
               <div className="stat-label">
                 <span className="label-text">쿠폰</span>
-                <span className="stat-value">{statsLoading ? "..." : couponCount ?? 0}</span>
+                <span className="stat-value">{statsLoading && couponCount === null ? "..." : couponCount ?? 0}</span>
               </div>
             </Link>
           </div>
@@ -170,8 +172,8 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
-              <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
-                나의 리뷰
+              <Link to="/mypage/reservations" onClick={() => setIsOpen(false)}>
+                클래스 예약 내역
               </Link>
             </li>
             <li>
@@ -180,12 +182,22 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
+              <Link to="/mypage/reviews" onClick={() => setIsOpen(false)}>
+                내 리뷰
+              </Link>
+            </li>
+            <li>
+              <Link to="/mypage/inquiries" onClick={() => setIsOpen(false)}>
+                문의 내역
+              </Link>
+            </li>
+            <li>
               <Link to="/mypage/profile" onClick={() => setIsOpen(false)}>
                 내 정보 수정
               </Link>
             </li>
             <li>
-              <Link to="/events" onClick={() => setIsOpen(false)}>
+              <Link to="/event" onClick={() => setIsOpen(false)}>
                 이벤트
               </Link>
             </li>

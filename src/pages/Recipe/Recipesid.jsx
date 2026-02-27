@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { deleteRecipe, getRecipeDetail, toggleWish } from "../../api/recipeApi";
+import React, { useState, useEffect, useMemo } from "react";
+import {useParams, useNavigate, Link, replace} from "react-router-dom";
+import {deleteRecipe, deletewihses, getRecipeDetail, Recommend, toggleWish} from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
+import RecipeFeedbackPanel from "./RecipeFeedbackPanel";
 
 const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
   let amount = Number(ing.baseAmount);
@@ -63,6 +64,8 @@ const Recipesid = () => {
   const [baseFlavor, setBaseFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
   const [editingIng, setEditingIng] = useState({ id: null, value: "" });
   const [isFavorite, setIsFavorite] = useState(false);
+  const [recommendCount, setRecommendCount] = useState(0);
+  const [isRecommended, setIsRecommended] = useState(false);
 
   useEffect(() => {
     const fetchRecipe = async () => {
@@ -70,9 +73,14 @@ const Recipesid = () => {
         setLoading(true);
         const response = await getRecipeDetail(id);
         const data = response.data.data;
+        console.log("레시피",data)
 
         setRecipe(data);
         setCurrentServings(Number(data.baseServings) || 1);
+        setIsFavorite(data.wished);
+
+        setRecommendCount(data.recommendCount || 0);
+        setIsRecommended(data.recommended || false);
 
         const initialFlavor = {
           spiciness: data.spiciness ?? 3,
@@ -92,6 +100,27 @@ const Recipesid = () => {
 
     if (id) fetchRecipe();
   }, [id, navigate]);
+
+  const handleToggleRecommend = async () => {
+    try {
+      const response = await Recommend(id);
+      if (response.status === 200 || response.status === 201) {
+        // 백엔드 toggle 로직에 따라 프론트 상태 변경
+        if (!isRecommended) {
+          setRecommendCount(prev => prev + 1);
+          setIsRecommended(true);
+          alert("이 레시피를 추천했습니다! 스푼이 적립되었어요 🥄");
+        } else {
+          setRecommendCount(prev => prev - 1);
+          setIsRecommended(false);
+          alert("추천을 취소했습니다.");
+        }
+      }
+    } catch (error) {
+      console.error("추천 처리 실패:", error);
+      alert("로그인이 필요하거나 본인 레시피는 추천할 수 없습니다.");
+    }
+  };
 
   const ratio = useMemo(() => {
     if (!recipe || !recipe.baseServings) return 1;
@@ -127,11 +156,17 @@ const Recipesid = () => {
 
   const handleToggleFavorite = async () => {
     try {
-      const response = await toggleWish(id);
-      if (response?.status === 200) {
-        const next = !isFavorite;
-        setIsFavorite(next);
-        alert(next ? "관심 목록에 추가되었습니다." : "관심 목록에서 제거되었습니다.");
+
+      if (isFavorite) {
+        await deletewihses(recipe.wished);
+        setIsFavorite(false);
+        alert("관심 목록에서 제거되었습니다")
+        console.log ("관심목록 삭제");
+      }else{
+        await toggleWish(id);
+        setIsFavorite(true);
+        alert("관심 목록에 등록되었습니다")
+        console.log ("관심목록 등록");
       }
     } catch (error) {
       console.error("관심 등록/해제 실패:", error);
@@ -324,9 +359,9 @@ const Recipesid = () => {
                         }}
                       />
                     </div>
-                    {step.stepImg && (
+                    {step.instImg && (
                       <div style={stepImgWrapper}>
-                        <img src={toBackendUrl(`/images/recipe/${step.stepImg}`)} alt={`단계 ${sIdx + 1}`} style={stepImg} />
+                        <img src={toBackendUrl(`/images/recipe/${step.instImg}`)} alt={`단계 ${sIdx + 1}`} style={stepImg} />
                       </div>
                     )}
                   </div>
@@ -335,6 +370,8 @@ const Recipesid = () => {
             </div>
           ))}
         </div>
+
+        <RecipeFeedbackPanel recipeId={id} />
 
         {/* 하단 네비게이션 */}
         <div style={bottomNav}>
@@ -349,6 +386,37 @@ const Recipesid = () => {
           </button>
           <button onClick={handleDelete} style={{ ...navBtn, backgroundColor: "#df1a1a", color: "#fff", border: "none" }}>
             삭제하기
+          </button>
+        </div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <button
+              onClick={handleToggleRecommend}
+              style={{
+                padding: '12px 25px',
+                borderRadius: '30px',
+                border: '2px solid #ff6b6b',
+                backgroundColor: isRecommended ? '#ff6b6b' : '#fff',
+                color: isRecommended ? '#fff' : '#ff6b6b',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '16px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+          >
+            <i className={`fa-${isRecommended ? 'solid' : 'regular'} fa-thumbs-up`}></i>
+            <span>{isRecommended ? "추천 완료" : "레시피 추천"}</span>
+
+            {/* 🚩 여기서 recommendCount를 사용하면 ESLint 에러가 사라집니다! */}
+            <span style={{
+              marginLeft: '8px',
+              borderLeft: '1px solid',
+              paddingLeft: '10px',
+              opacity: 0.9
+            }}>
+              {recommendCount}
+            </span>
           </button>
         </div>
       </div>

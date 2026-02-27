@@ -1,7 +1,8 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
+import './AdminList.css';
 
 function AdminNoticeWrite() {
     const { id } = useParams();
@@ -12,6 +13,7 @@ function AdminNoticeWrite() {
         title: '',
         content: ''
     });
+    const [showPreview, setShowPreview] = useState(true);
 
     const fetchNotice = async () => {
         try {
@@ -60,42 +62,51 @@ function AdminNoticeWrite() {
     };
 
     return (
-        <div className="container mt-5">
-            <h2>{isEdit ? '공지사항 수정' : '공지사항 등록'}</h2>
-            <form onSubmit={handleSubmit} className="mt-4">
-                <div className="mb-3">
-                    <label htmlFor="title" className="form-label">제목</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        id="title"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        required
-                    />
+        <div className="admin-list-container">
+            <div className="admin-list-header">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div className="admin-list-title">{isEdit ? '공지사항 수정' : '공지사항 등록'}</div>
+                        <div style={{ color: '#6B7280', marginTop: 6 }}>간단한 공지 작성/수정 폼입니다.</div>
+                    </div>
                 </div>
-                <div className="mb-3">
-                    <label htmlFor="content" className="form-label">내용</label>
-                    <textarea
-                        className="form-control"
-                        id="content"
-                        name="content"
-                        rows="10"
-                        value={formData.content}
-                        onChange={handleChange}
-                        required
-                    ></textarea>
-                </div>
-                <div className="d-flex justify-content-end gap-2">
-                    <button type="button" className="btn btn-secondary" onClick={() => navigate('/admin/notice')}>
-                        취소
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                        {isEdit ? '수정' : '등록'}
-                    </button>
-                </div>
-            </form>
+            </div>
+
+            <div className="admin-table-card" style={{ padding: 20 }}>
+                <form onSubmit={handleSubmit}>
+                    <div style={{ display: 'grid', gap: 14 }}>
+                        <div>
+                            <label className="form-label" style={{ fontWeight: 800 }}>제목</label>
+                            <input className="admin-input" id="title" name="title" value={formData.title} onChange={handleChange} required />
+                        </div>
+
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <label className="form-label" style={{ fontWeight: 800 }}>내용 (HTML 가능)</label>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button type="button" className="admin-btn-sm" onClick={() => setShowPreview((s) => !s)}>{showPreview ? '미리보기 숨기기' : '미리보기 보기'}</button>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                                <textarea className="admin-input" id="content" name="content" rows={10} value={formData.content} onChange={handleChange} required style={{ flex: showPreview ? 1 : '1 1 100%', minHeight: 220 }} />
+
+                                {showPreview && (
+                                    <div style={{ flex: 1, border: '1px solid #F3F4F6', borderRadius: 8, padding: 12, background: '#fff', minHeight: 220, overflowY: 'auto' }}>
+                                        <div style={{ color: '#6B7280', marginBottom: 8, fontSize: 13 }}>미리보기</div>
+                                        <div dangerouslySetInnerHTML={{ __html: formData.content }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button type="button" className="admin-btn-sm" onClick={() => navigate('/admin/notice')}>취소</button>
+                            <button type="submit" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>{isEdit ? '수정' : '등록'}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

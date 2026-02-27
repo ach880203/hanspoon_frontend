@@ -1,11 +1,12 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchProductDetail } from "../../api/products";
-import { addMyCartItem } from "../../api/carts";
+import { addMyCartItem, fetchMyCart } from "../../api/carts";
 import { toErrorMessage } from "../../api/http";
 import WishButton from "../../components/WishButton";
 import ReviewSection from "../../components/ReviewSection";
 import InquirySection from "../../components/InquirySection";
+import { useCart } from "../../contexts/CartContext";
 import "./ProductDetailPage.css";
 
 const TABS = [
@@ -48,13 +49,33 @@ export default function ProductDetailPage() {
 
   const clampQty = (n) => Math.max(1, Number.isFinite(n) ? n : 1);
 
+  const { refreshCount, showToast } = useCart();
+
   const addToCart = async () => {
     if (!data) return;
     setBusy(true);
     setErr("");
     try {
-      await addMyCartItem({ productId, quantity: clampQty(Number(qty)) });
-      nav("/cart");
+      // 1) 담기 전 장바구니 조회(로그인 상태)
+      const before = await fetchMyCart().catch(() => null);
+      const existed = !!before?.items?.some((it) => it.productId === Number(id));
+
+      // 2) 담기
+      await addMyCartItem({ productId: Number(id), quantity: Number(qty) });
+
+      // 3) 뱃지 갱신
+      await refreshCount();
+
+      // 4) 토스트 문구 분기
+      showToast({
+        title: "장바구니에 담았습니다.",
+        message: existed
+          ? "이미 담은 상품의 수량을 추가했습니다."
+          : "장바구니에 새 상품을 담았습니다.",
+        imgUrl: activeImg || data.thumbnailUrl,
+      });
+
+
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -131,7 +152,7 @@ export default function ProductDetailPage() {
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
   if (!data) return <div className="pdContainer">불러오는 중...</div>;
-
+  
   return (
     <div className="pdPage">
       <div className="pdContainer">

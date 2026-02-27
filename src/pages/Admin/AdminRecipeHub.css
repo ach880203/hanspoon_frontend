@@ -1,0 +1,208 @@
+/* 전체 컨테이너 */
+.admin-recipe-hub {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    color: #333;
+}
+
+/* 헤더 섹션 */
+.admin-recipe-hub-head {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.admin-recipe-hub-head h2 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.admin-recipe-hub-head p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* 탭 메뉴 스타일 */
+.admin-recipe-subtabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.admin-recipe-subtab-btn {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.admin-recipe-subtab-btn:hover {
+    background-color: #f8f9fa;
+}
+
+.admin-recipe-subtab-btn.active {
+    background-color: #ff6b6b; /* 한스푼 포인트 컬러 */
+    color: #fff;
+    border-color: #ff6b6b;
+}
+
+/* 패널 및 액션 바 */
+.admin-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+.admin-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-panel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* 입력창 및 버튼 */
+.admin-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 250px;
+}
+
+.admin-btn-main {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.admin-btn-search {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* 테이블 스타일 */
+.admin-table-container {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.admin-table th {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-bottom: 2px solid #dee2e6;
+    text-align: left;
+    font-weight: 700;
+}
+
+.admin-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.admin-table tr:hover {
+    background-color: #fcfcfc;
+}
+
+/* 텍스트 말줄임 처리 */
+.admin-class-ellipsis {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 버튼 세부 스타일 */
+.admin-btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.btn-danger {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.btn-danger:hover {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.btn-restore {
+    color: #27ae60;
+    border-color: #27ae60;
+}
+
+.btn-restore:hover {
+    background-color: #27ae60;
+    color: #fff;
+}
+
+/* 삭제된 행 표시 */
+.deleted-row {
+    color: #999;
+}
+
+.deleted-row img {
+    filter: grayscale(100%);
+    opacity: 0.6;
+}
+
+/* 빈 목록 표시 */
+.admin-class-empty-row {
+    text-align: center;
+    padding: 50px !important;
+    color: #999;
+}
+
+/* 메시지 알림 */
+.admin-class-msg {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.admin-class-msg-error {
+    background-color: #fff5f5;
+    color: #e03131;
+    border: 1px solid #ffa8a8;
+}
+
+.admin-class-msg-ok {
+    background-color: #f4fce3;
+    color: #2f9e44;
+    border: 1px solid #b2f2bb;
+}

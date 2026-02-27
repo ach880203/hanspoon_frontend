@@ -1,0 +1,118 @@
+/* 관리 패널 섹션 */
+.admin-class-panel {
+    background: #ffffff;
+    border-radius: 15px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 10px;
+}
+
+/* 상단 타이틀 및 검색바 배치 */
+.admin-class-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.admin-class-panel-head h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #334155;
+    margin: 0;
+}
+
+/* 테이블 이미지 썸네일 */
+.recipe-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+}
+
+.recipe-thumbnail:hover {
+    transform: scale(1.1);
+}
+
+/* 추천수 스푼 아이콘 스타일 */
+.spoon-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* 관리 버튼 공통 */
+.admin-btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 복구/수정 버튼 (그린/블루 계열) */
+.btn-edit, .btn-restore {
+    background-color: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+.btn-edit:hover, .btn-restore:hover {
+    background-color: #059669;
+    color: #ffffff;
+}
+
+/* 삭제/영구삭제 버튼 (레드 계열) */
+.btn-danger {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+}
+
+/* 상태 배지 */
+.admin-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-active {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.badge-deleted {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* 비어있는 행 스타일 */
+.admin-class-empty-row {
+    text-align: center;
+    padding: 60px 0 !important;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* 테이블 행 호버 효과 */
+.admin-table tbody tr {
+    transition: background-color 0.15s;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f8fafc;
+}

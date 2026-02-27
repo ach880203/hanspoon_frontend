@@ -1,0 +1,116 @@
+.search-page {
+    padding: 40px 0;
+    min-height: 60vh;
+}
+
+.search-header {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.search-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--dark-color);
+}
+
+.search-header p {
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+.search-section {
+    margin-bottom: 60px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 12px;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.section-header a {
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+
+.search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.search-result-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.card-image {
+    height: 200px;
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-info {
+    padding: 16px;
+    flex: 1;
+}
+
+.card-category {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.card-meta {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.search-loading,
+.search-empty {
+    text-align: center;
+    padding: 100px 0;
+    font-size: 1.2rem;
+    color: #6b7280;
+}

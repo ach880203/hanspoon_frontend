@@ -1,4 +1,3 @@
-
 import axiosInstance from './axios';
 
 export const adminApi = {
@@ -96,5 +95,56 @@ export const adminApi = {
     rejectCancelRequest: async (id) => {
         const response = await axiosInstance.post(`/api/admin/reservations/${id}/reject-cancel`);
         return response.data;
+    },
+
+    // Inquiries (Shop Products)
+    getProductInquiriesAdmin: async (page = 0, size = 10) => {
+        const response = await axiosInstance.get('/api/admin/inquiries', {
+            params: { page, size }
+        });
+        return response.data;
+    },
+    // OneDay Instructors
+    getOneDayInstructors: async () => {
+        const response = await axiosInstance.get('/api/admin/oneday/instructors');
+        return response.data;
+    },
+    getInstructorCandidateUsers: async (keyword) => {
+        const params = keyword ? { keyword } : {};
+        const response = await axiosInstance.get('/api/admin/oneday/instructors/candidate-users', { params });
+        return response.data;
+    },
+    createOneDayInstructor: async (data) => {
+        const response = await axiosInstance.post('/api/admin/oneday/instructors', data);
+        return response.data;
+    },
+    updateOneDayInstructor: async (id, data) => {
+        const response = await axiosInstance.put(`/api/admin/oneday/instructors/${id}`, data);
+        return response.data;
+    },
+    deleteOneDayInstructor: async (id) => {
+        const response = await axiosInstance.delete(`/api/admin/oneday/instructors/${id}`);
+        return response.data;
+    },
+
+    // Events
+    getEvents: async (params) => {
+        const response = await axiosInstance.get('/api/admin/events/list', { params });
+        return response.data;
+    },
+    getEvent: async (id) => {
+        const response = await axiosInstance.get(`/api/admin/events/${id}`);
+        return response.data;
+    },
+    createEvent: async (data) => {
+        const response = await axiosInstance.post('/api/admin/events', data);
+        return response.data;
+    },
+    updateEvent: async (id, data) => {
+        const response = await axiosInstance.put(`/api/admin/events/${id}`, data);
+        return response.data;
+    },
+    deleteEvent: async (id) => {
+        await axiosInstance.delete(`/api/admin/events/${id}`);
     }
 };

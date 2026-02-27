@@ -1,4 +1,4 @@
-﻿﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   getMyOneDayReservations,
@@ -89,6 +89,7 @@ export const OneDayClasses = () => {
         if (queryState.category) params.category = queryState.category;
         if (queryState.instructorId) params.instructorId = Number(queryState.instructorId);
         if (queryState.sort) params.sort = queryState.sort;
+        if (queryState.keyword) params.keyword = queryState.keyword;
 
         const data = await getOneDayClasses(params, { signal });
         const list = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
@@ -219,17 +220,11 @@ export const OneDayClasses = () => {
       instructor: c?.instructorName ?? (c?.instructorId ? `강사 #${c.instructorId}` : ""),
     }));
 
-    const filteredByKeyword = normalized.filter((x) => {
-      if (!queryState.keyword.trim()) return true;
-      const q = queryState.keyword.trim().toLowerCase();
-      return [x.title, x.category, x.level, x.instructor, String(x.id)]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q));
-    });
+    const filtered = normalized; // 서버 사이드 검색으로 전환되었으므로 키워드 필터 제거
 
-    if (!queryState.completedOnly) return filteredByKeyword;
-    return filteredByKeyword.filter((x) => completedClassIds.has(x.id));
-  }, [items, queryState.keyword, queryState.completedOnly, completedClassIds]);
+    if (!queryState.completedOnly) return filtered;
+    return filtered.filter((x) => completedClassIds.has(x.id));
+  }, [items, queryState.completedOnly, completedClassIds]);
 
   const onFilterChange = (key, value) => {
     // 필터가 바뀌면 첫 페이지부터 다시 조회해야 UX가 자연스럽습니다.

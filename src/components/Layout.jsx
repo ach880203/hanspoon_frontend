@@ -2,16 +2,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import MyPageDropdown from "./Layout/MyPageDropdown";
+import CartBadge from "./CartBadge";
+import CartToast from "./CartToast";
 import "./Layout.css";
 
 export default function Layout() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const navigate = useNavigate();
   // Read auth state once at layout level so header/drawer share the same source.
   const { user, logout } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -25,10 +29,11 @@ export default function Layout() {
 
   const primaryNav = useMemo(
     () => [
-      { to: "/recipes", label: "레시피" },
+      { to: "/recipes/list", label: "레시피" },
       { to: "/classes/oneday", label: "클래스" },
       { to: "/products", label: "마켓" },
       { to: "/notice", label: "공지사항" },
+      { to: "/event", label: "이벤트" },
       { to: "/faq", label: "자주 묻는 질문" },
     ],
     []
@@ -37,6 +42,15 @@ export default function Layout() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Show welcome modal when redirected from first-login flow
+  useEffect(() => {
+    if (location?.state?.showWelcomeModal) {
+      setShowWelcomeModal(true);
+      // remove the flag from history so refresh doesn't show it again
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 6);
@@ -133,9 +147,11 @@ export default function Layout() {
               />
             </button>
 
-            <Link to="/cart" className="hs-iconBtn" aria-label="장바구니">
-              <IconCart />
-            </Link>
+            <CartBadge>
+              <Link to="/cart" className="hs-iconBtn" aria-label="장바구니">
+                <IconCart />
+              </Link>
+            </CartBadge>
 
             {user ? (
               <MyPageDropdown />
@@ -240,6 +256,22 @@ export default function Layout() {
             </aside>
           </div>
         )}
+
+        <CartToast />
+
+        {showWelcomeModal && (
+          <div className="hs-overlay" role="dialog" aria-modal="true">
+            <div className="hs-welcome-modal">
+              <button className="hs-iconBtn hs-welcome-close" onClick={() => setShowWelcomeModal(false)} aria-label="닫기">✕</button>
+              <div className="hs-welcome-body">
+                <h2>환영합니다!</h2>
+                <p>신규 가입 축하드립니다 — 3,000포인트가 지급되었습니다.</p>
+                <button className="btn-auth-primary" onClick={() => setShowWelcomeModal(false)}>확인</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </header>
 
       <main className="layout-mainContainer">

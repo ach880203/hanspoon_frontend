@@ -1,4 +1,4 @@
-﻿// src/pages/SignupPage.jsx
+// src/pages/SignupPage.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../api/auth";

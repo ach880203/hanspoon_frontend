@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import MyPageDropdown from './MyPageDropdown';
 import './Header.css';
@@ -19,15 +19,28 @@ function Header() {
           <nav className="nav">
             <Link to="/" className="nav-link">홈</Link>
             <Link to="/notice" className="nav-link">공지사항</Link>
+            <Link to="/event" className="nav-link">이벤트</Link>
             <Link to="/faq" className="nav-link">자주 묻는 질문</Link>
             <Link to="/payment" className="nav-link">결제</Link>
           </nav>
 
           <div className="header-actions">
             <div className="utility-icons">
-              <button className="icon-btn search-btn" aria-label="검색">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              </button>
+              <div className="header-search-container">
+                <input
+                  type="text"
+                  className="header-search-input"
+                  placeholder="클래스 검색..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.target.value.trim()) {
+                      window.location.href = `/classes/oneday/classes?keyword=${encodeURIComponent(e.target.value.trim())}`;
+                    }
+                  }}
+                />
+                <button className="icon-btn search-btn" aria-label="검색">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+              </div>
               <Link to="/cart" className="icon-btn cart-btn" aria-label="장바구니">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
               </Link>

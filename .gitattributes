@@ -1,0 +1,17 @@
+# 기본 텍스트 파일은 LF로 통일해 운영체제 차이로 인한 불필요한 변경을 줄입니다.
+* text=auto eol=lf
+
+# 윈도우 배치 파일은 CRLF를 유지합니다.
+*.bat text eol=crlf
+
+# 바이너리 파일은 줄바꿈/인코딩 변환 대상에서 제외합니다.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary

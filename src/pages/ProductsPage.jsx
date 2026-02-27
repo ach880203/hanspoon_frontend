@@ -3,7 +3,7 @@ import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import { fetchProducts } from "../api/products";
 import { toErrorMessage } from "../api/http";
-import BannerSection, { marketBannerSlides } from "../components/BannerSection";
+
 
 const CATEGORIES = ["ALL", "INGREDIENT", "MEAL_KIT", "KITCHEN_SUPPLY"];
 const SORTS = ["LATEST", "PRICE_ASC", "PRICE_DESC"];
@@ -49,7 +49,7 @@ export default function ProductsPage() {
       
       
     
-      <h1>상품 목록</h1>
+      <h1>Products</h1>
 
       <div className="toolbar">
         <div className="tabs">
@@ -67,7 +67,7 @@ export default function ProductsPage() {
         <div className="filters">
           <input
             value={keyword}
-            placeholder="검색할 상품명을 입력하세요"
+            placeholder="검색(상품명)"
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") setPage(0); }}
           />
@@ -87,4 +87,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

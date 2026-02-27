@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { noticeApi } from '../../api';
 import './Notice.css';
@@ -80,7 +80,7 @@ function NoticeDetail() {
                 <div className="notice-detail-card">
                     <div className="notice-detail-header">
                         {notice.isImportant && (
-                            <span className="badge badge-important">以묒슂</span>
+                            <span className="badge badge-important">중요</span>
                         )}
                         <h1 className="notice-detail-title">{notice.title}</h1>
                         <div className="notice-detail-meta">
@@ -91,9 +91,10 @@ function NoticeDetail() {
                         </div>
                     </div>
 
-                    <div className="notice-detail-content">
-                        {notice.content}
-                    </div>
+                    <div
+                        className="notice-detail-content"
+                        dangerouslySetInnerHTML={{ __html: notice.content }}
+                    />
 
                     <div className="notice-detail-footer">
                         <button

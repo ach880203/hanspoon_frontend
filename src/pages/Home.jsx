@@ -1,9 +1,35 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './Home.css';
+import './WelcomeModal.css';
 
 function Home() {
+    const location = useLocation();
+    const [showModal, setShowModal] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.showWelcomeModal) {
+            setShowModal(true);
+            // 상태 초기화 (새로고침 시 다시 뜨지 않게)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
+
     return (
         <div className="home">
+            {showModal && (
+                <div className="welcome-modal-overlay">
+                    <div className="welcome-modal">
+                        <div className="welcome-icon">🥄</div>
+                        <h2>가입을 축하드려요!</h2>
+                        <p>반가워요! 신규 가입 선물로<br /><strong>3,000 스푼</strong>이 지급되었습니다.</p>
+                        <p className="sub-text">지금 바로 원데이 클래스 예약에 사용해 보세요!</p>
+                        <button className="btn btn-primary" onClick={() => setShowModal(false)}>
+                            반가워요!
+                        </button>
+                    </div>
+                </div>
+            )}
             <section className="hero">
                 <div className="container">
                     <div className="hero-content">

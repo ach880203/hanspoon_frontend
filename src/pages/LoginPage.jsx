@@ -1,11 +1,12 @@
-﻿import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getBackendBaseUrl } from "../utils/backendUrl";
 import "./Auth/Auth.css";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const oauthBaseUrl = getBackendBaseUrl("http://localhost:8080");
 
   const [email, setEmail] = useState("");
@@ -23,8 +24,12 @@ export default function LoginPage() {
     setErr(null);
     setBusy(true);
     try {
-      await login(email, password);
-      window.location.href = "/";
+      const res = await login(email, password);
+      if (res.isFirstLogin) {
+        navigate("/", { state: { showWelcomeModal: true } });
+      } else {
+        navigate("/");
+      }
     } catch (e) {
       setErr(e.message || "로그인에 실패했습니다.");
     } finally {

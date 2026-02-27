@@ -1,4 +1,4 @@
-﻿// src/App.jsx
+// src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 
@@ -22,11 +22,14 @@ import FindIdPage from "./pages/Auth/FindIdPage";
 import FindPasswordPage from "./pages/Auth/FindPasswordPage";
 import NoticeList from "./pages/Notice/NoticeList";
 import NoticeDetail from "./pages/Notice/NoticeDetail";
+import EventList from "./pages/Event/EventList";
+import EventDetail from "./pages/Event/EventDetail";
 import FaqList from "./pages/Faq/FaqList";
 import OAuth2RedirectHandler from "./pages/Auth/OAuth2RedirectHandler";
 
 import AdminNoticeList from "./pages/Admin/AdminNoticeList";
 import AdminNoticeWrite from "./pages/Admin/AdminNoticeWrite";
+import AdminEventWrite from "./pages/Admin/AdminEventWrite";
 import AdminFaqList from "./pages/Admin/AdminFaqList";
 import AdminFaqWrite from "./pages/Admin/AdminFaqWrite";
 import AdminDashboardPage from "./pages/Admin/AdminDashboardPage";
@@ -47,6 +50,7 @@ import RecipePage from "./pages/Recipe/RecipePage";
 import Recipesid from "./pages/Recipe/Recipesid";
 import Recipesuser from "./pages/Recipe/Recipesuser";
 import RecipeList from "./pages/Recipe/RecipeList";
+import RecipeWishes from "./pages/Recipe/RecipeWishes.jsx";
 
 import Payment from "./pages/Payment/Payment";
 import PaymentSuccess from "./pages/Payment/PaymentSuccess";
@@ -55,6 +59,7 @@ import PaymentFail from "./pages/Payment/PaymentFail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RecipeDeleteList from "./pages/Recipe/RecipeDeleteList";
 import AddressTestPage from "./pages/AddressTestPage";
+import SearchPage from "./pages/SearchPage";
 
 
 export default function App() {
@@ -64,6 +69,7 @@ export default function App() {
         <Route index element={<HomePage />} />
 
         <Route path="address-test" element={<AddressTestPage />} />
+        <Route path="search" element={<SearchPage />} />
 
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailPage />} />
@@ -98,6 +104,7 @@ export default function App() {
         <Route path="oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
         <Route path="recipes" element={<RecipePage title="레시피 등록" />} />
+        <Route path="recipes/recipewishes" element={<RecipeWishes title="레시피 관심목록" />} />
         <Route path="recipes/user" element={<Recipesuser title="내 레시피" />} />
         <Route path="recipes/:id" element={<Recipesid title="레시피 상세" />} />
         <Route path="recipes/list" element={<RecipeList title="레시피 목록" />} />
@@ -112,6 +119,8 @@ export default function App() {
 
         <Route path="notice" element={<NoticeList title="공지사항" />} />
         <Route path="notice/:id" element={<NoticeDetail />} />
+        <Route path="event" element={<EventList />} />
+        <Route path="event/:id" element={<EventDetail />} />
         <Route path="faq" element={<FaqList title="자주 묻는 질문" />} />
 
         <Route path="payment" element={<Payment />} />
@@ -123,6 +132,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="orders" element={<MyOrdersPage />} />
           <Route path="reservations" element={<MyClassPage />} />
+          <Route path="class-wishes" element={<Navigate to="/mypage/wishlist" replace />} />
           <Route path="wishlist" element={<MyWishesPage />} />
           <Route path="inquiries" element={<MyInquiriesPage title="내 문의" />} />
           <Route path="reviews" element={<MyReviewsPage title="내 리뷰" />} />
@@ -206,6 +216,16 @@ export default function App() {
         <Route path="admin/notice/edit/:id" element={
           <ProtectedRoute requiredRole="ROLE_ADMIN">
             <AdminNoticeWrite />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/event/write" element={
+          <ProtectedRoute requiredRole="ROLE_ADMIN">
+            <AdminEventWrite />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/event/edit/:id" element={
+          <ProtectedRoute requiredRole="ROLE_ADMIN">
+            <AdminEventWrite />
           </ProtectedRoute>
         } />
 
