@@ -105,7 +105,7 @@ export default function CartPage() {
   // computed
   const items = cart?.items ?? [];
   const allSelected = items.length > 0 && selected.size === items.length;
-  const canOrder = selected.size > 0 && !busy;
+  const canOrder = items.length > 0 && !busy;
 
   const currentAddress = useMemo(() => {
     if (!addresses.length) return null;
@@ -251,11 +251,10 @@ export default function CartPage() {
   };
 
   // =========================
-  // Calc (selected items only)
+  // Calc (all cart items)
   // =========================
   const calc = useMemo(() => {
-    const selectedItems = items.filter((it) => selected.has(it.itemId));
-    const productAmount = selectedItems.reduce((sum, it) => {
+    const productAmount = items.reduce((sum, it) => {
       const line = it.lineTotal ?? it.price * it.quantity;
       return sum + (line ?? 0);
     }, 0);
@@ -265,7 +264,7 @@ export default function CartPage() {
     const payable = productAmount - itemDiscount + shippingFee;
 
     return { productAmount, itemDiscount, shippingFee, payable };
-  }, [items, selected]);
+  }, [items]);
 
   // =========================
   // Address handlers
@@ -295,11 +294,12 @@ export default function CartPage() {
   };
 
   const openAddAddress = () => {
+    const auth = loadAuth() || {};
     setEditTargetId(null);
     setAddrDraft({
-      label: "새 배송지",
-      receiverName: currentAddress?.receiverName ?? "",
-      receiverPhone: currentAddress?.receiverPhone ?? "",
+      label: "",
+      receiverName: auth.userName ?? "",
+      receiverPhone: auth.phone ?? auth.userPhone ?? auth.tel ?? "",
       zipCode: "",
       address1: "",
       address2: "",
@@ -629,11 +629,6 @@ export default function CartPage() {
               </div>
 
               <div className="payRow">
-                <span className="muted">쿠폰 할인 금액</span>
-                <span className="muted">로그인 후 확인</span>
-              </div>
-
-              <div className="payRow">
                 <span className="muted">배송비</span>
                 <b>{fmt(calc.shippingFee)}원</b>
               </div>
@@ -645,7 +640,7 @@ export default function CartPage() {
                 <b>{fmt(calc.payable)}원</b>
               </div>
 
-              <div className="hint">선택 상품 기준으로 결제금액이 계산됩니다.</div>
+              <div className="hint">장바구니 전체 상품 기준으로 결제금액이 계산됩니다.</div>
 
               <div className="freeShip">
                 {calc.productAmount >= 20000 ? (
