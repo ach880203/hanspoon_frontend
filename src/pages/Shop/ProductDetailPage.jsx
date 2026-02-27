@@ -33,6 +33,7 @@ export default function ProductDetailPage() {
   const ratiosRef = useRef(new Map()); // scrollspy 안정화
 
   const productId = useMemo(() => Number(id), [id]);
+  const stock = Math.max(0, Number(data?.stock ?? 0));
 
   useEffect(() => {
     setErr("");
@@ -47,12 +48,16 @@ export default function ProductDetailPage() {
       .catch((e) => setErr(toErrorMessage(e)));
   }, [id]);
 
-  const clampQty = (n) => Math.max(1, Number.isFinite(n) ? n : 1);
+  const clampQty = (n) => {
+    const normalized = Number.isFinite(n) ? n : 1;
+    if (stock <= 0) return 1;
+    return Math.min(stock, Math.max(1, normalized));
+  };
 
   const { refreshCount, showToast } = useCart();
 
   const addToCart = async () => {
-    if (!data) return;
+    if (!data || stock <= 0) return;
     setBusy(true);
     setErr("");
     try {
@@ -205,24 +210,30 @@ export default function ProductDetailPage() {
             <div className="pdQtyBox">
               <div className="pdQtyLabel">수량</div>
               <div className="pdQtyCtrl">
-                <button type="button" onClick={() => setQty((q) => clampQty(q - 1))} disabled={busy}>
+                <button type="button" onClick={() => setQty((q) => clampQty(q - 1))} disabled={busy || stock <= 0}>
                   −
                 </button>
                 <input
                   type="number"
                   min={1}
+                  max={Math.max(1, stock)}
                   value={qty}
                   onChange={(e) => setQty(clampQty(Number(e.target.value)))}
+                  disabled={stock <= 0}
                 />
-                <button type="button" onClick={() => setQty((q) => clampQty(q + 1))} disabled={busy}>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => clampQty(q + 1))}
+                  disabled={busy || stock <= 0 || qty >= stock}
+                >
                   +
                 </button>
               </div>
             </div>
 
             <div className="pdActions">
-              <button className="pdCartBtn" disabled={busy} onClick={addToCart}>
-                {busy ? "처리 중.." : "장바구니 담기"}
+              <button className="pdCartBtn" disabled={busy || stock <= 0} onClick={addToCart}>
+                {busy ? "처리 중.." : stock <= 0 ? "품절" : "장바구니 담기"}
               </button>
               <WishButton productId={id} />
             </div>

@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { cancelOrder, deliverOrder, fetchOrder, shipOrder } from "../api/orders";
+import { cancelOrder, fetchOrder } from "../api/orders";
+import { createProductInquiry } from "../api/productInquiries";
 import { toErrorMessage } from "../api/http";
+import { translateOrderStatus } from "../utils/statusConverter";
+
+function toDate(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("ko-KR");
+}
 
 export default function OrderPage() {
   const nav = useNavigate();
@@ -10,6 +19,7 @@ export default function OrderPage() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState("");
+  const [message, setMessage] = useState("");
 
   const load = async () => {
     setErr("");
@@ -21,14 +31,21 @@ export default function OrderPage() {
     }
   };
 
-  useEffect(() => { load(); }, [orderId]);
+  useEffect(() => {
+    load();
+  }, [orderId]);
 
-  const action = async (fn) => {
+  const runAction = async (fn) => {
     setBusy(true);
     setErr("");
+    setMessage("");
     try {
       const updated = await fn();
-      setOrder(updated);
+      if (updated) {
+        setOrder(updated);
+      } else {
+        await load();
+      }
     } catch (e) {
       setErr(toErrorMessage(e));
     } finally {
@@ -36,54 +53,79 @@ export default function OrderPage() {
     }
   };
 
-  if (!order) return <div>ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</div>;
+  const submitOrderInquiry = async (typeLabel) => {
+    if (!order?.items?.length) {
+      setErr("¹®ÀÇ °¡´ÉÇÑ ÁÖ¹® »óÇ°ÀÌ ¾ø½À´Ï´Ù.");
+      return;
+    }
+    const productId = order.items[0]?.productId;
+    if (!productId) {
+      setErr("¹®ÀÇ °¡´ÉÇÑ »óÇ° ID¸¦ Ã£Áö ¸øÇß½À´Ï´Ù.");
+      return;
+    }
 
-  const canRefundReason = order.status === "PAID";
+    const input = window.prompt(`${typeLabel} ³»¿ëÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.`, "");
+    if (!input || !input.trim()) return;
+
+    await runAction(async () => {
+      const content = `[${typeLabel}] ÁÖ¹® #${order.orderId}\n${input.trim()}`;
+      await createProductInquiry(productId, { content, secret: true });
+      setMessage(`${typeLabel}ÀÌ(°¡) Á¢¼öµÇ¾ú½À´Ï´Ù.`);
+      return null;
+    });
+  };
+
+  if (!order) return <div>ºÒ·¯¿À´Â Áß...</div>;
+
+  const canCancel = order.status === "PAID";
+  const isShipped = order.status === "SHIPPED";
+  const isDelivered = order.status === "DELIVERED";
+  const isConfirmed = order.status === "CONFIRMED";
 
   return (
     <div>
-      <h1>ì£¼ë¬¸ #{order.orderId}</h1>
+      <h1>ÁÖ¹® #{order.orderId}</h1>
       {err && <div className="error">{err}</div>}
+      {message && <div style={{ color: "#166534", marginBottom: 12 }}>{message}</div>}
 
       <div className="panel">
         <div className="row" style={{ justifyContent: "space-between" }}>
           <div>
-            <div className="badge">{order.status}</div>
-            <div className="muted">ì´ ê²°ì œê¸ˆì•¡: {order.totalPrice.toLocaleString()}ì›</div>
+            <div className="badge">{translateOrderStatus(order.status)}</div>
+            <div className="muted">ÃÑ °áÁ¦±İ¾×: {order.totalPrice.toLocaleString()}¿ø</div>
           </div>
-          <div className="muted">
-            ìƒì„±ì¼ì‹œ: {String(order.createdAt || "")}
-          </div>
+          <div className="muted">»ı¼ºÀÏ½Ã: {toDate(order.createdAt)}</div>
         </div>
 
         <div className="grid2" style={{ marginTop: 12 }}>
           <div className="panelMini">
-            <div><b>ìˆ˜ë ¹ì¸ ì •ë³´</b></div>
+            <div><b>¼ö·ÉÁö Á¤º¸</b></div>
             <div>{order.receiverName} / {order.receiverPhone}</div>
-            <div className="muted">{order.address1} {order.address2}</div>
+            <div className="muted">{order.address1} {order.address2 || ""}</div>
+            <div className="muted">¼ÛÀå¹øÈ£: {order.trackingNumber || "-"}</div>
           </div>
           <div className="panelMini">
-            <div><b>ì²˜ë¦¬ ì‹œê°</b></div>
-            <div className="muted">ê²°ì œ ì‹œê°: {String(order.paidAt || "")}</div>
-            <div className="muted">ì¶œê³  ì‹œê°: {String(order.shippedAt || "")}</div>
-            <div className="muted">ë°°ì†¡ì™„ë£Œ ì‹œê°: {String(order.deliveredAt || "")}</div>
-            <div className="muted">í™˜ë¶ˆ ì‹œê°: {String(order.refundedAt || "")}</div>
-            {order.refundReason && <div className="muted">í™˜ë¶ˆ ì‚¬ìœ : {order.refundReason}</div>}
+            <div><b>Ã³¸® ½Ã°¢</b></div>
+            <div className="muted">°áÁ¦ ½Ã°¢: {toDate(order.paidAt)}</div>
+            <div className="muted">¹è¼ÛÁß Ã³¸®: {toDate(order.shippedAt)}</div>
+            <div className="muted">¹è¼Û¿Ï·á Ã³¸®: {toDate(order.deliveredAt)}</div>
+            <div className="muted">±¸¸ÅÈ®Á¤ Ã³¸®: {toDate(order.confirmedAt)}</div>
+            <div className="muted">È¯ºÒ ½Ã°¢: {toDate(order.refundedAt)}</div>
+            {order.refundReason && <div className="muted">È¯ºÒ »çÀ¯: {order.refundReason}</div>}
           </div>
         </div>
 
-        <h3 style={{ marginTop: 16 }}>ì£¼ë¬¸ ìƒí’ˆ</h3>
+        <h3 style={{ marginTop: 16 }}>ÁÖ¹® »óÇ°</h3>
         <div className="cartList">
           {order.items.map((it) => (
             <div key={it.orderItemId} className="cartItem">
               <div className="cartThumb">
-                {it.thumbnailUrl ? <img src={it.thumbnailUrl} alt={it.productName} /> : <div className="thumbPlaceholder">ì´ë¯¸ì§€ ì—†ìŒ</div>}
+                {it.thumbnailUrl ? <img src={it.thumbnailUrl} alt={it.productName} /> : <div className="thumbPlaceholder">ÀÌ¹ÌÁö ¾øÀ½</div>}
               </div>
               <div className="cartInfo">
                 <div className="title">{it.productName}</div>
                 <div className="muted">
-                  {it.orderPrice.toLocaleString()}ì› x {it.quantity} ={" "}
-                  <b>{it.lineTotal.toLocaleString()}ì›</b>
+                  {it.orderPrice.toLocaleString()}¿ø x {it.quantity} = <b>{it.lineTotal.toLocaleString()}¿ø</b>
                 </div>
               </div>
             </div>
@@ -91,45 +133,46 @@ export default function OrderPage() {
         </div>
 
         <div className="panel" style={{ marginTop: 12 }}>
-          <h3>ì£¼ë¬¸ ì²˜ë¦¬</h3>
+          <h3>ÁÖ¹® Ã³¸®</h3>
           <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-            <button disabled={busy} onClick={() => nav("/payment", {
-              state: {
-                orderId: order.orderId,
-                itemName: order.items[0]?.productName + (order.items.length > 1 ? ` ì™¸ ${order.items.length - 1}ê±´` : ""),
-                amount: order.totalPrice
-              }
-            })}>ê²°ì œí•˜ê¸°</button>
-            <button disabled={busy} onClick={() => action(() => shipOrder(order.orderId))}>ì¶œê³  ì²˜ë¦¬</button>
-            <button disabled={busy} onClick={() => action(() => deliverOrder(order.orderId))}>ë°°ì†¡ ì™„ë£Œ</button>
-
-            {canRefundReason && (
+            {canCancel ? (
               <>
                 <input
-                  placeholder="í™˜ë¶ˆ ì‚¬ìœ  (ê²°ì œì™„ë£Œ ìƒíƒœì—ì„œ í•„ìˆ˜)"
+                  placeholder="°áÁ¦Ãë¼Ò »çÀ¯"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   style={{ minWidth: 240 }}
                 />
-                <button className="danger" disabled={busy} onClick={() => action(() => cancelOrder(order.orderId, reason))}>
-                  ì·¨ì†Œ(í™˜ë¶ˆ)
+                <button
+                  className="danger"
+                  disabled={busy || !reason.trim()}
+                  onClick={() => runAction(() => cancelOrder(order.orderId, reason.trim()))}
+                >
+                  °áÁ¦Ãë¼Ò
                 </button>
               </>
-            )}
+            ) : null}
 
-            {!canRefundReason && (
-              <button className="danger" disabled={busy} onClick={() => action(() => cancelOrder(order.orderId, null))}>
-                ì£¼ë¬¸ ì·¨ì†Œ
-              </button>
-            )}
-          </div>
+            {isShipped ? (
+              <button disabled={busy} onClick={() => submitOrderInquiry("¹è¼Û ¹®ÀÇ")}>¹®ÀÇÇÏ±â</button>
+            ) : null}
 
-          <div className="muted" style={{ marginTop: 8 }}>
-            ì •ì±…: ì¶œê³ /ë°°ì†¡ì™„ë£Œ ì´í›„ì—ëŠ” ì·¨ì†Œê°€ ë¶ˆê°€í•©ë‹ˆë‹¤. (ë°˜í’ˆì€ ë‹¤ìŒ ë‹¨ê³„ì—ì„œ ì²˜ë¦¬)
+            {isDelivered ? (
+              <>
+                <button disabled={busy} onClick={() => submitOrderInquiry("±³È¯ ¿äÃ»")}>±³È¯ ¿äÃ»</button>
+                <button disabled={busy} onClick={() => submitOrderInquiry("È¯ºÒ ¿äÃ»")}>È¯ºÒ ¿äÃ»</button>
+                <button disabled={busy} onClick={() => submitOrderInquiry("ÁÖ¹® ¹®ÀÇ")}>¹®ÀÇÇÏ±â</button>
+              </>
+            ) : null}
+
+            {isConfirmed ? (
+              <button disabled={busy} onClick={() => submitOrderInquiry("ÁÖ¹® ¹®ÀÇ")}>¹®ÀÇÇÏ±â</button>
+            ) : null}
+
+            <button className="ghost" disabled={busy} onClick={() => nav("/mypage/orders")}>¸ñ·ÏÀ¸·Î</button>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

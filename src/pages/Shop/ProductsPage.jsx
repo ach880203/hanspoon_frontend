@@ -194,7 +194,7 @@ export default function ProductsPage() {
 
         <div className="productsGrid">
           {items.map((p) => (
-            <ProductCard key={p.id} p={p} />
+            <ProductCard key={p.id} p={p} variant="market" />
           ))}
         </div>
 

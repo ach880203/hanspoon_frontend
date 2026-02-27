@@ -24,6 +24,12 @@
   color: rgba(0, 0, 0, 0.55);
   text-decoration: none;
 }
+.rg-more:hover,
+.rg-more:focus,
+.rg-more:active,
+.rg-more:visited {
+  text-decoration: none;
+}
 .rg-more:hover {
   color: rgba(0, 0, 0, 0.82);
 }
@@ -60,6 +66,12 @@
   display: block;
   text-decoration: none;
   color: inherit;
+}
+.rg-card:hover,
+.rg-card:focus,
+.rg-card:active,
+.rg-card:visited {
+  text-decoration: none;
 }
 
 .rg-thumb {
@@ -177,6 +189,12 @@
   transition: 160ms ease;
 }
 
+.rg-arrowText {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .rg-arrow:hover {
   transform: translateY(-50%) scale(1.03);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
@@ -184,6 +202,29 @@
 
 .rg-left { left: -10px; }
 .rg-right { right: -10px; }
+
+.rg-indicators {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.rg-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.rg-indicator.is-active {
+  background: rgba(0, 0, 0, 0.55);
+  transform: scale(1.2);
+}
 
 /* skeleton */
 .rg-skeleton {
@@ -204,4 +245,103 @@
   .rg-grid-4 { grid-template-columns: repeat(2, 1fr); }
   .rg-grid-3 { grid-template-columns: repeat(1, 1fr); }
   .rg-left, .rg-right { display: none; }
+}
+
+/* market variant */
+.rg-section-market {
+  padding-top: 34px;
+}
+
+.rg-section-market .rg-head {
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.rg-section-market .rg-title {
+  text-align: left;
+  letter-spacing: 0.2px;
+  font-size: 24px;
+  color: #1f2937;
+}
+
+.rg-section-market .rg-more {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff4ed;
+  border: 1px solid #ffd7be;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rg-section-market .rg-more:hover {
+  background: #ffeddc;
+  color: #9a3412;
+}
+
+.rg-section-market .rg-grid {
+  gap: 20px;
+}
+
+.rg-section-market .rg-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+.rg-section-market .rg-card:hover {
+  transform: translateY(-4px);
+  border-color: #fdba74;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+}
+
+.rg-section-market .rg-thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  border: none;
+  background: #f9fafb;
+}
+
+.rg-section-market .rg-meta {
+  padding: 12px 14px 14px;
+}
+
+.rg-section-market .rg-chip {
+  background: #fff4ed;
+  color: #c2410c;
+  margin-bottom: 8px;
+}
+
+.rg-section-market .rg-itemTitle {
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 5px;
+}
+
+.rg-section-market .rg-sub {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  -webkit-line-clamp: 1;
+}
+
+.rg-section-market .rg-priceRow {
+  gap: 7px;
+}
+
+.rg-section-market .rg-discount {
+  color: #ea580c;
+  font-size: 14px;
+}
+
+.rg-section-market .rg-price {
+  font-size: 16px;
+  color: #111827;
+}
+
+.rg-section-market .rg-origin {
+  font-size: 12px;
 }

@@ -1,22 +1,22 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { fetchMyCartCount } from "../api/carts"; // 아래에 추가할 API
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { fetchMyCartCount } from "../api/carts";
 import { toErrorMessage } from "../api/http";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [count, setCount] = useState(0);
-  const [toast, setToast] = useState(null); // {title, message}
+  const [toast, setToast] = useState(null); // { title, message, imgUrl }
 
-  const refreshCount = async () => {
+  const refreshCount = useCallback(async () => {
     try {
       const c = await fetchMyCartCount();
       setCount(Number(c) || 0);
     } catch (e) {
-      // badge는 실패해도 UX 치명적이진 않으니 조용히 처리
+      // Do not block UX when badge refresh fails.
       console.debug("cart count refresh failed:", toErrorMessage(e));
     }
-  };
+  }, []);
 
   const showToast = (payload) => {
     setToast(payload);
@@ -25,13 +25,12 @@ export function CartProvider({ children }) {
   };
 
   useEffect(() => {
-    // 앱 처음 로딩 때 1회(로그인 상태면 정상)
     refreshCount();
-  }, []);
+  }, [refreshCount]);
 
   const value = useMemo(
     () => ({ count, setCount, refreshCount, toast, showToast }),
-    [count, toast]
+    [count, toast, refreshCount]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

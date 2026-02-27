@@ -67,6 +67,7 @@ function AdminPaymentList() {
                             <th>결제 ID</th>
                             <th>사용자</th>
                             <th>이메일</th>
+                            <th>상품명</th>
                             <th>금액</th>
                             <th>상태</th>
                             <th>결제일</th>
@@ -79,6 +80,29 @@ function AdminPaymentList() {
                                 <td>{payment.payId}</td>
                                 <td><strong>{payment.userName}</strong></td>
                                 <td>{payment.email}</td>
+                                <td>
+                                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                        {payment.orderName || '상품 결제'}
+                                    </div>
+                                    {payment.paymentItems && payment.paymentItems.length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {payment.paymentItems.map((item, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    style={{
+                                                        fontSize: 11,
+                                                        background: item.itemType === '상품' ? '#dbeafe' : '#dcfce7',
+                                                        color: item.itemType === '상품' ? '#1d4ed8' : '#15803d',
+                                                        padding: '2px 6px',
+                                                        borderRadius: 4,
+                                                    }}
+                                                >
+                                                    {item.itemType} #{item.productId || item.classId} x{item.quantity}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </td>
                                 <td>{payment.totalPrice?.toLocaleString()}원</td>
                                 <td>
                                     <span className={`admin-badge ${getStatusBadgeClass(payment.status)}`}>
