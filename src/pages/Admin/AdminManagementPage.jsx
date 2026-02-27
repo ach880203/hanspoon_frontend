@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import AdminUserList from "./AdminUserList";
 import AdminPaymentList from "./AdminPaymentList";
 import AdminDashboardPage from "./AdminDashboardPage";
@@ -9,6 +9,7 @@ import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassHub from "./AdminOneDayClassHub";
 import AdminInquiryList from "./AdminInquiryList";
 import "./AdminList.css";
+import AdminRecipeHub from "./AdminRecipeHub.jsx";
 
 const AdminManagementPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -29,6 +30,8 @@ const AdminManagementPage = () => {
         return <AdminInquiryList showOneDayTab={false} />; // 클래스 문의는 "클래스 관리" 내부에서 전용으로 관리
       case "reservations":
         return <AdminReservationList />;
+      case "recipe" :
+        return <AdminRecipeHub/>;
       case "cs":
         return (
           <div className="admin-cs-container">
@@ -68,6 +71,9 @@ const AdminManagementPage = () => {
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리
         </button>
+         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
+           레시피 관리
+         </button>
         <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
           예약 관리
         </button>

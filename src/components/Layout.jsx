@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+﻿import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import MyPageDropdown from "./Layout/MyPageDropdown";
@@ -29,7 +29,7 @@ export default function Layout() {
 
   const primaryNav = useMemo(
     () => [
-      { to: "/recipes", label: "레시피" },
+      { to: "/recipes/list", label: "레시피" },
       { to: "/classes/oneday", label: "클래스" },
       { to: "/products", label: "마켓" },
       { to: "/notice", label: "공지사항" },
