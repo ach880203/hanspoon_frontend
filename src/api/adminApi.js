@@ -43,9 +43,18 @@ export const adminApi = {
         await axiosInstance.delete(`/api/admin/faq/${id}`);
     },
 
-    // Users
     getDashboardSummary: async () => {
         const response = await axiosInstance.get('/api/admin/dashboard/summary');
+        return response.data;
+    },
+
+    getSalesTrend: async (days = 7) => {
+        const response = await axiosInstance.get('/api/admin/dashboard/sales-trend', { params: { days } });
+        return response.data;
+    },
+
+    getSalesStatistics: async () => {
+        const response = await axiosInstance.get('/api/admin/dashboard/sales/statistics');
         return response.data;
     },
 

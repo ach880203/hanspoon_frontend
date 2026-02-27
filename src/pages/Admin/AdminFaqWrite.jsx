@@ -79,10 +79,11 @@ function AdminFaqWrite() {
                             <label className="form-label" style={{ fontWeight: 800 }}>카테고리</label>
                             <select className="admin-select" id="category" name="category" value={formData.category} onChange={handleChange} required>
                                 <option value="">선택해 주세요</option>
-                                <option value="PAYMENT">결제</option>
-                                <option value="CLASS">클래스</option>
-                                <option value="MEMBER">회원</option>
-                                <option value="ETC">기타</option>
+                                <option value="쿠킹클래스">쿠킹클래스</option>
+                                <option value="주문/배송">주문/배송</option>
+                                <option value="결제/환불">결제/환불</option>
+                                <option value="레시피">레시피</option>
+                                <option value="기타">기타</option>
                             </select>
                         </div>
 

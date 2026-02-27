@@ -20,7 +20,7 @@ const AdminManagementPage = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <AdminDashboardPage />;
+        return <AdminDashboardPage onTabChange={setActiveTab} />;
       case "users":
         return <AdminUserList />;
       case "payments":
@@ -35,8 +35,8 @@ const AdminManagementPage = () => {
         return <AdminProductHub />;
       case "reservations":
         return <AdminReservationList />;
-      case "recipe" :
-        return <AdminRecipeHub/>;
+      case "recipe":
+        return <AdminRecipeHub />;
       case "cs":
         return (
           <div className="admin-cs-container">
