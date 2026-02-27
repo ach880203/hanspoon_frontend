@@ -1,0 +1,21 @@
+@import "./AdminOneDayClassManager.css";
+
+.admin-order-wrap {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-order-row-active td {
+  background: #fff7ed !important;
+}
+
+.admin-order-detail {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-order-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}

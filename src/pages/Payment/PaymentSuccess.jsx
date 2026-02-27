@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { paymentApi } from "../../api/paymentApi";
+import { useCart } from "../../contexts/CartContext";
 import "./Payment.css";
 
 function toPaymentMethodLabel(value) {
@@ -15,6 +16,7 @@ function toPaymentMethodLabel(value) {
 function PaymentSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refreshCount } = useCart();
   const [paymentData, setPaymentData] = useState(() => {
     const fromState = location.state?.paymentData;
     if (fromState) return fromState;
@@ -28,6 +30,10 @@ function PaymentSuccess() {
       return {};
     }
   });
+
+  useEffect(() => {
+    refreshCount();
+  }, [refreshCount]);
 
   useEffect(() => {
     let alive = true;

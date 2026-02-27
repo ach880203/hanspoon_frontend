@@ -7,6 +7,7 @@ import RollingGridSection from "../components/RollingGridSection";
 import { getOneDayClasses } from "../api/onedayApi";
 import { fetchProducts } from "../api/products";
 import { getRecipeList } from "../api/recipeApi";
+import { bannerApi } from "../api/commonApi";
 import EventPopup from "../components/EventPopup/EventPopup";
 
 
@@ -27,6 +28,7 @@ export default function HomePage() {
   const [recipeItems, setRecipeItems] = useState([]);
   const [classItems, setClassItems] = useState([]);
   const [marketItems, setMarketItems] = useState([]);
+  const [bannerSlides, setBannerSlides] = useState(marketBannerSlides);
 
   const [loading, setLoading] = useState({ recipes: true, classes: true, market: true });
   const [error, setError] = useState({ recipes: "", classes: "", market: "" });
@@ -36,6 +38,30 @@ export default function HomePage() {
 
   useEffect(() => {
     let ignore = false;
+
+    (async () => {
+      try {
+        const response = await bannerApi.getBanners();
+        const list = Array.isArray(response?.data) ? response.data : [];
+        if (!ignore && list.length > 0) {
+          const mapped = list.map((item) => ({
+            id: `banner-${item.bannerId}`,
+            eyebrow: item.eyebrow || "",
+            title: item.title || "",
+            period: item.period || "",
+            imageSrc: item.imageSrc || "",
+            imageAlt: item.imageAlt || item.title || "배너",
+            bg: item.bg || "#efe7da",
+            badges: Array.isArray(item.badges) ? item.badges : [],
+            to: item.toPath || undefined,
+            href: item.href || undefined,
+          }));
+          setBannerSlides(mapped);
+        }
+      } catch {
+        if (!ignore) setBannerSlides(marketBannerSlides);
+      }
+    })();
 
     // 1) Recipes (3분할이니까 최소 6개 정도 가져오면 롤링이 자연스러움)
     (async () => {
@@ -145,7 +171,7 @@ export default function HomePage() {
       <EventPopup />
 
       {/* 배너 섹션 */}
-      <BannerSection slides={marketBannerSlides} interval={4500} />
+      <BannerSection slides={bannerSlides} interval={4500} />
 
 
       {/* ✅ 배너 아래 섹션 3개 */}
