@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {useParams, useNavigate, Link, replace} from "react-router-dom";
 import {deleteRecipe, deletewihses, getRecipeDetail, Recommend, toggleWish} from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
+import RecipeFeedbackPanel from "./RecipeFeedbackPanel";
 
 const getCalculatedAmount = (ing, ratio, recipeData, flavor) => {
   let amount = Number(ing.baseAmount);
@@ -369,6 +370,8 @@ const Recipesid = () => {
             </div>
           ))}
         </div>
+
+        <RecipeFeedbackPanel recipeId={id} />
 
         {/* 하단 네비게이션 */}
         <div style={bottomNav}>

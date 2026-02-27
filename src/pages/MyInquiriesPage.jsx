@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteMyInquiry, fetchMyInquiries, updateMyInquiry } from "../api/productInquiries";
 import { getMyOneDayInquiries } from "../api/onedayApi";
+import { deleteRecipeInquiry, fetchMyRecipeInquiries, updateRecipeInquiry } from "../api/recipeApi";
 import { toErrorMessage } from "../api/http";
 import "./MyInquiriesPage.css";
 
@@ -10,6 +11,7 @@ const INQUIRY_SOURCE = {
   ALL: "ALL",
   MARKET: "MARKET",
   ONEDAY: "ONEDAY",
+  RECIPE: "RECIPE",
 };
 
 // 마켓 문의는 페이지 단위로 내려오므로, 통합 리스트를 위해 전체 페이지를 수집합니다.
@@ -42,6 +44,7 @@ function formatDate(value) {
 function sourceLabel(source) {
   if (source === INQUIRY_SOURCE.MARKET) return "마켓";
   if (source === INQUIRY_SOURCE.ONEDAY) return "클래스";
+  if (source === INQUIRY_SOURCE.RECIPE) return "레시피";
   return "전체";
 }
 
@@ -78,6 +81,24 @@ function normalizeOneDayInquiries(list) {
   }));
 }
 
+function normalizeRecipeInquiries(list) {
+  return (list ?? []).map((item) => ({
+    id: `RECIPE-${item.inquiryId}`,
+    source: INQUIRY_SOURCE.RECIPE,
+    inquiryId: item.inquiryId,
+    targetId: item.recipeId,
+    targetLabel: item.title ? `레시피 · ${item.title}` : `레시피 #${item.recipeId}`,
+    title: item.title ?? "",
+    category: item.category ?? "일반",
+    content: item.content ?? "",
+    answer: item.answerContent ?? "",
+    answered: Boolean(item.answered),
+    secret: Boolean(item.secret),
+    createdAt: item.createdAt ?? null,
+    answeredAt: item.answeredAt ?? null,
+  }));
+}
+
 export default function MyInquiriesPage() {
   const nav = useNavigate();
 
@@ -90,14 +111,16 @@ export default function MyInquiriesPage() {
 
   const [marketInquiries, setMarketInquiries] = useState([]);
   const [oneDayInquiries, setOneDayInquiries] = useState([]);
+  const [recipeInquiries, setRecipeInquiries] = useState([]);
 
   const load = async () => {
     setBusy(true);
     setErr("");
 
-    const [marketRes, oneDayRes] = await Promise.allSettled([
+    const [marketRes, oneDayRes, recipeRes] = await Promise.allSettled([
       fetchAllMarketInquiries(),
       getMyOneDayInquiries(),
+      fetchMyRecipeInquiries(),
     ]);
 
     const messages = [];
@@ -116,6 +139,13 @@ export default function MyInquiriesPage() {
       messages.push(`원데이 문의 조회 실패: ${toErrorMessage(oneDayRes.reason)}`);
     }
 
+    if (recipeRes.status === "fulfilled") {
+      setRecipeInquiries(normalizeRecipeInquiries(recipeRes.value));
+    } else {
+      setRecipeInquiries([]);
+      messages.push(`레시피 문의 조회 실패: ${toErrorMessage(recipeRes.reason)}`);
+    }
+
     setErr(messages.join("\n"));
     setBusy(false);
   };
@@ -126,22 +156,23 @@ export default function MyInquiriesPage() {
 
   const sourceStats = useMemo(() => {
     return {
-      ALL: marketInquiries.length + oneDayInquiries.length,
+      ALL: marketInquiries.length + oneDayInquiries.length + recipeInquiries.length,
       MARKET: marketInquiries.length,
       ONEDAY: oneDayInquiries.length,
+      RECIPE: recipeInquiries.length,
     };
-  }, [marketInquiries, oneDayInquiries]);
+  }, [marketInquiries, oneDayInquiries, recipeInquiries]);
 
   const mergedInquiries = useMemo(() => {
-    const all = [...marketInquiries, ...oneDayInquiries];
+    const all = [...marketInquiries, ...oneDayInquiries, ...recipeInquiries];
     all.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
     if (sourceFilter === INQUIRY_SOURCE.ALL) return all;
     return all.filter((item) => item.source === sourceFilter);
-  }, [marketInquiries, oneDayInquiries, sourceFilter]);
+  }, [marketInquiries, oneDayInquiries, recipeInquiries, sourceFilter]);
 
   const startEdit = (item) => {
-    if (item.source !== INQUIRY_SOURCE.MARKET) return;
+    if (item.source !== INQUIRY_SOURCE.MARKET && item.source !== INQUIRY_SOURCE.RECIPE) return;
 
     setEditingId(item.id);
     setEditForm({
@@ -156,7 +187,7 @@ export default function MyInquiriesPage() {
   };
 
   const saveEdit = async (item) => {
-    if (!editingId || item.source !== INQUIRY_SOURCE.MARKET) return;
+    if (!editingId) return;
     if (!editForm.content.trim()) {
       setErr("내용을 입력해 주세요.");
       return;
@@ -165,7 +196,16 @@ export default function MyInquiriesPage() {
     setBusy(true);
     setErr("");
     try {
-      await updateMyInquiry(item.inquiryId, editForm);
+      if (item.source === INQUIRY_SOURCE.MARKET) {
+        await updateMyInquiry(item.inquiryId, editForm);
+      } else if (item.source === INQUIRY_SOURCE.RECIPE) {
+        await updateRecipeInquiry(item.inquiryId, {
+          category: item.category ?? "일반",
+          title: item.title ?? "문의",
+          content: editForm.content,
+          secret: editForm.secret,
+        });
+      }
       cancelEdit();
       await load();
     } catch (e) {
@@ -176,13 +216,20 @@ export default function MyInquiriesPage() {
   };
 
   const remove = async (item) => {
-    if (item.source !== INQUIRY_SOURCE.MARKET) return;
     if (!window.confirm("문의를 삭제할까요?")) return;
 
     setBusy(true);
     setErr("");
     try {
-      await deleteMyInquiry(item.inquiryId);
+      if (item.source === INQUIRY_SOURCE.MARKET) {
+        await deleteMyInquiry(item.inquiryId);
+      } else if (item.source === INQUIRY_SOURCE.RECIPE) {
+        await deleteRecipeInquiry(item.inquiryId);
+      } else {
+        setErr("클래스 문의는 상세 화면에서 관리할 수 있습니다.");
+        setBusy(false);
+        return;
+      }
       await load();
     } catch (e) {
       setErr(toErrorMessage(e));
@@ -199,6 +246,11 @@ export default function MyInquiriesPage() {
 
     if (item.source === INQUIRY_SOURCE.ONEDAY) {
       nav(`/classes/oneday/classes/${item.targetId}`);
+      return;
+    }
+
+    if (item.source === INQUIRY_SOURCE.RECIPE) {
+      nav(`/recipes/${item.targetId}`);
     }
   };
 
@@ -221,6 +273,7 @@ export default function MyInquiriesPage() {
             { value: INQUIRY_SOURCE.ALL, label: "전체" },
             { value: INQUIRY_SOURCE.MARKET, label: "마켓" },
             { value: INQUIRY_SOURCE.ONEDAY, label: "클래스" },
+            { value: INQUIRY_SOURCE.RECIPE, label: "레시피" },
           ].map((tab) => (
             <button
               key={`inquiry-filter-${tab.value}`}
@@ -237,8 +290,6 @@ export default function MyInquiriesPage() {
         </button>
       </section>
 
-      <section className="my-inquiry-note">레시피 문의 도메인은 아직 없어 마켓/클래스만 표시됩니다.</section>
-
       {mergedInquiries.length === 0 ? (
         <section className="my-inquiry-empty">
           <strong>작성한 문의가 없습니다.</strong>
@@ -248,8 +299,8 @@ export default function MyInquiriesPage() {
         <section className="my-inquiry-list">
           {mergedInquiries.map((item) => {
             const isEditing = editingId === item.id;
-            const canEdit = item.source === INQUIRY_SOURCE.MARKET;
-            const canDelete = item.source === INQUIRY_SOURCE.MARKET;
+            const canEdit = item.source === INQUIRY_SOURCE.MARKET || item.source === INQUIRY_SOURCE.RECIPE;
+            const canDelete = item.source === INQUIRY_SOURCE.MARKET || item.source === INQUIRY_SOURCE.RECIPE;
 
             return (
               <article key={item.id} className="my-inquiry-card">
@@ -308,7 +359,7 @@ export default function MyInquiriesPage() {
                 </div>
 
                 <div className="inquiry-target">{item.targetLabel}</div>
-                {item.source === INQUIRY_SOURCE.ONEDAY ? (
+                {item.source === INQUIRY_SOURCE.ONEDAY || item.source === INQUIRY_SOURCE.RECIPE ? (
                   <div className="inquiry-category">분류: {item.category}</div>
                 ) : null}
 

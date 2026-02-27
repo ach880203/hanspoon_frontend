@@ -8,6 +8,7 @@ import AdminEventList from "./AdminEventList";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassHub from "./AdminOneDayClassHub";
 import AdminInquiryList from "./AdminInquiryList";
+import AdminRecipeFeedbackHub from "./AdminRecipeFeedbackHub";
 import "./AdminList.css";
 import AdminRecipeHub from "./AdminRecipeHub.jsx";
 
@@ -27,7 +28,15 @@ const AdminManagementPage = () => {
         // 클래스/강사/클래스문의/클래스리뷰를 하위 탭으로 한 곳에서 운영합니다.
         return <AdminOneDayClassHub />;
       case "market":
-        return <AdminInquiryList showOneDayTab={false} />; // 클래스 문의는 "클래스 관리" 내부에서 전용으로 관리
+        return (
+          <div className="admin-cs-container">
+            <h3>상품 문의 관리</h3>
+            <AdminInquiryList showOneDayTab={false} />
+            <hr style={{ margin: "40px 0" }} />
+            <h3>레시피 문의/리뷰 관리</h3>
+            <AdminRecipeFeedbackHub />
+          </div>
+        );
       case "reservations":
         return <AdminReservationList />;
       case "recipe" :

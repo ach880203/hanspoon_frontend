@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteReview, fetchMyReviews, updateReview } from "../api/productReviews";
 import { deleteOneDayReview, getMyOneDayReviews } from "../api/onedayApi";
-import { fetchMyRecipeReviews } from "../api/recipeApi";
+import { deleteRecipeReview, fetchMyRecipeReviews, updateRecipeReview } from "../api/recipeApi";
 import { toErrorMessage } from "../api/http";
 import "./MyReviewsPage.css";
 
@@ -56,14 +56,15 @@ function renderStars(rating) {
 
 function normalizeRecipeReviews(list) {
   return (list ?? []).map((item) => ({
-    id: `RECIPE-${item.revId}`,
+    id: `RECIPE-${item.reviewId ?? item.revId}`,
     source: REVIEW_SOURCE.RECIPE,
-    reviewId: item.revId,
+    reviewId: item.reviewId ?? item.revId,
     targetId: item.recipeId,
     targetLabel: item.recipeTitle ? `레시피 · ${item.recipeTitle}` : `레시피 #${item.recipeId}`,
     rating: Number(item.rating ?? 0),
     content: item.content ?? "",
-    createdAt: null,
+    createdAt: item.createdAt ?? null,
+    answerContent: item.answerContent ?? "",
     raw: item,
   }));
 }
@@ -170,7 +171,7 @@ export default function MyReviewsPage() {
   }, [marketReviews, oneDayReviews, recipeReviews]);
 
   const startEdit = (item) => {
-    if (item.source !== REVIEW_SOURCE.MARKET) return;
+    if (item.source !== REVIEW_SOURCE.MARKET && item.source !== REVIEW_SOURCE.RECIPE) return;
 
     setEditingId(item.id);
     setEditForm({
@@ -185,7 +186,7 @@ export default function MyReviewsPage() {
   };
 
   const saveEdit = async (item) => {
-    if (!editingId || item.source !== REVIEW_SOURCE.MARKET) return;
+    if (!editingId) return;
     if (!editForm.content.trim()) {
       setErr("리뷰 내용을 입력해 주세요.");
       return;
@@ -194,10 +195,17 @@ export default function MyReviewsPage() {
     setBusy(true);
     setErr("");
     try {
-      await updateReview(item.reviewId, {
-        rating: Number(editForm.rating),
-        content: editForm.content,
-      });
+      if (item.source === REVIEW_SOURCE.MARKET) {
+        await updateReview(item.reviewId, {
+          rating: Number(editForm.rating),
+          content: editForm.content,
+        });
+      } else if (item.source === REVIEW_SOURCE.RECIPE) {
+        await updateRecipeReview(item.reviewId, {
+          rating: Number(editForm.rating),
+          content: editForm.content,
+        });
+      }
       cancelEdit();
       await load();
     } catch (e) {
@@ -218,10 +226,8 @@ export default function MyReviewsPage() {
         await deleteReview(item.reviewId);
       } else if (item.source === REVIEW_SOURCE.ONEDAY) {
         await deleteOneDayReview(item.reviewId);
-      } else {
-        setErr("레시피 리뷰 삭제는 현재 이 화면에서 지원하지 않습니다.");
-        setBusy(false);
-        return;
+      } else if (item.source === REVIEW_SOURCE.RECIPE) {
+        await deleteRecipeReview(item.reviewId);
       }
       await load();
     } catch (e) {
@@ -291,8 +297,8 @@ export default function MyReviewsPage() {
         <section className="my-review-list">
           {mergedReviews.map((item) => {
             const isEditing = editingId === item.id;
-            const canEdit = item.source === REVIEW_SOURCE.MARKET;
-            const canDelete = item.source === REVIEW_SOURCE.MARKET || item.source === REVIEW_SOURCE.ONEDAY;
+            const canEdit = item.source === REVIEW_SOURCE.MARKET || item.source === REVIEW_SOURCE.RECIPE;
+            const canDelete = item.source === REVIEW_SOURCE.MARKET || item.source === REVIEW_SOURCE.ONEDAY || item.source === REVIEW_SOURCE.RECIPE;
 
             return (
               <article key={item.id} className="my-review-card">
@@ -362,7 +368,7 @@ export default function MyReviewsPage() {
                   </div>
                 )}
 
-                {item.source === REVIEW_SOURCE.ONEDAY && item.answerContent ? (
+                {(item.source === REVIEW_SOURCE.ONEDAY || item.source === REVIEW_SOURCE.RECIPE) && item.answerContent ? (
                   <div className="review-answer-box">
                     <strong>관리자 답변</strong>
                     <p>{item.answerContent}</p>

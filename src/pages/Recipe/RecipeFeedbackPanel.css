@@ -1,0 +1,257 @@
+.recipe-feedback {
+  margin-top: 28px;
+  background: #ffffff;
+  border: 1px solid #ffe2d2;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(31, 41, 55, 0.06);
+}
+
+.recipe-feedback-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.recipe-feedback-head h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #9a3412;
+}
+
+.recipe-feedback-tabs {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.feedback-tab {
+  border: 1px solid #ffd3bb;
+  background: #fff7f2;
+  color: #9a3412;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.feedback-tab.active {
+  background: #ea580c;
+  border-color: #ea580c;
+  color: #ffffff;
+}
+
+.feedback-alert {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.feedback-alert.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.feedback-alert.ok {
+  background: #ecfdf3;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.feedback-body {
+  display: grid;
+  gap: 14px;
+}
+
+.feedback-form-card,
+.feedback-card {
+  border: 1px solid #ffe7da;
+  background: #fffaf7;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.feedback-form-card h4 {
+  margin: 0 0 10px;
+  color: #7c2d12;
+}
+
+.feedback-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feedback-form-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #7c2d12;
+  font-size: 14px;
+}
+
+.feedback-form-card select,
+.feedback-form-card input,
+.feedback-form-card textarea,
+.feedback-edit-box select,
+.feedback-edit-box input,
+.feedback-edit-box textarea,
+.feedback-answer-editor textarea {
+  width: 100%;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.feedback-form-card textarea,
+.feedback-edit-box textarea,
+.feedback-answer-editor textarea {
+  resize: vertical;
+}
+
+.feedback-form-card button,
+.feedback-card button,
+.feedback-answer-editor button {
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+  background: #ea580c;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.feedback-form-card button:disabled,
+.feedback-card button:disabled,
+.feedback-answer-editor button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback-list {
+  display: grid;
+  gap: 10px;
+}
+
+.feedback-empty {
+  border: 1px dashed #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.feedback-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.feedback-card-head > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.feedback-card-head strong {
+  color: #7c2d12;
+}
+
+.feedback-card-head span {
+  font-size: 13px;
+  color: #9a3412;
+}
+
+.feedback-card-head > div:last-child {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.feedback-content {
+  margin: 0;
+  color: #4b5563;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.feedback-inquiry-meta {
+  margin-bottom: 8px;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
+.feedback-edit-box {
+  display: grid;
+  gap: 8px;
+}
+
+.feedback-answer {
+  margin-top: 10px;
+  border: 1px solid #ffedd5;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.feedback-answer strong {
+  color: #c2410c;
+}
+
+.feedback-answer p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  color: #4b5563;
+}
+
+.feedback-answer span {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.feedback-answer-editor {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.feedback-secret-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #7c2d12;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .recipe-feedback {
+    padding: 14px;
+  }
+
+  .recipe-feedback-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .feedback-form-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .feedback-card-head {
+    flex-direction: column;
+  }
+}
