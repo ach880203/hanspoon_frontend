@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {deleteRecipe, getRecipeList, updateRecipe} from "../../api/recipeApi"; // API 경로는 프로젝트에 맞게
-import { useNavigate } from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import "./AdminRecipeManager.css";
+import {toBackendUrl} from "../../utils/backendUrl.js";
 
 export default function AdminRecipeListManager() {
     const [recipes, setRecipes] = useState([]);
@@ -12,15 +13,30 @@ export default function AdminRecipeListManager() {
     const loadRecipes = useCallback(async () => {
         setLoading(true);
         try {
-            // deleted=false인 정상 레시피만 가져오는 API 호출
-            const data = await getRecipeList({ deleted: false });
-            setRecipes(data);
+            const response = await getRecipeList({ deleted: false });
+
+            // 로그에 찍힌 "Object { content: Array(3), ... }" 형태를 처리합니다.
+            // Axios를 사용 중이시라면 보통 response.data 안에 백엔드 데이터가 들어있습니다.
+            const result = response.data?.data || response;
+
+            console.log("실제 추출된 결과 객체:", result);
+
+            if (result && Array.isArray(result.content)) {
+                // 🚩 핵심: result.content가 우리가 원하는 레시피 배열입니다!
+                setRecipes(result.content);
+            } else if (Array.isArray(result)) {
+                // 혹시라도 나중에 배열로 바로 올 경우를 대비
+                setRecipes(result);
+            } else {
+                setRecipes([]);
+            }
         } catch (e) {
             console.error("레시피 로딩 실패", e);
+            setRecipes([]);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [getRecipeList]);
 
     useEffect(() => {
         void loadRecipes(); // void를 붙이면 await 없이 실행해도 ESLint가 허용해주는 경우가 많습니다.
@@ -76,6 +92,7 @@ export default function AdminRecipeListManager() {
                         <th>레시피명</th>
                         <th>작성자</th>
                         <th>추천수</th>
+                        <th>리뷰수</th>
                         <th>관리</th>
                     </tr>
                     </thead>
@@ -83,13 +100,19 @@ export default function AdminRecipeListManager() {
                     {filteredRecipes.map(recipe => (
                         <tr key={recipe.id}>
                             <td>{recipe.id}</td>
-                            <td><img src={recipe.recipeMainImg} alt="thumb" width="50" /></td>
+                            <td>
+                                <Link to={`/recipes/${recipe.id}`} style={{ textDecoration: 'none' }}>
+                                    <img src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : "/images/recipe/default.jpg"}
+                                     alt="thumb" width="50" />
+                                </Link>
+                            </td>
                             <td>{recipe.title}</td>
                             <td>{recipe.username}</td>
                             <td>🥄 {recipe.recommendCount}</td>
+                            <td> {recipe.reviewCount}</td>
                             <td>
-                                <button className="admin-btn-sm" onClick={() => updateRecipe(recipe.id)}>
-                                    수정
+                                <button className="admin-btn-sm" onClick={() => navigate(`/recipes/edit/${recipe.id}`)}>
+                                    수정하기
                                 </button>
                                 <button className="admin-btn-sm btn-danger" onClick={() => handleDelete(recipe.id)}>
                                     삭제

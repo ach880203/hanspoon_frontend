@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import { getRecipeList } from '../../api/recipeApi';
 import { toBackendUrl } from '../../utils/backendUrl';
 
@@ -7,6 +7,7 @@ const RecipeList = () => {
     const [recipes, setRecipes] = useState([]);
     const [pageInfo, setPageInfo] = useState({});
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
 
     const keyword = searchParams.get("keyword") || "";
     const category = searchParams.get("category") || "";
@@ -33,9 +34,13 @@ const RecipeList = () => {
         setSearchParams({ category, keyword: e.target.elements.keyword.value, page: 0 });
     };
 
+
     return (
         <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '50px 20px' }}>
             <h2 style={{ textAlign: 'center', fontWeight: '800', marginBottom: '30px' }}>맛있는 레시피 찾아보기</h2>
+            <button onClick={() => navigate("/recipes")} style={{cursor: 'pointer', backgroundColor: "#f0f0f0"}}>
+                레시피 작성하러 가기
+            </button>
 
             {/* 검색창 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
@@ -55,7 +60,7 @@ const RecipeList = () => {
             {/* 카테고리 네비게이션 (DeleteList 스타일 적용) */}
             <div className="category-nav" style={{ marginBottom: '40px' }}>
                 <ul style={{ display: "flex", justifyContent: "center", listStyle: "none", gap: "10px", padding: 0 }}>
-                    {["", "KOREAN", "BAKERY", "DESSERT", "ETC"].map((cat) => (
+                    {["", "KOREAN", "BAKERY"].map((cat) => (
                         <li key={cat}>
                             <button
                                 onClick={() => setSearchParams({ category: cat, keyword, page: 0 })}
@@ -70,7 +75,7 @@ const RecipeList = () => {
                                     transition: '0.2s'
                                 }}
                             >
-                                {cat === "" ? "전체" : cat === "KOREAN" ? "한식" : cat === "BAKERY" ? "베이커리" : cat === "DESSERT" ? "디저트" : "기타"}
+                                {cat === "" ? "전체" : cat === "KOREAN" ? "한식" : cat === "BAKERY" ? "베이커리" : cat}
                             </button>
                         </li>
                     ))}

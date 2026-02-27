@@ -80,7 +80,7 @@ const AdminManagementPage = () => {
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리
         </button>
-         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
+         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("recipe")}>
            레시피 관리
          </button>
         <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
