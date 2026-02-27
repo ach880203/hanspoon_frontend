@@ -177,6 +177,11 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
+                <Link to="/mypage/recipesuser" onClick={() => setIsOpen(false)}>
+                    내 레시피 목록
+                </Link>
+            </li>
+            <li>
               <Link to="/mypage/wishlist" onClick={() => setIsOpen(false)}>
                 찜 목록
               </Link>

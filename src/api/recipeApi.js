@@ -53,6 +53,11 @@ export const deletereturn = (id) => {
     return api.post(`/api/recipe/deleteReturn/${id}`);
 };
 
+//영구삭제
+export const permanentDeleteRecipe = (id) => {
+    return api.post(`/api/recipe/hard_delete/${id}`)
+}
+
 //9.관심목록
 
 export const fetchMyWishes = async (page = 0, size = 12, category = "") => {

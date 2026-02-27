@@ -136,6 +136,7 @@ export default function App() {
           <Route path="wishlist" element={<MyWishesPage />} />
           <Route path="inquiries" element={<MyInquiriesPage title="내 문의" />} />
           <Route path="reviews" element={<MyReviewsPage title="내 리뷰" />} />
+          <Route path="recipesuser" element={<Recipesuser title= "내 레시피"/>} />
 
 
           <Route path="points" element={<MyPointsPage />} />
