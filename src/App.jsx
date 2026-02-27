@@ -33,9 +33,9 @@ import AdminEventWrite from "./pages/Admin/AdminEventWrite";
 import AdminFaqList from "./pages/Admin/AdminFaqList";
 import AdminFaqWrite from "./pages/Admin/AdminFaqWrite";
 import AdminDashboardPage from "./pages/Admin/AdminDashboardPage";
-import AdminUserList from './pages/Admin/AdminUserList';
 import AdminUserDetail from './pages/Admin/AdminUserDetail';
 import AdminPaymentList from './pages/Admin/AdminPaymentList';
+import AdminSalesPage from './pages/Admin/AdminSalesPage';
 import AdminManagementPage from './pages/Admin/AdminManagementPage';
 
 import MyPageLayout from "./pages/MyPage/MyPageLayout";
@@ -162,11 +162,8 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="admin/users" element={
-          <ProtectedRoute requiredRole="ROLE_ADMIN">
-            <AdminUserList />
-          </ProtectedRoute>
-        } />
+
+
         <Route path="admin/users/:id" element={
           <ProtectedRoute requiredRole="ROLE_ADMIN">
             <AdminUserDetail />
@@ -190,6 +187,11 @@ export default function App() {
         <Route path="admin/payments" element={
           <ProtectedRoute requiredRole="ROLE_ADMIN">
             <AdminPaymentList />
+          </ProtectedRoute>
+        } />
+        <Route path="sales" element={
+          <ProtectedRoute requiredRole="ROLE_ADMIN">
+            <AdminSalesPage />
           </ProtectedRoute>
         } />
         <Route path="admin/inquiries" element={

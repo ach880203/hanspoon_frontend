@@ -18,7 +18,7 @@ const AdminManagementPage = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <AdminDashboardPage />;
+        return <AdminDashboardPage onTabChange={setActiveTab} />;
       case "users":
         return <AdminUserList />;
       case "payments":
@@ -39,8 +39,8 @@ const AdminManagementPage = () => {
         );
       case "reservations":
         return <AdminReservationList />;
-      case "recipe" :
-        return <AdminRecipeHub/>;
+      case "recipe":
+        return <AdminRecipeHub />;
       case "cs":
         return (
           <div className="admin-cs-container">
@@ -80,9 +80,9 @@ const AdminManagementPage = () => {
         <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
           상품 관리
         </button>
-         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
-           레시피 관리
-         </button>
+        <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
+          레시피 관리
+        </button>
         <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
           예약 관리
         </button>

@@ -39,9 +39,10 @@ function Payment() {
     buyerName: initialBuyerName,
     buyerEmail: initialBuyerEmail,
     buyerTel: initialBuyerTel,
+    formData: savedFormData,
   } = location.state || {};
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(savedFormData || {
     itemName: itemName || "상품 결제",
     amount: amount || 0,
     buyerName: initialBuyerName || "",
@@ -213,8 +214,14 @@ function Payment() {
         },
       });
 
+      // 실패/에러 시 기존 상태를 복구할 수 있도록 현재까지의 정보들을 포함해서 넘김
+      const returnState = {
+        ...location.state,
+        formData
+      };
+
       if (response.code != null) {
-        navigate("/payment/fail", { state: { message: response.message || "결제에 실패했습니다." } });
+        navigate("/payment/fail", { state: { ...returnState, message: response.message || "결제에 실패했습니다." } });
         return;
       }
 
@@ -231,7 +238,7 @@ function Payment() {
       });
 
       if (!verifyResult.success) {
-        navigate("/payment/fail", { state: { message: verifyResult.message || "결제 검증에 실패했습니다." } });
+        navigate("/payment/fail", { state: { ...returnState, message: verifyResult.message || "결제 검증에 실패했습니다." } });
         return;
       }
 
@@ -250,7 +257,8 @@ function Payment() {
 
       navigate("/payment/success", { state: { paymentData: successPayload } });
     } catch (error) {
-      navigate("/payment/fail", { state: { message: error.message || "결제 처리 중 오류가 발생했습니다." } });
+      const errorReturnState = { ...location.state, formData };
+      navigate("/payment/fail", { state: { ...errorReturnState, message: error.message || "결제 처리 중 오류가 발생했습니다." } });
     } finally {
       setLoading(false);
     }
