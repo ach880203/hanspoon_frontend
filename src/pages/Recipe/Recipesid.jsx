@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {useParams, useNavigate, Link, replace} from "react-router-dom";
-import {deleteRecipe, deletewihses, getRecipeDetail, Recommend, toggleWish, updateRecipe} from "../../api/recipeApi";
+import {useParams, useNavigate, Link} from "react-router-dom";
+import {deleteRecipe, deletewihses, getRecipeDetail, Recommend, toggleWish} from "../../api/recipeApi";
 import { toBackendUrl } from "../../utils/backendUrl";
 import RecipeFeedbackPanel from "./RecipeFeedbackPanel";
 import {useAuth} from "../../contexts/AuthContext.jsx";
