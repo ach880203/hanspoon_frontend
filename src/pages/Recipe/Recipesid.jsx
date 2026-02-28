@@ -44,7 +44,7 @@ const renderInstruction = (content, ratio, recipe, flavor) => {
   ingredients.forEach((ing) => {
     const name = ing.name.trim();
     const amount = getCalculatedAmount(ing, ratio, recipe, flavor);
-    const tokenRegex = new RegExp(`@${escapeRegExp(name)}(?![\\w\\uAC00-\\uD7A3_])`, "g");
+    const tokenRegex = new RegExp(`@${escapeRegExp(name)}`, "g");
     converted = converted.replace(
       tokenRegex,
       `<strong style="color: #ff6b6b; font-weight: bold;">${name} ${amount}${ing.unit}</strong>`
@@ -353,7 +353,7 @@ const Recipesid = () => {
       </header>
 
       {/* 조리 순서 섹션 */}
-      <div style={{ ...containerStyle, marginTop: "40px", paddingBottom: "80px" }}>
+      <div style={{ ...containerStyle, marginTop: "40px", paddingBottom: "80px" , whiteSpace: "pre-wrap"}}>
         <h3 style={sectionTitleStyle}>
           <i className="fa-solid fa-fire-burner" /> 조리 순서
         </h3>
