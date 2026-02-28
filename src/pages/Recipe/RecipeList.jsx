@@ -17,9 +17,17 @@ const RecipeList = () => {
         const fetchRecipes = async () => {
             try {
                 const response = await getRecipeList({ keyword, category, page });
+                // 🔍 데이터 구조 확인을 위해 콘솔을 찍어보시면 좋아요!
+                // console.log("전체 응답:", response.data.data);
+
                 if (response.data && response.data.data) {
-                    setRecipes(response.data.data.content);
-                    setPageInfo(response.data.data);
+                    // 1. 실제 데이터 목록 (VIA_DTO 적용 시 그대로 content에 있음)
+                    setRecipes(response.data.data.content || []);
+
+                    // 2. 페이지 정보 (VIA_DTO 적용 시 'page' 객체 안에 들어있음)
+                    // 만약 response.data.data.page가 없다면 기존 구조인 response.data.data를 사용
+                    const paginationData = response.data.data.page || response.data.data;
+                    setPageInfo(paginationData);
                 }
             } catch (error) {
                 console.error("레시피 로드 실패:", error);
