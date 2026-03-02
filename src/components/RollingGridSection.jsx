@@ -37,8 +37,9 @@ export default function RollingGridSection({
   const visible = useMemo(() => {
     if (len === 0) return [];
     const start = (page * perPage) % len;
+    const count = Math.min(perPage, len);
     const out = [];
-    for (let i = 0; i < perPage; i++) out.push(safe[(start + i) % len]);
+    for (let i = 0; i < count; i++) out.push(safe[(start + i) % len]);
     return out;
   }, [safe, len, page, perPage]);
 
