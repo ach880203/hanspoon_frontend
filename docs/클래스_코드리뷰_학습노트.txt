@@ -1,0 +1,91 @@
+﻿[문서 목적]
+이 문서는 원데이 클래스 파트 코드를 코드리뷰할 때 빠르게 구조를 파악하고,
+초보 개발자가 "왜 이렇게 작성했는지"를 이해하도록 돕는 학습 노트입니다.
+
+[이번 정리에서 실제로 바꾼 핵심]
+1) 중복 로직 공통화
+- 파일: src/utils/onedayClassUtils.js
+- 공통화한 함수:
+  - toClassId
+  - toSessionId
+  - isSessionCompletedByTime
+  - toSessionStatus
+  - toClassSlotStatus
+  - toDateMillis
+  - toIsoDateKey
+
+2) 클래스 화면에서 공통 유틸 사용으로 통일
+- 파일: src/pages/OneDay/OneDayExplorePage.jsx
+- 파일: src/pages/Admin/AdminOneDayClassManager.jsx
+- 파일: src/pages/OneDay/OneDayClassDetail.jsx
+
+3) 라벨 변환 중복 제거
+- AdminOneDayClassManager 내부의 toKoreanLevel/toKoreanRunType/toKoreanCategory 제거
+- 대신 onedayLabels의 toLevelLabel/toRunTypeLabel/toCategoryLabel 재사용
+
+[왜 공통화가 중요한가]
+- 같은 계산식이 여러 파일에 있으면, 한쪽만 수정되고 다른 쪽이 남아 버그가 생깁니다.
+- 특히 "세션 종료/마감/클래스 종료"는 운영 정책과 직접 연결되므로 화면마다 다르면 사용자 혼란이 큽니다.
+- 공통 유틸 한 곳에서만 수정하면 Explore/Admin/Detail이 같은 기준으로 동작합니다.
+
+[핵심 유틸 함수 설명]
+1) toSessionStatus(session)
+- 입력: 세션 객체(정원/예약수/서버 full/completed 값)
+- 출력: { full, completed }
+- 규칙:
+  - full: 서버 full=true 이거나 정원 <= 예약수면 true
+  - completed: 서버 completed=true 이거나 시작시각이 현재보다 과거면 true
+
+2) toClassSlotStatus(sessions)
+- 입력: 클래스의 전체 세션 배열
+- 출력:
+  - hasSessions
+  - classEnded
+  - hasReservableSession
+  - amCompleted / pmCompleted
+  - amFull / pmFull
+- 규칙:
+  - 오전/오후 세션을 분리해서 각각 완료/마감 계산
+  - 전체 세션이 모두 종료면 classEnded=true
+  - 종료 아니고 마감도 아닌 세션이 하나라도 있으면 hasReservableSession=true
+
+3) toIsoDateKey(value)
+- 목적: "YYYY-MM-DD" 형태 날짜 키를 통일
+- 사용처: 날짜별 세션 필터, 날짜 옵션 생성
+
+[코드리뷰 체크리스트(클래스 파트)]
+1) 상태 계산 일관성
+- 세션/클래스 상태 계산을 직접 구현하지 않고 onedayClassUtils를 쓰는가?
+
+2) 데이터 정규화
+- API 응답 id/classId 혼용 시 toClassId로 정규화했는가?
+- 날짜 비교는 toIsoDateKey를 사용했는가?
+
+3) UI 라벨 일관성
+- enum 텍스트 변환은 onedayLabels를 사용했는가?
+
+4) 경계값 처리
+- 세션이 0개인 클래스
+- startAt 파싱 실패(Invalid Date)
+- capacity/reservedCount가 null/문자열로 오는 경우
+
+[학습용 실전 과제]
+과제 1)
+- toClassSlotStatus에 "오늘 이후 세션만 대상으로 마감 여부 계산" 옵션을 추가해 보세요.
+- 힌트: toSessionStatus + 날짜 비교 분기
+
+과제 2)
+- Explore 화면에서 정렬 기준을
+  1) 종료 여부
+  2) runType
+  3) createdAt
+  순으로 바꾸는 과정을 직접 구현해 보세요.
+
+과제 3)
+- Admin 화면의 클래스 목록에
+  "예약 가능 세션 수"를 표시해 보세요.
+- 힌트: hasReservableSession 확장 버전(카운트 반환)
+
+[요약]
+이번 정리는 "기능 추가"보다 "동일 기능의 기준 통일"에 초점이 있습니다.
+결과적으로 유지보수성(수정 난이도)과 코드리뷰 가독성(의도 파악 속도)이 좋아집니다.

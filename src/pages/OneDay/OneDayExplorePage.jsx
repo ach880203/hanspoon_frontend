@@ -5,8 +5,15 @@ import {
   getOneDayClassDetail,
   getOneDayClassSessions,
   getOneDayClasses,
-  isSessionCompleted,
 } from "../../api/onedayApi";
+import {
+  toClassId,
+  toClassSlotStatus,
+  toDateMillis,
+  toIsoDateKey,
+  toSessionId,
+  toSessionStatus,
+} from "../../utils/onedayClassUtils";
 import {
   toCategoryLabel,
   toLevelLabel,
@@ -41,24 +48,6 @@ function parseNonNegativeInteger(value, fallback = 0) {
   return Number.isInteger(number) && number >= 0 ? number : fallback;
 }
 
-function toClassId(item) {
-  return Number(item?.id ?? item?.classId ?? 0);
-}
-
-function toSessionId(session) {
-  return Number(session?.sessionId ?? session?.id ?? 0);
-}
-
-function toIsoDateKey(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function parseQuery(params) {
   return {
     keyword: params.get("keyword") || "",
@@ -72,61 +61,6 @@ function parseQuery(params) {
     classPage: parseNonNegativeInteger(params.get("classPage"), 0),
     selectedClassId: parseNonNegativeInteger(params.get("selectedClassId"), 0),
   };
-}
-
-function toSessionStatus(session) {
-  const capacity = Number(session?.capacity ?? 0);
-  const reserved = Number(session?.reservedCount ?? 0);
-  const full = Boolean(session?.full) || capacity <= reserved;
-  const completed = Boolean(session?.completed) || isSessionCompleted(session?.startAt);
-  return { full, completed };
-}
-
-function toClassSlotStatus(sessions) {
-  const list = Array.isArray(sessions) ? sessions : [];
-  const hasSessions = list.length > 0;
-
-  const amSessions = list.filter((session) => session?.slot === "AM");
-  const pmSessions = list.filter((session) => session?.slot === "PM");
-
-  const calcSlot = (target) => {
-    if (target.length === 0) return { completed: false, full: false };
-
-    const completed = target.every((session) => toSessionStatus(session).completed);
-    if (completed) return { completed: true, full: false };
-
-    const upcoming = target.filter((session) => !toSessionStatus(session).completed);
-    if (upcoming.length === 0) return { completed: true, full: false };
-
-    const full = upcoming.every((session) => toSessionStatus(session).full);
-    return { completed: false, full };
-  };
-
-  const am = calcSlot(amSessions);
-  const pm = calcSlot(pmSessions);
-  const classEnded = hasSessions ? list.every((session) => toSessionStatus(session).completed) : false;
-  const hasReservableSession = hasSessions
-    ? list.some((session) => {
-        const status = toSessionStatus(session);
-        return !status.completed && !status.full;
-      })
-    : false;
-
-  return {
-    hasSessions,
-    classEnded,
-    hasReservableSession,
-    amCompleted: am.completed,
-    pmCompleted: pm.completed,
-    amFull: am.full,
-    pmFull: pm.full,
-  };
-}
-
-function toDateMillis(value) {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function toClassSortPriority(item, status) {
@@ -324,6 +258,8 @@ export function OneDayExplorePage() {
         return;
       }
 
+      // 중요: 클래스 상태(종료/마감)는 Explore/Admin/Detail이 같은 기준을 써야
+      // 화면마다 상태가 다르게 보이는 문제를 막을 수 있어 공통 유틸(toClassSlotStatus)로 계산합니다.
       const results = await Promise.all(
         classIds.map(async (classId) => {
           try {

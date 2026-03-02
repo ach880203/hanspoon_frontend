@@ -9,6 +9,8 @@ import {
 } from "../../api/onedayApi";
 import { adminApi } from "../../api/adminApi";
 import ClassLocationMap from "../OneDay/ClassLocationMap.jsx";
+import { toCategoryLabel, toLevelLabel, toRunTypeLabel } from "../OneDay/onedayLabels";
+import { toClassId, toClassSlotStatus, toDateMillis } from "../../utils/onedayClassUtils";
 import "./AdminOneDayClassManager.css";
 
 const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -42,65 +44,6 @@ const EMPTY_FORM = {
     { startAt: "15:00", slot: "PM", capacity: "10", price: "50000" },
   ],
 };
-
-function toClassId(item) {
-  return Number(item?.id ?? item?.classId ?? 0);
-}
-
-function toSessionStatus(session) {
-  const capacity = Number(session?.capacity ?? 0);
-  const reserved = Number(session?.reservedCount ?? 0);
-  const full = Boolean(session?.full) || capacity <= reserved;
-  const completed = Boolean(session?.completed) || isSessionCompletedByTime(session?.startAt);
-  return { full, completed };
-}
-
-function toClassSlotStatus(sessions) {
-  const list = Array.isArray(sessions) ? sessions : [];
-  const hasSessions = list.length > 0;
-
-  const amSessions = list.filter((session) => session?.slot === "AM");
-  const pmSessions = list.filter((session) => session?.slot === "PM");
-
-  const calcSlot = (targetSessions) => {
-    if (targetSessions.length === 0) return { completed: false, full: false };
-
-    const completed = targetSessions.every((session) => toSessionStatus(session).completed);
-    if (completed) return { completed: true, full: false };
-
-    const upcoming = targetSessions.filter((session) => !toSessionStatus(session).completed);
-    if (upcoming.length === 0) return { completed: true, full: false };
-
-    const full = upcoming.every((session) => toSessionStatus(session).full);
-    return { completed: false, full };
-  };
-
-  const am = calcSlot(amSessions);
-  const pm = calcSlot(pmSessions);
-  const classEnded = hasSessions ? list.every((session) => toSessionStatus(session).completed) : false;
-
-  return {
-    hasSessions,
-    classEnded,
-    amCompleted: am.completed,
-    pmCompleted: pm.completed,
-    amFull: am.full,
-    pmFull: pm.full,
-  };
-}
-
-function toDateMillis(value) {
-  if (!value) return 0;
-  const parsed = new Date(value).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function isSessionCompletedByTime(startAt) {
-  if (!startAt) return false;
-  const time = new Date(startAt).getTime();
-  if (Number.isNaN(time)) return false;
-  return time <= Date.now();
-}
 
 export default function AdminOneDayClassManager() {
   const [mode, setMode] = useState("list"); // list | create | edit
@@ -163,6 +106,8 @@ export default function AdminOneDayClassManager() {
         return;
       }
 
+      // 운영자 화면도 사용자 화면과 같은 상태 기준을 쓰도록 공통 유틸을 재사용합니다.
+      // 이렇게 맞춰두면 "관리자에서는 운영중, 사용자에서는 종료" 같은 불일치가 줄어듭니다.
       const results = await Promise.all(
         classIds.map(async (classId) => {
           try {
@@ -649,9 +594,9 @@ export default function AdminOneDayClassManager() {
                     <div className="class-row-main">
                       <strong>{item.title || `클래스 #${item.id}`}</strong>
                       <div className="class-row-meta">
-                        <span>{toKoreanLevel(item.level)}</span>
-                        <span>{toKoreanRunType(item.runType)}</span>
-                        <span>{toKoreanCategory(item.category)}</span>
+                        <span>{toLevelLabel(item.level)}</span>
+                        <span>{toRunTypeLabel(item.runType)}</span>
+                        <span>{toCategoryLabel(item.category)}</span>
                         <span>강사: {item.instructorName || "-"} (ID: {item.instructorId ?? "-"})</span>
                       </div>
                       <div className="class-row-status">
@@ -1125,23 +1070,4 @@ function readFileAsDataUrl(file) {
     reader.onerror = () => reject(new Error("이미지를 읽지 못했습니다."));
     reader.readAsDataURL(file);
   });
-}
-
-function toKoreanLevel(level) {
-  if (level === "BEGINNER") return "입문";
-  if (level === "INTERMEDIATE") return "중급";
-  if (level === "ADVANCED") return "고급";
-  return level || "-";
-}
-
-function toKoreanRunType(runType) {
-  if (runType === "ALWAYS") return "상시";
-  if (runType === "EVENT") return "이벤트";
-  return runType || "-";
-}
-
-function toKoreanCategory(category) {
-  if (category === "KOREAN") return "한식";
-  if (category === "BAKERY") return "베이커리";
-  return category || "-";
 }

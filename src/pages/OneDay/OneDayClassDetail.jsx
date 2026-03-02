@@ -20,6 +20,7 @@ import {
   resolveOneDayUserId,
   toggleOneDayWish,
 } from "../../api/onedayApi";
+import { toIsoDateKey } from "../../utils/onedayClassUtils";
 import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./onedayLabels";
 import OneDayLocationViewer from "./OneDayLocationViewer";
 import "./OneDayClassDetail.css";
@@ -984,14 +985,4 @@ function fmtDateOnly(value) {
   if (!value) return "-";
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("ko-KR");
-}
-
-function toIsoDateKey(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
