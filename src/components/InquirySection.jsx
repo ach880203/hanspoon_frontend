@@ -83,7 +83,7 @@ export default function InquirySection({ productId }) {
     setOpenId(null);
     setForm({ content: "", secret: false });
     load(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 상품이 바뀌면 문의 목록/폼 상태를 초기화한 뒤 첫 페이지를 다시 조회합니다.
   }, [productId]);
 
   const submit = async () => {

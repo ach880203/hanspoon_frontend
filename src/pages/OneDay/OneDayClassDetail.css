@@ -247,6 +247,18 @@
   white-space: pre-wrap;
 }
 
+.od-location-box {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.od-location-box h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1f2937;
+}
+
 .od-form-grid {
   display: grid;
   gap: 10px;

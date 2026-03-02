@@ -8,6 +8,7 @@ import {
   updateOneDayClass,
 } from "../../api/onedayApi";
 import { adminApi } from "../../api/adminApi";
+import ClassLocationMap from "../OneDay/ClassLocationMap.jsx";
 import "./AdminOneDayClassManager.css";
 
 const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -32,6 +33,9 @@ const EMPTY_FORM = {
   runType: "ALWAYS",
   category: "KOREAN",
   instructorId: "",
+  locationAddress: "",
+  locationLat: null,
+  locationLng: null,
   alwaysDays: "30",
   sessions: [
     { startAt: "10:00", slot: "AM", capacity: "10", price: "50000" },
@@ -308,6 +312,9 @@ export default function AdminOneDayClassManager() {
         runType: detail?.runType ?? "ALWAYS",
         category: detail?.category ?? "KOREAN",
         instructorId: String(detail?.instructorId ?? ""),
+        locationAddress: detail?.locationAddress ?? "",
+        locationLat: detail?.locationLat ?? null,
+        locationLng: detail?.locationLng ?? null,
         alwaysDays: "30",
         sessions: normalizedSessions.length > 0 ? normalizedSessions : EMPTY_FORM.sessions,
       });
@@ -408,6 +415,9 @@ export default function AdminOneDayClassManager() {
       runType: form.runType,
       category: form.category,
       instructorId: Number.isInteger(instructorId) && instructorId > 0 ? instructorId : null,
+      locationAddress: form.locationAddress?.trim() || "",
+      locationLat: form.locationLat,
+      locationLng: form.locationLng,
       sessions,
     };
   };
@@ -732,6 +742,25 @@ export default function AdminOneDayClassManager() {
                   onChange={(e) => setField("detailDescription", e.target.value)}
                 />
               </label>
+
+              <div>
+                <span>클래스 위치(지도 선택)</span>
+                <ClassLocationMap
+                  value={{
+                    address: form.locationAddress,
+                    lat: form.locationLat,
+                    lng: form.locationLng,
+                  }}
+                  onChange={(v) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      locationAddress: v.address,
+                      locationLat: v.lat,
+                      locationLng: v.lng,
+                    }))
+                  }
+                />
+              </div>
 
               <label>
                 <span>메인 사진 (리스트 썸네일)</span>

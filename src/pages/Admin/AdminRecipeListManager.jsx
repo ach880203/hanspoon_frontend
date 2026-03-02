@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {deleteRecipe, getRecipeList, updateRecipe} from "../../api/recipeApi"; // API 경로는 프로젝트에 맞게
+import {deleteRecipe, getRecipeList} from "../../api/recipeApi"; // API 경로는 프로젝트에 맞게
 import {Link, useNavigate} from "react-router-dom";
 import "./AdminRecipeManager.css";
 import {toBackendUrl} from "../../utils/backendUrl.js";
@@ -97,7 +97,13 @@ export default function AdminRecipeListManager() {
                     </tr>
                     </thead>
                     <tbody>
-                    {filteredRecipes.map(recipe => (
+                    {loading ? (
+                        <tr>
+                            <td colSpan={7} style={{ textAlign: "center", padding: "40px 0" }}>
+                                레시피 목록을 불러오는 중입니다.
+                            </td>
+                        </tr>
+                    ) : filteredRecipes.map(recipe => (
                         <tr key={recipe.id}>
                             <td>{recipe.id}</td>
                             <td>

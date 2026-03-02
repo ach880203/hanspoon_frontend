@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getRecipeList, permanentDeleteRecipe } from "../../api/recipeApi.js";
 import { toBackendUrl } from "../../utils/backendUrl.js";
 
@@ -34,7 +34,7 @@ function Recipesuser() {
             await permanentDeleteRecipe(id);
             setRecipes(recipes.filter((r) => String(r.id) !== String(id)));
             alert("레시피가 완전히 삭제되었습니다.");
-        } catch (error) {
+        } catch {
             alert("삭제 실패: 관련 데이터가 있어 삭제할 수 없습니다.");
         }
     };
@@ -60,7 +60,13 @@ function Recipesuser() {
                     </tr>
                     </thead>
                     <tbody>
-                    {recipes.length > 0 ? (
+                    {loading ? (
+                        <tr>
+                            <td colSpan="5" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>
+                                레시피를 불러오는 중입니다.
+                            </td>
+                        </tr>
+                    ) : recipes.length > 0 ? (
                         recipes.map((recipe) => (
                             <tr key={recipe.id} className="table-row" style={{ borderBottom: "1px solid #f1f5f9" }}>
                                 <td style={tdStyle}>

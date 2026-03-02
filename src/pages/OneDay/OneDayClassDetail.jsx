@@ -21,6 +21,7 @@ import {
   toggleOneDayWish,
 } from "../../api/onedayApi";
 import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./onedayLabels";
+import OneDayLocationViewer from "./OneDayLocationViewer";
 import "./OneDayClassDetail.css";
 
 const INQUIRY_CATEGORIES = ["예약", "결제", "클래스", "기타"];
@@ -53,6 +54,8 @@ export const OneDayClassDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [reviewNotice, setReviewNotice] = useState({ error: "", message: "" });
+  const [inquiryNotice, setInquiryNotice] = useState({ error: "", message: "" });
   const [activeTab, setActiveTab] = useState("detail");
 
   const [isWished, setIsWished] = useState(false);
@@ -88,8 +91,9 @@ export const OneDayClassDetail = () => {
     };
   };
 
-  const loadClassData = useCallback(async () => {
-    setLoading(true);
+  const loadClassData = useCallback(async (options = {}) => {
+    const showLoading = options.showLoading !== false;
+    if (showLoading) setLoading(true);
     setError("");
     try {
       const [detailData, sessionsData, reviewData, myCompletedData, myWishData, inquiryData] = await Promise.all([
@@ -126,7 +130,7 @@ export const OneDayClassDetail = () => {
     } catch (e) {
       setError(e?.message ?? "상세 정보를 불러오지 못했습니다.");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [classId, location.state]);
 
@@ -276,9 +280,17 @@ export const OneDayClassDetail = () => {
   }, [activeTab, loading, detail, sessions.length, reviews.length, inquiries.length]);
 
   useEffect(() => {
-    if (!selectedReservationId && reviewableReservations.length > 0) {
+    const selectableIds = new Set(
+      reviewableReservations.map((reservation) => String(reservation.reservationId))
+    );
+    const current = String(selectedReservationId || "");
+
+    if (current && selectableIds.has(current)) return;
+    if (reviewableReservations.length > 0) {
       setSelectedReservationId(String(reviewableReservations[0].reservationId));
+      return;
     }
+    if (current) setSelectedReservationId("");
   }, [reviewableReservations, selectedReservationId]);
 
   const handleHoldOnly = async (sessionId) => {
@@ -344,6 +356,7 @@ export const OneDayClassDetail = () => {
     event.preventDefault();
     setError("");
     setMessage("");
+    setReviewNotice({ error: "", message: "" });
     setSubmittingReview(true);
     try {
       const reservationId = Number(selectedReservationId);
@@ -356,10 +369,10 @@ export const OneDayClassDetail = () => {
 
       await createOneDayReview({ reservationId, rating, content });
       setReviewForm({ rating: 5, content: "" });
-      setMessage("리뷰가 등록되었습니다.");
-      await loadClassData();
+      setReviewNotice({ error: "", message: "리뷰가 등록되었습니다." });
+      await loadClassData({ showLoading: false });
     } catch (e) {
-      setError(e?.message ?? "리뷰 등록에 실패했습니다.");
+      setReviewNotice({ error: e?.message ?? "리뷰 등록에 실패했습니다.", message: "" });
     } finally {
       setSubmittingReview(false);
     }
@@ -369,13 +382,14 @@ export const OneDayClassDetail = () => {
     if (!window.confirm("리뷰를 삭제하시겠습니까?")) return;
     setError("");
     setMessage("");
+    setReviewNotice({ error: "", message: "" });
     setDeletingReviewId(reviewId);
     try {
       await deleteOneDayReview(reviewId);
-      setMessage("리뷰가 삭제되었습니다.");
-      await loadClassData();
+      setReviewNotice({ error: "", message: "리뷰가 삭제되었습니다." });
+      await loadClassData({ showLoading: false });
     } catch (e) {
-      setError(e?.message ?? "리뷰 삭제에 실패했습니다.");
+      setReviewNotice({ error: e?.message ?? "리뷰 삭제에 실패했습니다.", message: "" });
     } finally {
       setDeletingReviewId(null);
     }
@@ -384,9 +398,10 @@ export const OneDayClassDetail = () => {
   const handleAnswerReview = async (reviewId) => {
     setError("");
     setMessage("");
+    setReviewNotice({ error: "", message: "" });
     const answerContent = String(answerDraftByReviewId[reviewId] || "").trim();
     if (!answerContent) {
-      setError("리뷰 답글 내용을 입력해 주세요.");
+      setReviewNotice({ error: "리뷰 답글 내용을 입력해 주세요.", message: "" });
       return;
     }
 
@@ -395,10 +410,10 @@ export const OneDayClassDetail = () => {
       await answerOneDayReview(reviewId, { answerContent });
       setAnswerDraftByReviewId((prev) => ({ ...prev, [reviewId]: "" }));
       setOpenAnswerReviewId(null);
-      setMessage("리뷰 답글이 등록되었습니다.");
-      await loadClassData();
+      setReviewNotice({ error: "", message: "리뷰 답글이 등록되었습니다." });
+      await loadClassData({ showLoading: false });
     } catch (e) {
-      setError(e?.message ?? "리뷰 답글 등록에 실패했습니다.");
+      setReviewNotice({ error: e?.message ?? "리뷰 답글 등록에 실패했습니다.", message: "" });
     } finally {
       setAnsweringReviewId(null);
     }
@@ -408,6 +423,7 @@ export const OneDayClassDetail = () => {
     event.preventDefault();
     setError("");
     setMessage("");
+    setInquiryNotice({ error: "", message: "" });
     setSubmittingInquiry(true);
 
     try {
@@ -426,10 +442,10 @@ export const OneDayClassDetail = () => {
       });
 
       setInquiryForm((prev) => ({ ...prev, title: "", content: "", secret: false }));
-      setMessage("문의가 등록되었습니다.");
-      await loadClassData();
+      setInquiryNotice({ error: "", message: "문의가 등록되었습니다." });
+      await loadClassData({ showLoading: false });
     } catch (e) {
-      setError(e?.message ?? "문의 등록에 실패했습니다.");
+      setInquiryNotice({ error: e?.message ?? "문의 등록에 실패했습니다.", message: "" });
     } finally {
       setSubmittingInquiry(false);
     }
@@ -438,9 +454,10 @@ export const OneDayClassDetail = () => {
   const handleAnswerInquiry = async (inquiryId) => {
     setError("");
     setMessage("");
+    setInquiryNotice({ error: "", message: "" });
     const answerContent = String(answerDraftByInquiryId[inquiryId] || "").trim();
     if (!answerContent) {
-      setError("문의 답글 내용을 입력해 주세요.");
+      setInquiryNotice({ error: "문의 답글 내용을 입력해 주세요.", message: "" });
       return;
     }
 
@@ -449,10 +466,10 @@ export const OneDayClassDetail = () => {
       await answerOneDayInquiry(inquiryId, { answerContent });
       setAnswerDraftByInquiryId((prev) => ({ ...prev, [inquiryId]: "" }));
       setOpenAnswerInquiryId(null);
-      setMessage("문의 답글이 등록되었습니다.");
-      await loadClassData();
+      setInquiryNotice({ error: "", message: "문의 답글이 등록되었습니다." });
+      await loadClassData({ showLoading: false });
     } catch (e) {
-      setError(e?.message ?? "문의 답글 등록에 실패했습니다.");
+      setInquiryNotice({ error: e?.message ?? "문의 답글 등록에 실패했습니다.", message: "" });
     } finally {
       setAnsweringInquiryId(null);
     }
@@ -612,6 +629,15 @@ export const OneDayClassDetail = () => {
         <p className="od-detail-description">
           {detail?.detailDescription || detail?.description || "상세 설명이 아직 등록되지 않았습니다."}
         </p>
+        <div className="od-location-box">
+          <h3>클래스 위치</h3>
+          <OneDayLocationViewer
+            address={detail?.locationAddress}
+            lat={detail?.locationLat}
+            lng={detail?.locationLng}
+            height={320}
+          />
+        </div>
       </section>
 
       <section
@@ -622,6 +648,8 @@ export const OneDayClassDetail = () => {
         }}
       >
         <h2>문의하기</h2>
+        {inquiryNotice.error ? <div className="od-error-box">{inquiryNotice.error}</div> : null}
+        {inquiryNotice.message ? <div className="od-ok-box">{inquiryNotice.message}</div> : null}
         <form className="od-form-grid" onSubmit={handleCreateInquiry}>
           <div className="od-form-row">
             <label>
@@ -744,6 +772,8 @@ export const OneDayClassDetail = () => {
         }}
       >
         <h2>리뷰 작성</h2>
+        {reviewNotice.error ? <div className="od-error-box">{reviewNotice.error}</div> : null}
+        {reviewNotice.message ? <div className="od-ok-box">{reviewNotice.message}</div> : null}
         <form className="od-form-grid" onSubmit={handleCreateReview}>
           <label>
             <span>완료된 예약 선택</span>

@@ -63,10 +63,10 @@ export default function ProductDetailPage() {
     try {
       // 1) 담기 전 장바구니 조회(로그인 상태)
       const before = await fetchMyCart().catch(() => null);
-      const existed = !!before?.items?.some((it) => it.productId === Number(id));
+      const existed = !!before?.items?.some((it) => it.productId === productId);
 
       // 2) 담기
-      await addMyCartItem({ productId: Number(id), quantity: Number(qty) });
+      await addMyCartItem({ productId, quantity: Number(qty) });
 
       // 3) 뱃지 갱신
       await refreshCount();
@@ -157,7 +157,7 @@ export default function ProductDetailPage() {
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
   if (!data) return <div className="pdContainer">불러오는 중...</div>;
-  
+
   return (
     <div className="pdPage">
       <div className="pdContainer">
@@ -235,7 +235,7 @@ export default function ProductDetailPage() {
               <button className="pdCartBtn" disabled={busy || stock <= 0} onClick={addToCart}>
                 {busy ? "처리 중.." : stock <= 0 ? "품절" : "장바구니 담기"}
               </button>
-              <WishButton productId={id} />
+              <WishButton productId={productId} />
             </div>
 
             {err && <div className="pdError">{err}</div>}
@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
           ref={(el) => (sectionRefs.current.review = el)}
         >
           <h2 className="pdSectionTitle">상품평</h2>
-          <ReviewSection productId={id} />
+          <ReviewSection productId={productId} />
         </section>
 
         <section
@@ -290,7 +290,7 @@ export default function ProductDetailPage() {
           ref={(el) => (sectionRefs.current.inquiry = el)}
         >
           <h2 className="pdSectionTitle">상품문의</h2>
-          <InquirySection productId={id} />
+          <InquirySection productId={productId} />
         </section>
 
         <section

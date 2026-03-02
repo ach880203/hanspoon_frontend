@@ -1,6 +1,7 @@
 import axiosInstance from "./axios";
 import { loadAuth } from "../utils/authStorage";
 
+
 const api = axiosInstance;
 
 async function unwrap(promise) {
@@ -17,6 +18,21 @@ async function unwrap(promise) {
 
   return body;
 }
+
+/**
+ * 주소 -> 좌표 변환(백엔드 프록시)
+ * @param {string} query
+ * @returns {Promise<{address:string, lat:number, lng:number}>}
+ */
+export async function geocodeAddress(query) {
+    // axios 인스턴스를 함수로 호출하면 baseURL 루트("/") 요청이 먼저 발생할 수 있어
+    // 지도 검색 API 경로를 명시적으로 호출합니다.
+    const res = await api.get("/api/oneday/location/geocode", {
+        params: { query },
+    });
+    return res.data;
+}
+
 
 // 로그인 사용자 식별자(userId)를 공통으로 꺼내는 함수입니다.
 // 백엔드와 필드명이 다를 수 있어 여러 후보 키를 순서대로 확인합니다.
