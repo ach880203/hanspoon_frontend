@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { geocodeAddress } from "../../api/onedayApi";
+import { ensureKakaoMapSdkLoaded } from "../../utils/kakaoMapSdk";
 
 /**
  * 원데이 클래스 위치 선택(카카오맵)
@@ -16,6 +17,8 @@ export default function ClassLocationMap({ value, onChange }) {
     const mapDomRef = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
+    const geocoderRef = useRef(null);
+    const 최신주소Ref = useRef("");
 
     const 초기값 = useMemo(() => {
         // 기본값: 서울시청 (원데이 기본 위치 없을 때)
@@ -27,6 +30,27 @@ export default function ClassLocationMap({ value, onChange }) {
     }, [value?.address, value?.lat, value?.lng]);
 
     const [주소입력, set주소입력] = useState(초기값.address);
+
+    // 지도 클릭 핸들러는 최초 1회 등록되므로, 최신 주소 문자열은 ref로 별도 유지합니다.
+    useEffect(() => {
+        const nextAddress = typeof value?.address === "string" ? value.address : "";
+        if (nextAddress.trim()) {
+            최신주소Ref.current = nextAddress;
+        }
+    }, [value?.address]);
+
+    useEffect(() => {
+        if (typeof 주소입력 === "string" && 주소입력.trim()) {
+            최신주소Ref.current = 주소입력;
+        }
+    }, [주소입력]);
+
+    const 주소후보정규화 = (resultRow, fallbackAddress) => {
+        const roadAddress = resultRow?.road_address?.address_name;
+        const jibunAddress = resultRow?.address?.address_name;
+        // 도로명 주소가 없는 좌표도 있기 때문에 지번 주소를 fallback으로 사용합니다.
+        return (roadAddress || jibunAddress || fallbackAddress || "").trim();
+    };
 
     const 지도초기화 = () => {
         // ✅ 카카오 SDK 로딩 확인
@@ -47,15 +71,43 @@ export default function ClassLocationMap({ value, onChange }) {
         marker.setMap(map);
         markerRef.current = marker;
 
+        if (window.kakao?.maps?.services) {
+            geocoderRef.current = new window.kakao.maps.services.Geocoder();
+        } else {
+            // libraries=services 누락/키 문제 시 역지오코딩이 동작하지 않을 수 있습니다.
+            console.warn("[원데이지도] kakao.maps.services 를 찾지 못했습니다. SDK URL(libraries=services)과 JS 키를 확인해 주세요.");
+        }
+
         // ✅ 지도 클릭으로 좌표 선택(옵션)
         window.kakao.maps.event.addListener(map, "click", (mouseEvent) => {
             const latlng = mouseEvent.latLng;
             marker.setPosition(latlng);
+            const lat = latlng.getLat();
+            const lng = latlng.getLng();
+            const fallbackAddress = 최신주소Ref.current;
 
-            onChange?.({
-                address: value?.address ?? 주소입력 ?? "",
-                lat: latlng.getLat(),
-                lng: latlng.getLng(),
+            const geocoder = geocoderRef.current;
+            if (!geocoder || !window.kakao?.maps?.services) {
+                console.info("[원데이지도] 클릭 역지오코딩 생략(services 미준비)", { lat, lng });
+                onChange?.({ address: fallbackAddress, lat, lng });
+                return;
+            }
+
+            // Kakao coord2Address 파라미터 순서: x=경도(lng), y=위도(lat)
+            geocoder.coord2Address(lng, lat, (result, status) => {
+                if (status !== window.kakao.maps.services.Status.OK || !Array.isArray(result) || result.length === 0) {
+                    console.info("[원데이지도] 클릭 역지오코딩 실패", { lat, lng, status });
+                    onChange?.({ address: fallbackAddress, lat, lng });
+                    return;
+                }
+
+                const resolvedAddress = 주소후보정규화(result[0], fallbackAddress);
+                console.info("[원데이지도] 클릭 역지오코딩 성공", { lat, lng, address: resolvedAddress });
+                if (resolvedAddress) {
+                    set주소입력(resolvedAddress);
+                    최신주소Ref.current = resolvedAddress;
+                }
+                onChange?.({ address: resolvedAddress, lat, lng });
             });
         });
 
@@ -63,17 +115,24 @@ export default function ClassLocationMap({ value, onChange }) {
     };
 
     useEffect(() => {
-        // SDK가 이미 준비되었으면 즉시 초기화
-        if (지도초기화()) return;
+        let cancelled = false;
 
-        // SDK 로딩이 늦는 경우를 대비해 짧게 재시도
-        const timer = window.setInterval(() => {
-            if (지도초기화()) {
-                window.clearInterval(timer);
-            }
-        }, 100);
+        // SDK 준비가 끝난 뒤에만 지도 생성을 시도합니다.
+        ensureKakaoMapSdkLoaded()
+            .then(() => {
+                if (!cancelled) {
+                    지도초기화();
+                }
+            })
+            .catch((error) => {
+                if (!cancelled) {
+                    console.error("[원데이지도] 카카오 SDK 로딩 실패", error);
+                }
+            });
 
-        return () => window.clearInterval(timer);
+        return () => {
+            cancelled = true;
+        };
     }, []); // 최초 1회만
 
     // ✅ value가 바뀌었을 때(수정 화면에서 초기 데이터 로딩 등) 지도도 동기화

@@ -8,6 +8,7 @@ import { fetchProducts } from "../api/products";
 import { getRecipeList } from "../api/recipeApi";
 import { bannerApi } from "../api/commonApi";
 import EventPopup from "../components/EventPopup/EventPopup";
+import { toBackendUrl } from "../utils/backendUrl";
 
 
 const FALLBACK_RECIPE_IMG = "/img/banner-chicken.png";
@@ -30,7 +31,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState({ recipes: true, classes: true, market: true });
   const [error, setError] = useState({ recipes: "", classes: "", market: "" });
 
-  const RECIPE_BASE_IMG = "http://localhost:8080/images/recipe/";
   const RECIPE_DEFAULT_IMG = "/images/recipe/default.jpg";
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function HomePage() {
           title: r.title,
           sub: `리뷰 ${r.reviewCount || 0}`,
           chip: r.category ? r.category : "", // 서버에 category 필드가 있으면 표시
-          imageSrc: r.recipeImg ? `${RECIPE_BASE_IMG}${r.recipeImg}` : RECIPE_DEFAULT_IMG,
+          imageSrc: r.recipeImg ? toBackendUrl(`/images/recipe/${r.recipeImg}`, "http://localhost:8080") : RECIPE_DEFAULT_IMG,
           imageAlt: r.title,
           to: `/recipes/${r.id}`, // 리스트 페이지랑 동일한 상세 라우트
         }));
@@ -107,7 +107,7 @@ export default function HomePage() {
             title,
             sub: [category, level].filter(Boolean).join(" · "),
             chip: runType,
-            imageSrc: c?.thumbnailUrl || c?.imageUrl || FALLBACK_CLASS_IMG,
+            imageSrc: c?.mainImageData || c?.thumbnailUrl || c?.imageUrl || c?.detailImageData || FALLBACK_CLASS_IMG,
             imageAlt: title,
             to: `/classes/oneday/classes/${id}`,
           };
@@ -142,7 +142,13 @@ export default function HomePage() {
             discount,
             price,
             originPrice: origin,
-            imageSrc: p?.imgUrl || p?.imageUrl || p?.thumbnailUrl || FALLBACK_PRODUCT_IMG,
+            imageSrc:
+              (typeof p?.thumbnailUrl === "string" && p.thumbnailUrl.startsWith("/")
+                ? toBackendUrl(p.thumbnailUrl, "http://localhost:8080")
+                : p?.thumbnailUrl) ||
+              p?.imgUrl ||
+              p?.imageUrl ||
+              FALLBACK_PRODUCT_IMG,
             imageAlt: title,
             // ⚠️ 상세 라우트는 프로젝트에 맞게 수정
             to: `/products/${id}`,

@@ -1,0 +1,135 @@
+﻿[카카오지도 API 자습서]
+대상 파일
+- src/utils/kakaoMapSdk.js
+- src/pages/OneDay/ClassLocationMap.jsx
+- src/pages/OneDay/OneDayLocationViewer.jsx
+- src/api/onedayApi.js (geocodeAddress)
+
+==================================================
+1. 전체 구조 먼저 이해하기
+==================================================
+이 프로젝트의 지도 흐름은 2가지입니다.
+
+A) 등록/수정 화면 지도 (ClassLocationMap)
+- 관리자/운영자가 지도에서 위치를 선택하고 저장하는 화면
+- 지도 클릭 시 좌표(lat,lng) + 역지오코딩 주소를 얻어 폼 상태에 반영
+- 주소 검색 버튼은 백엔드 프록시 API(/api/oneday/location/geocode)를 호출
+
+B) 상세/모달 화면 지도 (OneDayLocationViewer)
+- 저장된 주소/좌표를 "보여주기" 위한 읽기 전용 지도
+- 좌표가 없고 주소만 있을 때는 주소 -> 좌표 보완 조회 후 표시
+
+핵심 원칙
+- 프론트는 JavaScript 키(VITE_KAKAO_JS_KEY)만 사용
+- REST 키는 백엔드에서만 사용
+
+==================================================
+2. SDK 로더(kakaoMapSdk.js) 줄 단위 의미
+==================================================
+(1) KAKAO_SDK_SELECTOR
+- 이미 삽입한 script를 재사용하기 위한 선택자
+- 중복 script 삽입 방지
+
+(2) KAKAO_SDK_URL_PREFIX
+- 카카오 지도 SDK 기본 URL
+
+(3) sdkLoadPromise 캐시
+- 여러 컴포넌트가 동시에 로딩 요청해도 한 번만 로드
+- 중복 요청/레이스 컨디션 방지
+
+(4) buildKakaoSdkUrl(jsKey)
+- appkey + libraries=services + autoload=false를 URL에 조합
+- services 라이브러리는 Geocoder 사용 시 필수
+- autoload=false로 두고 kakao.maps.load에서 로딩 완료 시점을 제어
+
+(5) ensureKakaoMapSdkLoaded()
+- 이미 준비되었으면 즉시 resolve
+- 아니면 script를 동적으로 삽입
+- load 이후 kakao.maps.load 콜백에서 최종 준비 확인
+- 실패하면 sdkLoadPromise를 null로 되돌려 재시도 가능하게 처리
+
+왜 이 로더가 필요한가?
+- index.html의 정적 script 로딩은 브라우저 parser-blocking 경고를 만들 수 있음
+- 동적 로딩 + 준비 시점 제어가 화면 안정성/유지보수성에 유리함
+
+==================================================
+3. 등록/수정 지도(ClassLocationMap) 핵심 흐름
+==================================================
+1) 컴포넌트 mount
+- ensureKakaoMapSdkLoaded() 호출
+- 성공 후 지도/마커/지오코더 초기화
+
+2) 지도 클릭 이벤트
+- 클릭 좌표(lat,lng) 획득
+- geocoder.coord2Address(lng, lat, callback) 호출
+  ※ 매우 중요: x=경도(lng), y=위도(lat)
+- 도로명 주소 우선, 없으면 지번 주소 fallback
+- onChange({ address, lat, lng })로 부모 폼 상태 업데이트
+
+3) 주소 검색 버튼
+- geocodeAddress(query) 호출
+- 백엔드가 카카오 Local API 호출 결과를 정리해서 반환
+- 반환 좌표로 지도 중심/마커 이동
+
+4) 안정성 포인트
+- services 미준비면 좌표만 반영하고 주소는 기존값 fallback
+- null/빈값/파싱실패 방어 코드 존재
+
+==================================================
+4. 상세/모달 지도(OneDayLocationViewer) 핵심 흐름
+==================================================
+1) sdkReady 상태 관리
+- ensureKakaoMapSdkLoaded 성공 시 true
+
+2) 좌표 결정 우선순위
+- props.lat/lng가 있으면 최우선 사용
+- 없으면 주소로 geocoder.addressSearch 후 보완 좌표 사용
+
+3) 지도 렌더링
+- 좌표가 준비되면 지도 생성(최초) 또는 center/marker 갱신(이후)
+- 좌표가 없으면 "위치 정보가 아직 등록되지 않았습니다" 안내 박스 표시
+
+==================================================
+5. 자주 하는 실수와 예방 방법
+==================================================
+실수 1) libraries=services 누락
+- 증상: kakao.maps.services undefined
+- 예방: SDK URL에 libraries=services 고정
+
+실수 2) 좌표 순서 반전
+- 증상: 엉뚱한 주소 반환
+- 예방: coord2Address는 (lng, lat)
+
+실수 3) 키 혼용
+- 증상: 401/403 또는 SDK 로드 실패
+- 예방: 프론트=JS 키, 백엔드=REST 키 분리
+
+실수 4) 주소가 비는 케이스 미처리
+- 증상: 선택 주소 공백
+- 예방: road_address.address_name || address.address_name fallback
+
+==================================================
+6. 직접 연습해볼 개선 과제
+==================================================
+과제 1)
+- ClassLocationMap에 "현재 위치로 이동" 버튼 추가
+- navigator.geolocation 사용
+
+과제 2)
+- OneDayLocationViewer에 "지도 크게 보기" 모달 추가
+- 기존 좌표/주소 props 재사용
+
+과제 3)
+- 역지오코딩 실패 메시지를 사용자 친화적으로 세분화
+- services 미준비 / 네트워크 실패 / 결과 없음 분리
+
+==================================================
+7. 디버깅 체크 순서(실전)
+==================================================
+1) 콘솔: SDK 로드 에러 여부
+2) Network: /api/oneday/location/geocode 응답 status/body
+3) 클릭 시 lat/lng 값이 바뀌는지
+4) coord2Address 호출 인자 순서(lng,lat) 재확인
+5) 주소 fallback 로직 적용 여부 확인
+
+이 순서대로 보면 "주소가 안 뜨는 문제"를 대부분 빠르게 원인 확정할 수 있습니다.
