@@ -1,176 +1,118 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { getRecipeList } from "../../api/recipeApi.js";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getRecipeList, permanentDeleteRecipe } from "../../api/recipeApi.js";
+import { toBackendUrl } from "../../utils/backendUrl.js";
 
 function Recipesuser() {
-  const [recipes, setRecipes] = useState([]);
-  const navigate = useNavigate();
+    const [recipes, setRecipes] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchList = async () => {
-      try {
-        const response = await getRecipeList({ page: 0, category: "KOREAN" });
-        setRecipes(response.data.content || []);
-      } catch (error) {
-        console.error("목록 로드 실패:", error);
-      }
+    const authData = localStorage.getItem("hanspoon_auth");
+    const currentUser = authData ? JSON.parse(authData) : null;
+    const currentUserId = currentUser?.userId;
+
+    useEffect(() => {
+        const fetchMyList = async () => {
+            if (!currentUserId) return;
+            setLoading(true);
+            try {
+                const response = await getRecipeList({ page: 0, userId: currentUserId });
+                const myRecipes = response.data?.data?.content || response.data?.content || [];
+                setRecipes(myRecipes);
+            } catch (error) {
+                console.error("내 레시피 로드 실패:", error);
+            } finally { setLoading(false); }
+        };
+        fetchMyList();
+    }, [currentUserId]);
+
+    const handleDelete = async (id, e) => {
+        e.stopPropagation();
+        if (!window.confirm("정말 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+        try {
+            await permanentDeleteRecipe(id);
+            setRecipes(recipes.filter((r) => String(r.id) !== String(id)));
+            alert("레시피가 완전히 삭제되었습니다.");
+        } catch {
+            alert("삭제 실패: 관련 데이터가 있어 삭제할 수 없습니다.");
+        }
     };
 
-    fetchList();
-  }, []);
-
-  const handleDelete = (id, e) => {
-    e.stopPropagation();
-    if (!window.confirm("이 레시피를 삭제할까요?")) return;
-
-    const updated = recipes.filter((r) => String(r.id) !== String(id));
-    localStorage.setItem("userRecipes", JSON.stringify(updated));
-    localStorage.setItem("myRecipes", JSON.stringify(updated));
-    setRecipes(updated);
-  };
-
-  const handleEdit = (recipe, e) => {
-    e.stopPropagation();
-    navigate("/recipes", { state: { editData: recipe } });
-  };
-
-  const goToDetail = (id) => {
-    navigate(`/recipes/${id}`);
-  };
-
-  return (
-    <div className="recipe-user-page" style={{ backgroundColor: "#f8fafc", minHeight: "100vh", padding: "40px 0" }}>
-      <div style={{ width: "95%", maxWidth: "1600px", margin: "0 auto" }}>
-        <header style={{ marginBottom: "40px", padding: "0 10px" }}>
-          <h2 style={{ fontSize: "2.4rem", fontWeight: "bold", color: "#1e293b", marginBottom: "10px" }}>내 레시피 목록</h2>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-            <p style={{ color: "#64748b", fontSize: "1.1rem", margin: 0 }}>
-              총 <b>{recipes.length}</b>개의 레시피가 있습니다.
-            </p>
-            <button onClick={() => navigate("/recipes")} style={navBtnStyle}>
-              + 새 레시피 작성
-            </button>
-          </div>
-        </header>
-
-        <div style={{ minHeight: "500px" }}>
-          {recipes.length > 0 ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "25px",
-                width: "100%",
-              }}
-            >
-              {recipes.map((recipe) => (
-                <div
-                  key={recipe.id}
-                  className="recipe-card"
-                  style={{ ...cardStyle, cursor: "pointer" }}
-                  onClick={() => goToDetail(recipe.id)}
-                >
-                  <div style={{ width: "100%", aspectRatio: "3/4", overflow: "hidden", backgroundColor: "#f1f5f9" }}>
-                    <img
-                      src={recipe.recipeMainImg || "https://images.unsplash.com/photo-1495195129352-aec325a55b65?q=80&w=600"}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      alt={recipe.title}
-                    />
-                  </div>
-
-                  <div style={{ padding: "20px" }}>
-                    <div style={{ marginBottom: "15px" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#6366f1", fontWeight: "bold" }}>{recipe.category}</span>
-                      <h5
-                        style={{
-                          fontWeight: "bold",
-                          marginTop: "5px",
-                          fontSize: "1.1rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {recipe.title || "제목 없음"}
-                      </h5>
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", color: "#94a3b8" }}>
-                      <span>인분 {recipe.baseServings}</span>
-                      <span>등록일 {new Date(recipe.id).toLocaleDateString()}</span>
-                    </div>
-
-                    <div style={{ marginTop: "20px", display: "flex", gap: "8px", borderTop: "1px solid #f1f5f9", paddingTop: "15px" }}>
-                      <button onClick={(e) => handleEdit(recipe, e)} style={smallIconBtnStyle} title="수정">
-                        수정
-                      </button>
-                      <button onClick={(e) => handleDelete(recipe.id, e)} style={{ ...smallIconBtnStyle, color: "#ef4444" }} title="삭제">
-                        삭제
-                      </button>
-                    </div>
-                  </div>
+    return (
+        <div className="recipe-user-page" style={{ padding: "40px 20px", maxWidth: "1200px", margin: "0 auto" }}>
+            <header style={{ marginBottom: "30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                    <h2 style={{ fontSize: "1.8rem", fontWeight: "bold", color: "#1e293b" }}>내 레시피 관리</h2>
+                    <p style={{ color: "#64748b" }}>총 <b>{recipes.length}</b>개의 레시피가 있습니다.</p>
                 </div>
-              ))}
+                <button onClick={() => navigate("/recipes")} style={navBtnStyle}>+ 새 레시피 작성</button>
+            </header>
+
+            <div style={{ backgroundColor: "#fff", borderRadius: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                    <thead style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                    <tr>
+                        <th style={thStyle}>이미지</th>
+                        <th style={thStyle}>레시피명</th>
+                        <th style={thStyle}>카테고리</th>
+                        <th style={{ ...thStyle, textAlign: "center" }}>관리</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loading ? (
+                        <tr>
+                            <td colSpan="5" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>
+                                레시피를 불러오는 중입니다.
+                            </td>
+                        </tr>
+                    ) : recipes.length > 0 ? (
+                        recipes.map((recipe) => (
+                            <tr key={recipe.id} className="table-row" style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                <td style={tdStyle}>
+                                    <img
+                                        src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : "https://via.placeholder.com/50"}
+                                        alt="thumb"
+                                        style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "6px", cursor: "pointer" }}
+                                        onClick={() => navigate(`/recipes/${recipe.id}`)}
+                                    />
+                                </td>
+                                <td style={{ ...tdStyle, fontWeight: "500", cursor: "pointer" }} onClick={() => navigate(`/recipes/${recipe.id}`)}>
+                                    {recipe.title}
+                                </td>
+                                <td style={tdStyle}><span style={categoryBadgeStyle}>{recipe.category}</span></td>
+                                <td style={{ ...tdStyle, textAlign: "center" }}>
+                                    <button className="edit-btn" onClick={() => navigate(`/recipes/edit/${recipe.id}`)} style={actionBtnStyle}>수정</button>
+                                    <button className="delete-btn" onClick={(e) => handleDelete(recipe.id, e)} style={{ ...actionBtnStyle, color: "#ef4444" }}>삭제</button>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="5" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>작성한 레시피가 없습니다.</td>
+                        </tr>
+                    )}
+                    </tbody>
+                </table>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0" }}>
-              <div style={{ marginBottom: "20px", fontSize: "50px", color: "#cbd5e1" }}>⌕</div>
-              <p style={{ color: "#64748b" }}>아직 작성한 레시피가 없습니다.</p>
-              <button onClick={() => navigate("/recipes")} style={navBtnStyle}>
-                레시피 작성하러 가기
-              </button>
-            </div>
-          )}
+
+            <style>{`
+                .table-row:hover { backgroundColor: #f8fafc; }
+                .edit-btn:hover { background-color: #e0e7ff !important; color: #4338ca !important; }
+                .delete-btn:hover { background-color: #fee2e2 !important; }
+            `}</style>
         </div>
-
-        <footer style={{ display: "flex", gap: "12px", justifyContent: "center", padding: "80px 0 40px" }}>
-          <Link to="/" style={navBtnStyle}>메인으로</Link>
-          <Link to="/products" style={navBtnStyle}>마켓(상품)</Link>
-          <Link to="/cart" style={navBtnStyle}>장바구니</Link>
-          <Link to="/admin/add-product" style={navBtnStyle}>관리자: 상품등록</Link>
-        </footer>
-      </div>
-
-      <style>{`
-        .recipe-card { transition: all 0.3s ease; }
-        .recipe-card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.08) !important; }
-      `}</style>
-    </div>
-  );
+    );
 }
 
-const navBtnStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "10px 20px",
-  borderRadius: "10px",
-  border: "1px solid #e2e8f0",
-  textDecoration: "none",
-  color: "#475569",
-  background: "white",
-  fontSize: "0.95rem",
-  fontWeight: "500",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-  cursor: "pointer",
-  transition: "all 0.2s",
+// 🚩 리스트용 스타일 상수들
+const thStyle = { padding: "15px", color: "#475569", fontSize: "0.9rem", fontWeight: "600" };
+const tdStyle = { padding: "12px 15px", color: "#1e293b", fontSize: "0.95rem", verticalAlign: "middle" };
+const actionBtnStyle = {
+    padding: "6px 12px", border: "1px solid #e2e8f0", borderRadius: "6px", backgroundColor: "#fff",
+    fontSize: "0.85rem", cursor: "pointer", marginLeft: "5px", transition: "0.2s"
 };
-
-const cardStyle = {
-  backgroundColor: "#fff",
-  borderRadius: "15px",
-  overflow: "hidden",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-  border: "1px solid #f1f5f9",
-};
-
-const smallIconBtnStyle = {
-  ...navBtnStyle,
-  padding: "6px 12px",
-  fontSize: "0.85rem",
-  borderRadius: "6px",
-  backgroundColor: "#f8fafc",
-  gap: "5px",
-};
+const categoryBadgeStyle = { padding: "4px 8px", backgroundColor: "#f1f5f9", borderRadius: "4px", fontSize: "0.75rem", color: "#6366f1", fontWeight: "bold" };
+const navBtnStyle = { padding: "10px 20px", backgroundColor: "#4f46e5", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" };
 
 export default Recipesuser;

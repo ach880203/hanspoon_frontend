@@ -1,39 +1,39 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./BannerSection.css";
 
 export const marketBannerSlides = [
   {
     id: "m1",
-    eyebrow: "신선한 오리와 천연 재료로 담백하고 건강하게 만든",
-    title: "첨가물 0% 순살 오리 무항생제 밀키트",
+    eyebrow: "신선한 재료로 간편하게 만드는 집밥",
+    title: "닭고기 0% 첨가 프리미엄 밀키트",
     period: "2.17 - 2.23",
     imageSrc: "/img/banner-duck.png",
-    imageAlt: "오리 요리 배너 이미지",
+    imageAlt: "오리 배너 이미지",
     bg: "#ded2bf",
     badges: [
       { label: "공동구매", tone: "dark" },
-      { label: "쿠폰 할인", tone: "light" },
+      { label: "쿠폰할인", tone: "light" },
     ],
     to: "/products",
   },
   {
     id: "m2",
-    eyebrow: "겉바속촉 수제 양념으로 완성한",
-    title: "에어프라이어로도 가능한 순살 치킨",
+    eyebrow: "겉바속촉 수제 오븐 레시피",
+    title: "에어프라이어로도 가능한 수제 치킨",
     period: "2.24 - 3.02",
     imageSrc: "/img/banner-chicken.png",
     imageAlt: "치킨 배너 이미지",
     bg: "#e8d6c5",
     badges: [
       { label: "한정", tone: "dark" },
-      { label: "신상", tone: "light" },
+      { label: "무료배송", tone: "light" },
     ],
     to: "/products",
   },
   {
     id: "m3",
-    eyebrow: "담백한 연어와 허브의 완벽한 조합",
+    eyebrow: "담백한 연어와 허브의 균형 잡힌 조합",
     title: "노르웨이산 연어 허브 스테이크",
     period: "3.03 - 3.09",
     imageSrc: "/img/banner-salmon.png",
@@ -41,14 +41,14 @@ export const marketBannerSlides = [
     bg: "#d9e6e2",
     badges: [
       { label: "프리미엄", tone: "dark" },
-      { label: "특가", tone: "light" },
+      { label: "한정수량", tone: "light" },
     ],
     to: "/products",
   },
   {
     id: "m4",
     eyebrow: "가볍게 먹어도 든든한 한 그릇",
-    title: "비건 단백질 샐러드 보울 세트",
+    title: "비건 단호박 샐러드 보울 세트",
     period: "3.10 - 3.16",
     imageSrc: "/img/banner-veggie.png",
     imageAlt: "샐러드 보울 배너 이미지",
@@ -94,18 +94,13 @@ export default function BannerSection({
   const goPrev = () => go((i) => i - 1);
   const goNext = () => go((i) => i + 1);
 
-  // 자동 재생
   useEffect(() => {
     if (!autoPlay || len <= 1) return;
     if (pauseOnHover && isHover) return;
 
-    const start = () => {
-      timerRef.current = setInterval(() => {
-        goNext();
-      }, interval);
-    };
-
-    start();
+    timerRef.current = setInterval(() => {
+      goNext();
+    }, interval);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -113,7 +108,6 @@ export default function BannerSection({
     };
   }, [autoPlay, interval, len, isHover, pauseOnHover]);
 
-  // 페이지 비활성화 시 자동 재생 일시 정지
   useEffect(() => {
     const onVis = () => {
       if (document.hidden) {
@@ -214,7 +208,9 @@ export default function BannerSection({
                 }}
                 aria-label="이전 배너"
               >
-                <IconChevronLeft />
+                <span className="hs-bannerArrowText" aria-hidden="true">
+                  {"<"}
+                </span>
               </button>
 
               <button
@@ -227,13 +223,15 @@ export default function BannerSection({
                 }}
                 aria-label="다음 배너"
               >
-                <IconChevronRight />
+                <span className="hs-bannerArrowText" aria-hidden="true">
+                  {">"}
+                </span>
               </button>
             </>
           )}
 
           {showDots && len > 1 && (
-            <div className="hs-bannerDots" aria-label="배너 페이지네이션">
+            <div className="hs-bannerDots" aria-label="배너 페이지 인디케이터">
               {safeSlides.map((_, di) => (
                 <button
                   key={`dot-${di}`}
@@ -248,21 +246,5 @@ export default function BannerSection({
         </div>
       </div>
     </section>
-  );
-}
-
-function IconChevronLeft() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconChevronRight() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
   );
 }

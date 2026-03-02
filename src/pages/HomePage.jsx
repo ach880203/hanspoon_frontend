@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import "./Home.css";
 import BannerSection, { marketBannerSlides } from "../components/BannerSection";
 import { useEffect, useState } from "react";
@@ -7,6 +6,7 @@ import RollingGridSection from "../components/RollingGridSection";
 import { getOneDayClasses } from "../api/onedayApi";
 import { fetchProducts } from "../api/products";
 import { getRecipeList } from "../api/recipeApi";
+import { bannerApi } from "../api/commonApi";
 import EventPopup from "../components/EventPopup/EventPopup";
 
 
@@ -21,12 +21,11 @@ function toCardPrice(n) {
 }
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
-
   // preview states
   const [recipeItems, setRecipeItems] = useState([]);
   const [classItems, setClassItems] = useState([]);
   const [marketItems, setMarketItems] = useState([]);
+  const [bannerSlides, setBannerSlides] = useState(marketBannerSlides);
 
   const [loading, setLoading] = useState({ recipes: true, classes: true, market: true });
   const [error, setError] = useState({ recipes: "", classes: "", market: "" });
@@ -37,6 +36,30 @@ export default function HomePage() {
   useEffect(() => {
     let ignore = false;
 
+    (async () => {
+      try {
+        const response = await bannerApi.getBanners();
+        const list = Array.isArray(response?.data) ? response.data : [];
+        if (!ignore && list.length > 0) {
+          const mapped = list.map((item) => ({
+            id: `banner-${item.bannerId}`,
+            eyebrow: item.eyebrow || "",
+            title: item.title || "",
+            period: item.period || "",
+            imageSrc: item.imageSrc || "",
+            imageAlt: item.imageAlt || item.title || "배너",
+            bg: item.bg || "#efe7da",
+            badges: Array.isArray(item.badges) ? item.badges : [],
+            to: item.toPath || undefined,
+            href: item.href || undefined,
+          }));
+          setBannerSlides(mapped);
+        }
+      } catch {
+        if (!ignore) setBannerSlides(marketBannerSlides);
+      }
+    })();
+
     // 1) Recipes (3분할이니까 최소 6개 정도 가져오면 롤링이 자연스러움)
     (async () => {
       setLoading((s) => ({ ...s, recipes: true }));
@@ -46,7 +69,6 @@ export default function HomePage() {
         // 홈 미리보기용: 6개 정도(3개씩 롤링 2페이지)
         const res = await getRecipeList({ keyword: "", category: "", page: 0, size: 6 });
         const list = res?.data.data?.content ?? [];
-        console.log("레시피 API :", res.data.data);
 
         const mapped = list.map((r) => ({
           id: r.id,
@@ -145,7 +167,7 @@ export default function HomePage() {
       <EventPopup />
 
       {/* 배너 섹션 */}
-      <BannerSection slides={marketBannerSlides} interval={4500} />
+      <BannerSection slides={bannerSlides} interval={4500} />
 
 
       {/* ✅ 배너 아래 섹션 3개 */}
@@ -171,6 +193,7 @@ export default function HomePage() {
         title="MARKET"
         moreTo="/products"
         perPage={4}
+        variant="market"
         items={marketItems}
         loading={loading.market}
         error={error.market}

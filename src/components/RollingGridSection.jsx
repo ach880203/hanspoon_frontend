@@ -21,6 +21,7 @@ export default function RollingGridSection({
   perPage = 4,
   loading = false,
   error = "",
+  variant = "default",
 }) {
   const safe = useMemo(() => items.filter(Boolean), [items]);
   const len = safe.length;
@@ -45,7 +46,7 @@ export default function RollingGridSection({
   const next = () => canRoll && setPage((p) => (p + 1) % pageCount);
 
   return (
-    <section className="rg-section">
+    <section className={`rg-section rg-section-${variant}`}>
       <div className="rg-head">
         <div className="rg-title">{title}</div>
         <Link to={moreTo} className="rg-more">
@@ -70,14 +71,28 @@ export default function RollingGridSection({
         <div className={`rg-grid rg-grid-${perPage}`}>
           {loading
             ? Array.from({ length: perPage }).map((_, i) => <div key={i} className="rg-skeleton" />)
-            : visible.map((it, i) => <CardItem key={`${it.id}-${i}`} item={it} />)}
+            : visible.map((it, i) => <CardItem key={`${it.id}-${i}`} item={it} variant={variant} />)}
         </div>
+
+        {!loading && canRoll && (
+          <div className="rg-indicators" aria-label={`${title} pages`}>
+            {Array.from({ length: pageCount }).map((_, pi) => (
+              <button
+                key={`rg-indicator-${pi}`}
+                type="button"
+                className={`rg-indicator ${pi === page ? "is-active" : ""}`}
+                onClick={() => setPage(pi)}
+                aria-label={`${title} ${pi + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function CardItem({ item }) {
+function CardItem({ item, variant = "default" }) {
   const content = (
     <>
       <div className="rg-thumb">
@@ -103,30 +118,22 @@ function CardItem({ item }) {
 
   if (item.href) {
     return (
-      <a className="rg-card" href={item.href}>
+      <a className={`rg-card rg-card-${variant}`} href={item.href}>
         {content}
       </a>
     );
   }
 
   return (
-    <Link className="rg-card" to={item.to || "/"}>
+    <Link className={`rg-card rg-card-${variant}`} to={item.to || "/"}>
       {content}
     </Link>
   );
 }
 
 function IconChevronLeft() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  );
+  return <span className="rg-arrowText" aria-hidden="true">{"<"}</span>;
 }
 function IconChevronRight() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  );
+  return <span className="rg-arrowText" aria-hidden="true">{">"}</span>;
 }

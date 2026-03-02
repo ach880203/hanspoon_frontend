@@ -33,6 +33,7 @@ export default function ProductDetailPage() {
   const ratiosRef = useRef(new Map()); // scrollspy 안정화
 
   const productId = useMemo(() => Number(id), [id]);
+  const stock = Math.max(0, Number(data?.stock ?? 0));
 
   useEffect(() => {
     setErr("");
@@ -47,21 +48,25 @@ export default function ProductDetailPage() {
       .catch((e) => setErr(toErrorMessage(e)));
   }, [id]);
 
-  const clampQty = (n) => Math.max(1, Number.isFinite(n) ? n : 1);
+  const clampQty = (n) => {
+    const normalized = Number.isFinite(n) ? n : 1;
+    if (stock <= 0) return 1;
+    return Math.min(stock, Math.max(1, normalized));
+  };
 
   const { refreshCount, showToast } = useCart();
 
   const addToCart = async () => {
-    if (!data) return;
+    if (!data || stock <= 0) return;
     setBusy(true);
     setErr("");
     try {
       // 1) 담기 전 장바구니 조회(로그인 상태)
       const before = await fetchMyCart().catch(() => null);
-      const existed = !!before?.items?.some((it) => it.productId === Number(id));
+      const existed = !!before?.items?.some((it) => it.productId === productId);
 
       // 2) 담기
-      await addMyCartItem({ productId: Number(id), quantity: Number(qty) });
+      await addMyCartItem({ productId, quantity: Number(qty) });
 
       // 3) 뱃지 갱신
       await refreshCount();
@@ -152,7 +157,7 @@ export default function ProductDetailPage() {
   }, [data]); // data 로딩 후 섹션이 생긴 다음에 observe
 
   if (!data) return <div className="pdContainer">불러오는 중...</div>;
-  
+
   return (
     <div className="pdPage">
       <div className="pdContainer">
@@ -205,26 +210,32 @@ export default function ProductDetailPage() {
             <div className="pdQtyBox">
               <div className="pdQtyLabel">수량</div>
               <div className="pdQtyCtrl">
-                <button type="button" onClick={() => setQty((q) => clampQty(q - 1))} disabled={busy}>
+                <button type="button" onClick={() => setQty((q) => clampQty(q - 1))} disabled={busy || stock <= 0}>
                   −
                 </button>
                 <input
                   type="number"
                   min={1}
+                  max={Math.max(1, stock)}
                   value={qty}
                   onChange={(e) => setQty(clampQty(Number(e.target.value)))}
+                  disabled={stock <= 0}
                 />
-                <button type="button" onClick={() => setQty((q) => clampQty(q + 1))} disabled={busy}>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => clampQty(q + 1))}
+                  disabled={busy || stock <= 0 || qty >= stock}
+                >
                   +
                 </button>
               </div>
             </div>
 
             <div className="pdActions">
-              <button className="pdCartBtn" disabled={busy} onClick={addToCart}>
-                {busy ? "처리 중.." : "장바구니 담기"}
+              <button className="pdCartBtn" disabled={busy || stock <= 0} onClick={addToCart}>
+                {busy ? "처리 중.." : stock <= 0 ? "품절" : "장바구니 담기"}
               </button>
-              <WishButton productId={id} />
+              <WishButton productId={productId} />
             </div>
 
             {err && <div className="pdError">{err}</div>}
@@ -270,7 +281,7 @@ export default function ProductDetailPage() {
           ref={(el) => (sectionRefs.current.review = el)}
         >
           <h2 className="pdSectionTitle">상품평</h2>
-          <ReviewSection productId={id} />
+          <ReviewSection productId={productId} />
         </section>
 
         <section
@@ -279,7 +290,7 @@ export default function ProductDetailPage() {
           ref={(el) => (sectionRefs.current.inquiry = el)}
         >
           <h2 className="pdSectionTitle">상품문의</h2>
-          <InquirySection productId={id} />
+          <InquirySection productId={productId} />
         </section>
 
         <section

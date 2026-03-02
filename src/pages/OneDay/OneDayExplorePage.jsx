@@ -13,6 +13,7 @@ import {
   toRunTypeLabel,
   toSlotLabel,
 } from "./onedayLabels";
+import OneDayLocationViewer from "./OneDayLocationViewer";
 import "./OneDayExplorePage.css";
 
 const CLASS_PAGE_SIZE = 6;
@@ -864,6 +865,16 @@ export function OneDayExplorePage() {
                   <span className="odxv-chip">
                     강사: {selectedClassDetail?.instructorName || "미지정"}
                   </span>
+                </div>
+
+                <div className="odxv-location-wrap">
+                  <h4>클래스 위치</h4>
+                  <OneDayLocationViewer
+                    address={selectedClassDetail?.locationAddress}
+                    lat={selectedClassDetail?.locationLat}
+                    lng={selectedClassDetail?.locationLng}
+                    height={220}
+                  />
                 </div>
 
                 <div className="odxv-detail-actions">

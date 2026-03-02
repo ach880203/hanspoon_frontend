@@ -22,7 +22,7 @@ export const AdminReservationList = () => {
       const res = await adminApi.getReservations(statusFilter);
       setReservations(res.data || []);
     } catch (e) {
-      setError(e?.message ?? "예약 목록을 불러오지 못했습니다.");
+      setError(e?.message ?? "레시피 목록을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }

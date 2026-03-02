@@ -3,14 +3,25 @@ import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import { fetchProducts } from "../api/products";
 import { toErrorMessage } from "../api/http";
+import BannerSection, { marketBannerSlides } from "../components/BannerSection";
 
 
-const CATEGORIES = ["ALL", "INGREDIENT", "MEAL_KIT", "KITCHEN_SUPPLY"];
-const SORTS = ["LATEST", "PRICE_ASC", "PRICE_DESC"];
+const CATEGORIES = [
+  { value: "ALL", label: "전체" },
+  { value: "INGREDIENT", label: "재료" },
+  { value: "MEAL_KIT", label: "밀키트" },
+  { value: "KITCHEN_SUPPLY", label: "주방용품" },
+];
+
+const SORTS = [
+  { value: "LATEST", label: "추천순" },
+  { value: "PRICE_ASC", label: "낮은 가격순" },
+  { value: "PRICE_DESC", label: "높은 가격순" },
+];
 
 export default function ProductsPage() {
 
-  
+
   const [category, setCategory] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [sort, setSort] = useState("LATEST");
@@ -46,20 +57,20 @@ export default function ProductsPage() {
   return (
     <div>
       <BannerSection slides={marketBannerSlides} interval={4500} />
-      
-      
-    
-      <h1>Products</h1>
+
+
+
+      <h1>상품</h1>
 
       <div className="toolbar">
         <div className="tabs">
           {CATEGORIES.map((c) => (
             <button
-              key={c}
-              className={c === category ? "tab active" : "tab"}
-              onClick={() => { setCategory(c); setPage(0); }}
+              key={c.value}
+              className={c.value === category ? "tab active" : "tab"}
+              onClick={() => { setCategory(c.value); setPage(0); }}
             >
-              {c}
+              {c.label}
             </button>
           ))}
         </div>
@@ -72,7 +83,7 @@ export default function ProductsPage() {
             onKeyDown={(e) => { if (e.key === "Enter") setPage(0); }}
           />
           <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(0); }}>
-            {SORTS.map((s) => <option key={s} value={s}>{s}</option>)}
+            {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
       </div>

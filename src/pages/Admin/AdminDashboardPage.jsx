@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../../api';
 import './AdminDashboardPage.css';
+import SalesTrendSection from './components/SalesTrendSection';
 
 const DASHBOARD_CACHE_KEY_PREFIX = 'adminDashboardSummary';
 
@@ -31,7 +32,7 @@ function writeDashboardCache(summary) {
     }
 }
 
-const AdminDashboardPage = () => {
+const AdminDashboardPage = ({ onTabChange }) => {
     const [summary, setSummary] = useState(() => readDashboardCache());
     const [loading, setLoading] = useState(() => !readDashboardCache());
 
@@ -72,24 +73,34 @@ const AdminDashboardPage = () => {
                     title="오늘 매출"
                     value={`${sales.todaySales.toLocaleString()}원`}
                     meta={`어제 ${sales.yesterdaySales.toLocaleString()}원`}
+                    onTabChange={onTabChange}
                 />
                 <DashboardCard
                     title="미처리 환불"
                     value={`${orders.refundRequested}건`}
                     isAlert={orders.refundRequested > 0}
                     meta="즉시 처리가 필요합니다"
+                    tabKey="payments"
+                    onTabChange={onTabChange}
                 />
                 <DashboardCard
                     title="배송 준비"
                     value={`${orders.paymentCompleted}건`}
                     meta={`배송중 ${orders.shipping}건`}
+                    tabKey="market"
+                    onTabChange={onTabChange}
                 />
                 <DashboardCard
                     title="오늘 클래스 예약"
                     value={`${reservations.todayCount}건`}
                     meta={`취소/환불 대기 ${reservations.pendingCancel}건 / 전체 취소 ${reservations.totalCanceled}건`}
+                    tabKey="reservations"
+                    onTabChange={onTabChange}
                 />
             </div>
+
+            {/* 매출 추이 그래프 세션 */}
+            <SalesTrendSection />
 
             <div className="status-grid">
                 {/* 주문 처리 현황 */}
@@ -116,13 +127,21 @@ const AdminDashboardPage = () => {
     );
 };
 
-const DashboardCard = ({ title, value, meta, isAlert }) => (
-    <div className="dashboard-card" style={{ borderLeft: isAlert ? '4px solid #ef4444' : '4px solid #3b82f6' }}>
+const DashboardCard = ({ title, value, meta, isAlert, tabKey, onTabChange }) => (
+    <div
+        className="dashboard-card"
+        style={{
+            borderLeft: isAlert ? '4px solid #ef4444' : '4px solid #3b82f6',
+            cursor: tabKey && onTabChange ? 'pointer' : 'default',
+        }}
+        onClick={() => tabKey && onTabChange && onTabChange(tabKey)}
+    >
         <div>
             <div className="card-title">{title}</div>
             <div className="card-value" style={{ color: isAlert ? '#ef4444' : '#0f172a' }}>{value}</div>
         </div>
         <div className={`card-meta ${isAlert ? 'alert' : ''}`}>{meta}</div>
+        {tabKey && onTabChange && <div style={{ marginTop: 8, fontSize: 12, color: '#3b82f6' }}>바로가기 →</div>}
     </div>
 );
 

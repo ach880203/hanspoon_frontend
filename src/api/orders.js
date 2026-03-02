@@ -35,14 +35,9 @@ export async function payOrder(orderId, payMethod = "CARD") {
   return res.data;
 }
 
-// ship/deliver는 관리자 테스트 용도로 기존 경로를 유지합니다.
-export async function shipOrder(orderId) {
-  const res = await http.post(`/api/orders/${orderId}/ship`);
-  return res.data;
-}
-
-export async function deliverOrder(orderId) {
-  const res = await http.post(`/api/orders/${orderId}/deliver`);
+// 내 주문 배송완료 처리: /api/orders/me/{id}/deliver
+export async function deliverMyOrder(orderId) {
+  const res = await http.post(`/api/orders/me/${orderId}/deliver`);
   return res.data;
 }
 

@@ -591,6 +591,18 @@
   font-size: 14px;
 }
 
+.odxv-location-wrap {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.odxv-location-wrap h4 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--odxv-ink);
+}
+
 .odxv-detail-actions {
   margin-top: 11px;
   margin-bottom: 12px;

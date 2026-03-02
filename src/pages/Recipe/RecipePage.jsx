@@ -274,6 +274,21 @@ const RecipePage = () => {
     setRecipe({ ...recipe, instructionGroup: newGroups });
   };
 
+    const UNIT_OPTIONS = [
+        { label: "큰술", value: "큰술" },
+        { label: "작은술", value: "작은술" },
+        { label: "컵", value: "컵" },
+        { label: "g", value: "g" },
+        { label: "ml", value: "ml" },
+        { label: "개", value: "개" },
+        { label: "쪽", value: "쪽" },
+        { label: "단", value: "단" },
+        { label: "포기 ", value: "포기" },
+        { label: "꼬집", value: "꼬집" },
+        { label: "근 ", value: "근" },
+        { label: "적당량", value: "적당량" },
+    ];
+
   // 페이지 스타일
   const css = `
     .recipe-body { background-color: #f8f9fa; padding: 50px 0; font-family: 'Pretendard', sans-serif; }
@@ -290,7 +305,7 @@ const RecipePage = () => {
     .info-flex { display: flex; gap: 40px; }
     .info-left, .info-right { flex: 1; }
     .info-right { border-left: 1px solid #f1f3f5; padding-left: 40px; }
-    
+
     .input-label { font-size: 12px; color: #666; margin-bottom: 8px; display: block; }
     .custom-input { width: 100%; border: 1px solid #dee2e6; border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-bottom: 15px; background: #fff; }
 
@@ -305,7 +320,7 @@ const RecipePage = () => {
     .group-box { border: 1px solid #f1f3f5; border-radius: 8px; padding: 20px; margin-bottom: 15px; position: relative; }
     .ing-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
     .ing-name { flex: 3; } .ing-amt { flex: 1; } .ing-unit { flex: 1; } .ing-taste { flex: 2; }
-    
+
     .step-box { border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; gap: 15px; position: relative; background: #fff; }
     .step-text { flex: 1.5; }
     .step-img-area { flex: 1; border-left: 1px solid #eee; padding-left: 15px; }
@@ -353,9 +368,7 @@ const RecipePage = () => {
               <select className="custom-input" value={recipe.category} onChange={(e) => setRecipe({...recipe, category: e.target.value})}>
                 <option value="">--카테고리 선택--</option>
                 <option value="KOREAN">한식</option>
-                <option value="DESSERT">디저트</option>
                 <option value="BAKERY">베이커리</option>
-                <option value="ETC">기타</option>
               </select>
 
               <label className="input-label">기본 인분</label>
@@ -399,11 +412,28 @@ const RecipePage = () => {
                     newGroups[gIdx].ingredients[rIdx].baseAmount = e.target.value;
                     setRecipe({...recipe, ingredientGroup: newGroups});
                   }} />
-                  <input type="text" className="custom-input ing-unit" placeholder="단위" value={ing.unit} onChange={(e) => {
-                    const newGroups = [...recipe.ingredientGroup];
-                    newGroups[gIdx].ingredients[rIdx].unit = e.target.value;
-                    setRecipe({...recipe, ingredientGroup: newGroups});
-                  }} />
+                    <select
+                        className="custom-input ing-unit"
+                        value={ing.unit}
+                        style={{
+                            padding: "8px",
+                            borderRadius: "4px",
+                            border: "1px solid #ddd",
+                            cursor: "pointer"
+                        }}
+                        onChange={(e) => {
+                            const newGroups = [...recipe.ingredientGroup];
+                            newGroups[gIdx].ingredients[rIdx].unit = e.target.value;
+                            setRecipe({...recipe, ingredientGroup: newGroups});
+                        }}
+                    >
+                        <option value="">단위 선택</option>
+                        {UNIT_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
                   <select className="custom-input ing-taste" value={ing.tasteType || 'NONE'} onChange={(e) => {
                     const newGroups = [...recipe.ingredientGroup];
                     // 백엔드 저장 키(tasteType)로 직접 매핑합니다.
@@ -479,16 +509,6 @@ const RecipePage = () => {
               <div className="add-circle" onClick={() => addInstructionStep(gIdx)}><i className="fa-solid fa-plus"></i></div>
             </div>
           ))}
-        </div>
-
-        {/* 4. 서브 레시피 */}
-        <div className="section-card">
-          <div className="section-title">같이 필요한 서브 레시피</div>
-          <select multiple className="custom-input" style={{height: '120px', borderRadius:'8px'}} value={recipe.subRecipes} onChange={(e) => {
-            const values = Array.from(e.target.selectedOptions, option => option.value);
-            setRecipe({...recipe, subRecipes: values});
-          }}>
-          </select>
         </div>
       </div>
     </div>

@@ -61,7 +61,7 @@ function AdminEventList() {
                         <input className="admin-input" placeholder="제목으로 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
                         <button className="admin-btn-search" onClick={() => setPage(0)}>검색</button>
                     </div>
-                    <select className="admin-select" onChange={(e) => { /* 상태 필터 여지 */ }}>
+                    <select className="admin-select" onChange={() => { /* 상태 필터 여지 */ }}>
                         <option value="">전체</option>
                         <option value="ongoing">진행중</option>
                         <option value="ended">종료</option>

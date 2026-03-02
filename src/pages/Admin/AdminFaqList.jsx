@@ -63,7 +63,7 @@ function AdminFaqList() {
                         <input className="admin-input" placeholder="질문으로 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
                         <button className="admin-btn-search" onClick={() => setPage(0)}>검색</button>
                     </div>
-                    <select className="admin-select" onChange={(e) => { /* 카테고리 필터 추가 가능 */ }}>
+                    <select className="admin-select" onChange={() => { /* 카테고리 필터 추가 가능 */ }}>
                         <option value="">전체 카테고리</option>
                     </select>
                 </div>

@@ -43,9 +43,18 @@ export const adminApi = {
         await axiosInstance.delete(`/api/admin/faq/${id}`);
     },
 
-    // Users
     getDashboardSummary: async () => {
         const response = await axiosInstance.get('/api/admin/dashboard/summary');
+        return response.data;
+    },
+
+    getSalesTrend: async (days = 7) => {
+        const response = await axiosInstance.get('/api/admin/dashboard/sales-trend', { params: { days } });
+        return response.data;
+    },
+
+    getSalesStatistics: async () => {
+        const response = await axiosInstance.get('/api/admin/dashboard/sales/statistics');
         return response.data;
     },
 
@@ -146,5 +155,57 @@ export const adminApi = {
     },
     deleteEvent: async (id) => {
         await axiosInstance.delete(`/api/admin/events/${id}`);
+    },
+
+    // Banner
+    getBanners: async () => {
+        const response = await axiosInstance.get('/api/admin/banners/list');
+        return response.data;
+    },
+    getBanner: async (id) => {
+        const response = await axiosInstance.get(`/api/admin/banners/${id}`);
+        return response.data;
+    },
+    createBanner: async (data) => {
+        const response = await axiosInstance.post('/api/admin/banners', data);
+        return response.data;
+    },
+    updateBanner: async (id, data) => {
+        const response = await axiosInstance.put(`/api/admin/banners/${id}`, data);
+        return response.data;
+    },
+    deleteBanner: async (id) => {
+        const response = await axiosInstance.delete(`/api/admin/banners/${id}`);
+        return response.data;
+    },
+    uploadBannerImage: async (file) => {
+        const fd = new FormData();
+        fd.append("file", file);
+        const response = await axiosInstance.post('/api/admin/banners/upload-image', fd, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    // Orders
+    getOrders: async (params) => {
+        const response = await axiosInstance.get('/api/admin/orders/list', { params });
+        return response.data;
+    },
+    getOrder: async (orderId) => {
+        const response = await axiosInstance.get(`/api/admin/orders/${orderId}`);
+        return response.data;
+    },
+    shipOrder: async (orderId, trackingNumber) => {
+        const response = await axiosInstance.post(`/api/admin/orders/${orderId}/ship`, { trackingNumber });
+        return response.data;
+    },
+    deliverOrder: async (orderId) => {
+        const response = await axiosInstance.post(`/api/admin/orders/${orderId}/deliver`);
+        return response.data;
+    },
+    confirmOrder: async (orderId) => {
+        const response = await axiosInstance.post(`/api/admin/orders/${orderId}/confirm`);
+        return response.data;
     }
 };

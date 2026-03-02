@@ -162,6 +162,12 @@
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
 }
 
+.hs-bannerArrowText {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .hs-bannerArrow.is-left {
   left: 14px;
 }
@@ -182,18 +188,18 @@
 }
 
 .hs-dot {
-  width: 26px;
-  height: 3px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   border: 0;
   background: rgba(0, 0, 0, 0.18);
   cursor: pointer;
-  transition: 180ms ease;
+  transition: transform 180ms ease, background 180ms ease;
 }
 
 .hs-dot.is-active {
-  background: rgba(0, 0, 0, 0.42);
-  width: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.25);
 }
 
 /* responsive */

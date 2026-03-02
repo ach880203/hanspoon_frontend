@@ -156,13 +156,13 @@ export default function ReviewSection({ productId }) {
     setForm({ rating: 5, content: "" });
     load(0);
     loadSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 상품이 바뀌면 정렬/필터/작성폼을 기본값으로 되돌린 뒤 다시 조회합니다.
   }, [productId]);
 
   // 정렬/필터/검색 적용 시 0페이지부터 다시
   useEffect(() => {
     load(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 정렬/필터/검색어 변경은 항상 첫 페이지부터 재조회해야 목록이 일관됩니다.
   }, [sort, ratingFilter, keyword]);
 
   const applySearch = () => setKeyword(keywordInput.trim());

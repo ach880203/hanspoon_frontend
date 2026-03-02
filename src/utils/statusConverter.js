@@ -32,6 +32,7 @@ export const translateOrderStatus = (status) => {
         case 'PAID': return '결제완료';
         case 'SHIPPED': return '배송중';
         case 'DELIVERED': return '배송완료';
+        case 'CONFIRMED': return '구매확정';
         case 'CANCELED': return '주문취소';
         case 'REFUNDED': return '환불완료';
         default: return status || '-';

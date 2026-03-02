@@ -61,7 +61,7 @@ function AdminNoticeList() {
                         <input className="admin-input" placeholder="제목으로 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
                         <button className="admin-btn-search" onClick={() => setPage(0)}>검색</button>
                     </div>
-                    <select className="admin-select" onChange={(e) => { /* placeholder for future filters */ }}>
+                    <select className="admin-select" onChange={() => { /* placeholder for future filters */ }}>
                         <option value="">전체</option>
                         <option value="important">중요 공지</option>
                     </select>

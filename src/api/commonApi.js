@@ -62,3 +62,12 @@ export const eventApi = {
     }
 };
 
+/**
+ * 메인 배너 API
+ */
+export const bannerApi = {
+    getBanners: async () => {
+        const response = await axiosInstance.get('/api/banners');
+        return response.data;
+    }
+};

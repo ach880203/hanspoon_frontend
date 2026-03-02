@@ -9,10 +9,8 @@ const OAuth2RedirectHandler = () => {
 
     useEffect(() => {
         const getUrlParameter = (name) => {
-            name = name.replace(/[[]/, '\[').replace(/[\]]/, '\]');
-            const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-            const results = regex.exec(location.search);
-            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+            const params = new URLSearchParams(location.search);
+            return params.get(name) || '';
         };
 
         const run = async () => {
@@ -43,7 +41,7 @@ const OAuth2RedirectHandler = () => {
                     } else {
                         navigate('/');
                     }
-                } catch (err) {
+                } catch {
                     // 실패 시 포괄적인 처리: 루트로 이동
                     window.location.href = '/';
                 }

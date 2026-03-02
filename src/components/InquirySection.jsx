@@ -16,9 +16,13 @@ function formatDate(v) {
   }
 }
 
+function canOpenInquiry(q) {
+  if (!q?.secret) return true;
+  return Boolean(q?.canViewSecret);
+}
+
 function previewTitle(q) {
-  // 비밀글은 제목을 “비밀글입니다.”로 통일(노출 최소화)
-  if (q?.secret) return "비밀글입니다.";
+  if (q?.secret && !canOpenInquiry(q)) return "비밀글입니다.";
   const text = String(q?.content || "").replace(/\s+/g, " ").trim();
   if (!text) return "(내용 없음)";
   return text.length > 40 ? text.slice(0, 40) + "…" : text;
@@ -79,7 +83,7 @@ export default function InquirySection({ productId }) {
     setOpenId(null);
     setForm({ content: "", secret: false });
     load(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 상품이 바뀌면 문의 목록/폼 상태를 초기화한 뒤 첫 페이지를 다시 조회합니다.
   }, [productId]);
 
   const submit = async () => {
@@ -195,13 +199,18 @@ export default function InquirySection({ productId }) {
             list.map((q) => {
               const opened = openId === q.inqId;
               const statusText = q.answeredYn ? "답변완료" : "답변대기";
+              const canOpen = canOpenInquiry(q);
 
               return (
                 <div key={q.inqId} className="iqRowBlock">
                   <button
                     type="button"
-                    className={opened ? "iqTr iqTrBtn open" : "iqTr iqTrBtn"}
-                    onClick={() => setOpenId((cur) => (cur === q.inqId ? null : q.inqId))}
+                    className={`${opened ? "iqTr iqTrBtn open" : "iqTr iqTrBtn"} ${canOpen ? "" : "disabled"}`}
+                    onClick={() => {
+                      if (!canOpen) return;
+                      setOpenId((cur) => (cur === q.inqId ? null : q.inqId));
+                    }}
+                    disabled={!canOpen}
                   >
                     <div className="iqTd iqColTitle">
                       {q.secret && <span className="iqLock" aria-label="비밀글">🔒</span>}
@@ -217,13 +226,13 @@ export default function InquirySection({ productId }) {
                   </button>
 
                   {/* 펼침 영역(Q/A) */}
-                  {opened && (
+                  {opened && canOpen && (
                     <div className="iqDetail">
                       <div className="iqQA">
                         <div className="iqQ">
                           <div className="iqQLabel">Q</div>
                           <div className="iqQText">
-                            {q.secret ? "비밀글입니다." : String(q.content || "")}
+                            {String(q.content || "")}
                           </div>
                         </div>
 

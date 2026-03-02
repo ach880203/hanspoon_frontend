@@ -47,7 +47,7 @@ export default function AdminOneDayInstructorManager() {
     try {
       const res = await adminApi.getInstructorCandidateUsers(nextKeyword);
       setCandidateUsers(Array.isArray(res?.data) ? res.data : []);
-    } catch (e) {
+    } catch {
       setCandidateUsers([]);
     }
   }, []);
@@ -352,4 +352,3 @@ function readFileAsDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
-

@@ -30,7 +30,7 @@ function PaymentFail() {
 
                     <div className="result-actions">
                         <button
-                            onClick={() => navigate('/payment')}
+                            onClick={() => navigate('/payment', { state: location.state })}
                             className="btn btn-primary btn-large"
                         >
                             다시 시도하기
