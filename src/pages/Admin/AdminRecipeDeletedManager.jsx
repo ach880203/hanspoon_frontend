@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {deletelist, deletereturn, permanentDeleteRecipe} from "../../api/recipeApi";
+import { deletelist, deletereturn, permanentDeleteRecipe } from "../../api/recipeApi";
 import "./AdminRecipeManager.css";
-import {toBackendUrl} from "../../utils/backendUrl.js"; // 공통 관리자 스타일
+import { toBackendUrl } from "../../utils/backendUrl.js";
 
 export default function AdminRecipeDeletedManager() {
     const [deletedRecipes, setDeletedRecipes] = useState([]);
@@ -9,44 +9,43 @@ export default function AdminRecipeDeletedManager() {
     const [error, setError] = useState("");
     const [keyword, setKeyword] = useState("");
 
-    // 1. 삭제된 레시피 목록 불러오기 (deleted=true인 것들)
+    // [추가] 페이지 정보 상태
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    // 1. 삭제된 레시피 목록 불러오기
     const loadDeletedRecipes = useCallback(async () => {
         setLoading(true);
         setError("");
         try {
-            // 1. 삭제된 레시피용 API 호출 (getRecipeList를 활용하거나 전용 API 사용)
-            const response = await deletelist({ deleted: true });
+            // [수정] page 파라미터 추가전달
+            const response = await deletelist({ deleted: true, page: page });
 
-            // 2. 백엔드 응답 구조에서 데이터 추출 (Page 객체 대응)
-            // response.data.data 가 { content: [], totalPages: 1 ... } 형태일 때
             const result = response.data?.data || response;
-
             console.log("삭제된 레시피 결과 객체:", result);
 
-            if (result && Array.isArray(result.content)) {
-                // 🚩 페이징 객체일 경우 content 배열을 세팅
+            if (result && result.content) {
                 setDeletedRecipes(result.content);
-            } else if (Array.isArray(result)) {
-                // 🚩 일반 배열로 올 경우 그대로 세팅
-                setDeletedRecipes(result);
+                // [추가] 전체 페이지 수 저장
+                setTotalPages(result.page?.totalPages || result.totalPages || 0);
             } else {
-                // 🚩 그 외의 경우 빈 배열로 방어
                 setDeletedRecipes([]);
+                setTotalPages(0);
             }
         } catch (e) {
             console.error("삭제 리스트 로딩 실패:", e);
             setError("삭제된 레시피 목록을 불러오지 못했습니다.");
-            setDeletedRecipes([]); // 에러 발생 시 빈 배열로 초기화하여 filter 에러 방지
+            setDeletedRecipes([]);
         } finally {
             setLoading(false);
         }
-    }, [deletelist]);
+    }, [page]); // [수정] page가 바뀔 때마다 다시 호출
 
     useEffect(() => {
         void loadDeletedRecipes();
     }, [loadDeletedRecipes]);
 
-    // 2. 검색 필터링 (레시피명, 작성자)
+    // 2. 검색 필터링 (현재 페이지 내 검색)
     const filteredRecipes = useMemo(() => {
         const normalizedKeyword = keyword.trim().toLowerCase();
         return deletedRecipes.filter((r) => {
@@ -58,20 +57,20 @@ export default function AdminRecipeDeletedManager() {
         });
     }, [deletedRecipes, keyword]);
 
-    // 3. 복구 처리 (deleted를 다시 false로)
+    // 3. 복구 처리
     const handleRestore = async (id) => {
         if (!window.confirm("이 레시피를 목록으로 복구하시겠습니까?")) return;
         try {
             await deletereturn(id);
             alert("복구되었습니다.");
-            await deletelist(); // 목록 새로고침
+            await loadDeletedRecipes(); // [수정] 목록 새로고침
         } catch (e) {
             console.error(e);
             alert("복구 중 오류가 발생했습니다.");
         }
     };
 
-    // 4. (선택) 영구 삭제 처리
+    // 4. 영구 삭제 처리
     const handlePermanentDelete = async (id) => {
         if (!window.confirm("정말 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
         try {
@@ -98,7 +97,7 @@ export default function AdminRecipeDeletedManager() {
                     <button
                         type="button"
                         className="admin-btn-search"
-                        onClick={() => void loadDeletedRecipes()}
+                        onClick={() => { setPage(0); void loadDeletedRecipes(); }}
                         disabled={loading}
                     >
                         {loading ? "조회 중..." : "새로고침"}
@@ -122,7 +121,7 @@ export default function AdminRecipeDeletedManager() {
                     <tbody>
                     {filteredRecipes.length === 0 ? (
                         <tr>
-                            <td colSpan="6" className="admin-class-empty-row">
+                            <td colSpan="5" className="admin-class-empty-row">
                                 삭제된 레시피 내역이 없습니다.
                             </td>
                         </tr>
@@ -146,7 +145,7 @@ export default function AdminRecipeDeletedManager() {
                                         type="button"
                                         className="admin-btn-sm"
                                         onClick={() => void handleRestore(recipe.id)}
-                                        style={{ marginRight: "5px", backgroundColor: "#4caf50", color: "white" }}
+                                        style={{ marginRight: "5px", backgroundColor: "#4caf50", color: "white", cursor: "pointer" }}
                                     >
                                         복구
                                     </button>
@@ -154,7 +153,7 @@ export default function AdminRecipeDeletedManager() {
                                         type="button"
                                         className="admin-btn-sm"
                                         onClick={() => void handlePermanentDelete(recipe.id)}
-                                        style={{ backgroundColor: "#f44336", color: "white" }}
+                                        style={{ backgroundColor: "#f44336", color: "white", cursor: "pointer" }}
                                     >
                                         영구삭제
                                     </button>
@@ -165,6 +164,28 @@ export default function AdminRecipeDeletedManager() {
                     </tbody>
                 </table>
             </div>
+
+            {/* [추가] 페이지네이션 UI */}
+            {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', marginTop: '20px' }}>
+                    {[...Array(totalPages)].map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i)}
+                            style={{
+                                padding: '5px 10px',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                                backgroundColor: page === i ? '#333' : '#fff',
+                                color: page === i ? '#fff' : '#333',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
         </section>
     );
 }

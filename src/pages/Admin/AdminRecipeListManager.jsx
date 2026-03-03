@@ -1,34 +1,36 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {deleteRecipe, getRecipeList} from "../../api/recipeApi"; // API 경로는 프로젝트에 맞게
-import {Link, useNavigate} from "react-router-dom";
+import { deleteRecipe, getRecipeList } from "../../api/recipeApi";
+import { Link, useNavigate } from "react-router-dom";
 import "./AdminRecipeManager.css";
-import {toBackendUrl} from "../../utils/backendUrl.js";
+import { toBackendUrl } from "../../utils/backendUrl.js";
 
 export default function AdminRecipeListManager() {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(false);
     const [keyword, setKeyword] = useState("");
+
+    // [추가] 페이지 정보 상태
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     const navigate = useNavigate();
 
     const loadRecipes = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await getRecipeList({ deleted: false });
+            // [수정] params에 page 번호를 함께 전달합니다.
+            const response = await getRecipeList({ deleted: false, page: page });
 
-            // 로그에 찍힌 "Object { content: Array(3), ... }" 형태를 처리합니다.
-            // Axios를 사용 중이시라면 보통 response.data 안에 백엔드 데이터가 들어있습니다.
             const result = response.data?.data || response;
-
             console.log("실제 추출된 결과 객체:", result);
 
-            if (result && Array.isArray(result.content)) {
-                // 🚩 핵심: result.content가 우리가 원하는 레시피 배열입니다!
+            if (result && result.content) {
                 setRecipes(result.content);
-            } else if (Array.isArray(result)) {
-                // 혹시라도 나중에 배열로 바로 올 경우를 대비
-                setRecipes(result);
+                // [추가] 백엔드에서 준 페이지 정보 저장 (Page 객체 대응)
+                setTotalPages(result.page?.totalPages || result.totalPages || 0);
             } else {
                 setRecipes([]);
+                setTotalPages(0);
             }
         } catch (e) {
             console.error("레시피 로딩 실패", e);
@@ -36,16 +38,16 @@ export default function AdminRecipeListManager() {
         } finally {
             setLoading(false);
         }
-    }, [getRecipeList]);
+    }, [page]); // [수정] page가 바뀔 때마다 다시 호출되도록 설정
 
     useEffect(() => {
-        void loadRecipes(); // void를 붙이면 await 없이 실행해도 ESLint가 허용해주는 경우가 많습니다.
+        void loadRecipes();
     }, [loadRecipes]);
 
-    // 검색 필터링
+    // 검색 필터링 (현재 페이지 내에서 검색)
     const filteredRecipes = useMemo(() => {
         return recipes.filter(r =>
-            r.title.toLowerCase().includes(keyword.toLowerCase()) ||
+            r.title?.toLowerCase().includes(keyword.toLowerCase()) ||
             r.username?.toLowerCase().includes(keyword.toLowerCase())
         );
     }, [recipes, keyword]);
@@ -55,13 +57,9 @@ export default function AdminRecipeListManager() {
         try {
             await deleteRecipe(id);
             alert("삭제되었습니다.");
-
-            // 🚩 여기가 포인트입니다!
-            // loadRecipes가 비동기 함수이므로, 목록을 다시 불러오는 것이 완료될 때까지 기다려야 합니다.
             await loadRecipes();
-
         } catch (e) {
-            console.error(e); // 에러 로그를 남겨두면 나중에 확인하기 좋아요!
+            console.error(e);
             alert("삭제 중 오류가 발생했습니다.");
         }
     };
@@ -75,7 +73,10 @@ export default function AdminRecipeListManager() {
                         className="admin-input"
                         placeholder="레시피명, 작성자 검색"
                         value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
+                        onChange={(e) => {
+                            setKeyword(e.target.value);
+                            setPage(0); // 검색어 입력 시 첫 페이지로 리셋
+                        }}
                     />
                     <button className="admin-btn-main" onClick={() => navigate("/recipe/new")}>
                         신규 레시피 등록
@@ -103,19 +104,25 @@ export default function AdminRecipeListManager() {
                                 레시피 목록을 불러오는 중입니다.
                             </td>
                         </tr>
+                    ) : filteredRecipes.length === 0 ? (
+                        <tr>
+                            <td colSpan={7} style={{ textAlign: "center", padding: "40px 0" }}>
+                                조건에 맞는 레시피가 없습니다.
+                            </td>
+                        </tr>
                     ) : filteredRecipes.map(recipe => (
                         <tr key={recipe.id}>
                             <td>{recipe.id}</td>
                             <td>
                                 <Link to={`/recipes/${recipe.id}`} style={{ textDecoration: 'none' }}>
                                     <img src={recipe.recipeImg ? toBackendUrl(`/images/recipe/${recipe.recipeImg}`) : "/images/recipe/default.jpg"}
-                                     alt="thumb" width="50" />
+                                         alt="thumb" width="50" style={{ objectFit: 'cover', height: '50px', borderRadius: '4px' }} />
                                 </Link>
                             </td>
                             <td>{recipe.title}</td>
                             <td>{recipe.username}</td>
                             <td>🥄 {recipe.recommendCount}</td>
-                            <td> {recipe.reviewCount}</td>
+                            <td>🗨️ {recipe.reviewCount}</td>
                             <td>
                                 <button className="admin-btn-sm" onClick={() => navigate(`/recipes/edit/${recipe.id}`)}>
                                     수정하기
@@ -129,6 +136,29 @@ export default function AdminRecipeListManager() {
                     </tbody>
                 </table>
             </div>
+
+            {/* [추가] 페이지네이션 UI */}
+            {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px', paddingBottom: '20px' }}>
+                    {[...Array(totalPages)].map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i)}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                                backgroundColor: page === i ? '#333' : '#fff',
+                                color: page === i ? '#fff' : '#333',
+                                cursor: 'pointer',
+                                fontWeight: page === i ? 'bold' : 'normal'
+                            }}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
         </section>
     );
 }

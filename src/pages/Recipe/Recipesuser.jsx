@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRecipeList, permanentDeleteRecipe } from "../../api/recipeApi.js";
 import { toBackendUrl } from "../../utils/backendUrl.js";
@@ -6,33 +6,61 @@ import { toBackendUrl } from "../../utils/backendUrl.js";
 function Recipesuser() {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    // 🚩 페이지네이션 상태 추가
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     const navigate = useNavigate();
 
     const authData = localStorage.getItem("hanspoon_auth");
     const currentUser = authData ? JSON.parse(authData) : null;
     const currentUserId = currentUser?.userId;
 
+    // 🚩 useCallback으로 감싸고 page 의존성 추가
+    const fetchMyList = useCallback(async () => {
+        if (!currentUserId) return;
+        setLoading(true);
+        try {
+            // 1. API 호출
+            const response = await getRecipeList({ page: page, userId: currentUserId, size: 10 });
+
+            // 2. 데이터 추출 (구조: response.data (ApiResponse) -> .data (Page객체))
+            // 한나님의 ApiResponse 구조상 response.data.data에 Page 정보가 들어있습니다.
+            const result = response.data?.data;
+
+            console.log("백엔드에서 온 실제 데이터 객체:", result);
+
+            if (result) {
+                // 🚩 1. 실제 데이터 목록은 result.content에 있네요. (이건 잘 하셨어요!)
+                setRecipes(result.content || []);
+
+                // 🚩 2. 전체 페이지 수 추출 경로 수정!
+                // 로그를 보니 'result.page.totalPages' 안에 숫자가 들어있습니다.
+                const total = result.page?.totalPages || 0;
+
+                setTotalPages(total);
+
+                console.log("실제 접근한 전체 페이지 수:", total);
+            }
+        } catch (error) {
+            console.error("내 레시피 로드 실패:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUserId, page]);
+
     useEffect(() => {
-        const fetchMyList = async () => {
-            if (!currentUserId) return;
-            setLoading(true);
-            try {
-                const response = await getRecipeList({ page: 0, userId: currentUserId });
-                const myRecipes = response.data?.data?.content || response.data?.content || [];
-                setRecipes(myRecipes);
-            } catch (error) {
-                console.error("내 레시피 로드 실패:", error);
-            } finally { setLoading(false); }
-        };
         fetchMyList();
-    }, [currentUserId]);
+    }, [fetchMyList]);
 
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         if (!window.confirm("정말 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
         try {
             await permanentDeleteRecipe(id);
-            setRecipes(recipes.filter((r) => String(r.id) !== String(id)));
+            // 삭제 후 목록 새로고침 (현재 페이지 데이터 갱신)
+            await fetchMyList();
             alert("레시피가 완전히 삭제되었습니다.");
         } catch {
             alert("삭제 실패: 관련 데이터가 있어 삭제할 수 없습니다.");
@@ -44,7 +72,7 @@ function Recipesuser() {
             <header style={{ marginBottom: "30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                     <h2 style={{ fontSize: "1.8rem", fontWeight: "bold", color: "#1e293b" }}>내 레시피 관리</h2>
-                    <p style={{ color: "#64748b" }}>총 <b>{recipes.length}</b>개의 레시피가 있습니다.</p>
+                    <p style={{ color: "#64748b" }}>내 레시피 목록을 관리하세요.</p>
                 </div>
                 <button onClick={() => navigate("/recipes")} style={navBtnStyle}>+ 새 레시피 작성</button>
             </header>
@@ -62,7 +90,7 @@ function Recipesuser() {
                     <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan="5" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>
+                            <td colSpan="4" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>
                                 레시피를 불러오는 중입니다.
                             </td>
                         </tr>
@@ -89,15 +117,35 @@ function Recipesuser() {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="5" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>작성한 레시피가 없습니다.</td>
+                            <td colSpan="4" style={{ padding: "100px", textAlign: "center", color: "#94a3b8" }}>작성한 레시피가 없습니다.</td>
                         </tr>
                     )}
                     </tbody>
                 </table>
             </div>
 
+            {/* 🚩 페이지네이션 UI 추가 */}
+            {totalPages > 1 && (
+                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "30px" }}>
+                    {[...Array(totalPages)].map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i)}
+                            style={{
+                                ...pageBtnStyle,
+                                backgroundColor: page === i ? "#4f46e5" : "#fff",
+                                color: page === i ? "#fff" : "#475569",
+                                borderColor: page === i ? "#4f46e5" : "#e2e8f0"
+                            }}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <style>{`
-                .table-row:hover { backgroundColor: #f8fafc; }
+                .table-row:hover { background-color: #f8fafc; }
                 .edit-btn:hover { background-color: #e0e7ff !important; color: #4338ca !important; }
                 .delete-btn:hover { background-color: #fee2e2 !important; }
             `}</style>
@@ -105,7 +153,7 @@ function Recipesuser() {
     );
 }
 
-// 🚩 리스트용 스타일 상수들
+// 기존 스타일 유지 및 페이지 번호 스타일 추가
 const thStyle = { padding: "15px", color: "#475569", fontSize: "0.9rem", fontWeight: "600" };
 const tdStyle = { padding: "12px 15px", color: "#1e293b", fontSize: "0.95rem", verticalAlign: "middle" };
 const actionBtnStyle = {
@@ -114,5 +162,11 @@ const actionBtnStyle = {
 };
 const categoryBadgeStyle = { padding: "4px 8px", backgroundColor: "#f1f5f9", borderRadius: "4px", fontSize: "0.75rem", color: "#6366f1", fontWeight: "bold" };
 const navBtnStyle = { padding: "10px 20px", backgroundColor: "#4f46e5", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" };
+
+// 🚩 페이지 번호용 스타일 추가
+const pageBtnStyle = {
+    padding: "8px 14px", border: "1px solid", borderRadius: "6px", cursor: "pointer",
+    fontSize: "0.9rem", fontWeight: "500", transition: "0.2s"
+};
 
 export default Recipesuser;
