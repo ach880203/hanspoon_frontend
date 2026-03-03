@@ -114,7 +114,7 @@ export default function Layout() {
           <div className="hs-left">
             <Link to="/" className="hs-brand" aria-label="한스푼 홈">
               <span className="hs-brand-mark" aria-hidden="true">🥄</span>
-              <span className="hs-brand-text">한스푼</span>
+                <span className="hs-brand-text"><h2>한스푼</h2></span>
             </Link>
           </div>
 

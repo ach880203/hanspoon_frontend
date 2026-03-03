@@ -21,11 +21,11 @@ import {
   toSlotLabel,
 } from "./onedayLabels";
 import OneDayLocationViewer from "./OneDayLocationViewer";
+import OneDaySessionCalendar from "./OneDaySessionCalendar";
 import "./OneDayExplorePage.css";
 
 const CLASS_PAGE_SIZE = 6;
 const SESSION_VISIBLE_SIZE = 8;
-const SESSION_DATE_OPTION_MAX = 10;
 const LATEST_BANNER_SIZE = 8;
 const LATEST_BANNER_ROTATE_MS = 3500;
 const LIST_RUN_TYPE_TABS = [
@@ -357,9 +357,17 @@ export function OneDayExplorePage() {
         .map((session) => toIsoDateKey(session?.startAt))
         .filter(Boolean)
     );
-    return Array.from(dateSet)
-      .sort((left, right) => left.localeCompare(right))
-      .slice(0, SESSION_DATE_OPTION_MAX);
+    return Array.from(dateSet).sort((left, right) => left.localeCompare(right));
+  }, [selectedClassSessions]);
+
+  const selectedClassSessionCountByDate = useMemo(() => {
+    const groupedCount = {};
+    selectedClassSessions.forEach((session) => {
+      const dateKey = toIsoDateKey(session?.startAt);
+      if (!dateKey) return;
+      groupedCount[dateKey] = (groupedCount[dateKey] ?? 0) + 1;
+    });
+    return groupedCount;
   }, [selectedClassSessions]);
 
   const classRunTypeCounts = useMemo(
@@ -831,26 +839,16 @@ export function OneDayExplorePage() {
                 </div>
 
                 <div className="odxv-detail-date-picker">
-                  <label htmlFor="odxv-detail-date">날짜 선택</label>
-                  {selectedClassDateOptions.length > 0 ? (
-                    <select
-                      id="odxv-detail-date"
-                      value={
-                        selectedClassDateOptions.includes(committed.date)
-                          ? committed.date
-                          : selectedClassDateOptions[0]
-                      }
-                      onChange={(event) => onDetailDateChange(event.target.value)}
-                    >
-                      {selectedClassDateOptions.map((dateText) => (
-                        <option key={dateText} value={dateText}>
-                          {dateText}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input id="odxv-detail-date" type="text" value="선택 가능한 날짜 없음" disabled />
-                  )}
+                  <OneDaySessionCalendar
+                    className="odxv-session-calendar"
+                    dateOptions={selectedClassDateOptions}
+                    selectedDate={committed.date}
+                    onSelectDate={onDetailDateChange}
+                    sessionCountByDate={selectedClassSessionCountByDate}
+                    label="세션 날짜 선택"
+                    emptyText="선택 가능한 날짜가 없습니다."
+                    compact
+                  />
                 </div>
 
                 {filteredSelectedSessions.length === 0 ? (

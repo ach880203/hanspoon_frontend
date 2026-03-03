@@ -279,6 +279,126 @@
   background: #f8fafc;
 }
 
+.always-date-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.weekday-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekday-toolbar > span {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 700;
+}
+
+.weekday-preset-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.weekday-toggle-group {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekday-toggle {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.weekday-toggle.is-active {
+  border-color: #f29a68;
+  background: #fff1e9;
+  color: #b45309;
+}
+
+.always-preview-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  background: #ffffff;
+}
+
+.always-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.always-preview-head strong {
+  font-size: 14px;
+}
+
+.always-preview-head span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.always-preview-day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.always-preview-day-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  background: #fcfcfd;
+}
+
+.always-preview-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.always-preview-day-head strong {
+  font-size: 13px;
+  color: #111827;
+}
+
+.always-preview-day-head span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.always-preview-slot-list {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 4px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.always-preview-more {
+  display: flex;
+  justify-content: center;
+}
+
 .session-head {
   display: flex;
   justify-content: space-between;
@@ -394,10 +514,22 @@
   .session-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .weekday-toggle-group {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
   .session-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weekday-toggle-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .always-preview-day-grid {
     grid-template-columns: 1fr;
   }
 }

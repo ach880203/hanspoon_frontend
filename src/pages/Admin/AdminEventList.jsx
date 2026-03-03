@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { adminApi } from '../../api';
 import './AdminList.css';
 
 function AdminEventList() {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
     const [events, setEvents] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
@@ -49,7 +51,7 @@ function AdminEventList() {
                         <div className="admin-list-title">이벤트 관리</div>
                         <div style={{ color: '#6B7280', marginTop: 6 }}>이벤트를 등록/수정하고 상태를 관리하세요.</div>
                     </div>
-                    <Link to="/admin/event/write" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
+                    <Link to="/admin/event/write" state={{ returnTo }} className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
                         새 이벤트 등록
                     </Link>
                 </div>
@@ -94,7 +96,7 @@ function AdminEventList() {
                                         </span>
                                     </td>
                                     <td>
-                                        <Link to={`/admin/event/edit/${event.eventId}`} className="admin-btn-sm" style={{ marginRight: 8 }}>
+                                        <Link to={`/admin/event/edit/${event.eventId}`} state={{ returnTo }} className="admin-btn-sm" style={{ marginRight: 8 }}>
                                             수정
                                         </Link>
                                         <button onClick={() => handleDelete(event.eventId)} className="admin-btn-sm admin-btn-refund">

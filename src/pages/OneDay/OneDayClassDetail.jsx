@@ -23,10 +23,10 @@ import {
 import { toIsoDateKey } from "../../utils/onedayClassUtils";
 import { toCategoryLabel, toLevelLabel, toRunTypeLabel, toSlotLabel } from "./onedayLabels";
 import OneDayLocationViewer from "./OneDayLocationViewer";
+import OneDaySessionCalendar from "./OneDaySessionCalendar";
 import "./OneDayClassDetail.css";
 
 const INQUIRY_CATEGORIES = ["예약", "결제", "클래스", "기타"];
-const SESSION_DATE_OPTION_MAX = 10;
 const DETAIL_TABS = [
   { id: "detail", label: "클래스 상세" },
   { id: "inquiry", label: "클래스 문의" },
@@ -170,7 +170,17 @@ export const OneDayClassDetail = () => {
         .map((session) => toIsoDateKey(session?.startAt))
         .filter(Boolean)
     );
-    return Array.from(dateSet).sort((a, b) => a.localeCompare(b)).slice(0, SESSION_DATE_OPTION_MAX);
+    return Array.from(dateSet).sort((a, b) => a.localeCompare(b));
+  }, [sessions]);
+
+  const sessionCountByDate = useMemo(() => {
+    const groupedCount = {};
+    sessions.forEach((session) => {
+      const dateKey = toIsoDateKey(session?.startAt);
+      if (!dateKey) return;
+      groupedCount[dateKey] = (groupedCount[dateKey] ?? 0) + 1;
+    });
+    return groupedCount;
   }, [sessions]);
 
   useEffect(() => {
@@ -539,18 +549,14 @@ export const OneDayClassDetail = () => {
         ) : (
           <>
             <div className="od-session-date-filter">
-              <label htmlFor="od-session-date">날짜 선택</label>
-              <input
-                id="od-session-date"
-                type="date"
-                value={selectedSessionDate}
-                onChange={(e) => setSelectedSessionDate(e.target.value)}
-                min={sessionDateOptions[0]}
-                max={sessionDateOptions[sessionDateOptions.length - 1]}
+              <OneDaySessionCalendar
+                className="od-session-calendar"
+                dateOptions={sessionDateOptions}
+                selectedDate={selectedSessionDate}
+                onSelectDate={setSelectedSessionDate}
+                sessionCountByDate={sessionCountByDate}
+                label="예약 날짜 선택"
               />
-              <span className="od-meta">
-                선택 날짜: {selectedSessionDate ? fmtDateOnly(selectedSessionDate) : "날짜를 선택해 주세요"}
-              </span>
             </div>
 
             {sessionsForSelectedDate.length === 0 ? (
@@ -979,10 +985,4 @@ function fmtDate(value) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("ko-KR");
-}
-
-function fmtDateOnly(value) {
-  if (!value) return "-";
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("ko-KR");
 }

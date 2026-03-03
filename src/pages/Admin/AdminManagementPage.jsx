@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import AdminUserList from "./AdminUserList";
 import AdminPaymentList from "./AdminPaymentList";
 import AdminDashboardPage from "./AdminDashboardPage";
@@ -14,13 +15,38 @@ import "./AdminList.css";
 import AdminRecipeHub from "./AdminRecipeHub.jsx";
 import AdminProductHub from "./AdminProductHub.jsx";
 
+const ADMIN_TAB_KEYS = [
+  "dashboard",
+  "users",
+  "payments",
+  "orders",
+  "classes",
+  "market",
+  "recipe",
+  "reservations",
+  "cs",
+];
+
+const DEFAULT_ADMIN_TAB = "dashboard";
+
 const AdminManagementPage = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = useMemo(() => {
+    const tabFromQuery = searchParams.get("tab");
+    return ADMIN_TAB_KEYS.includes(tabFromQuery) ? tabFromQuery : DEFAULT_ADMIN_TAB;
+  }, [searchParams]);
+
+  const handleTabChange = (nextTab) => {
+    const safeNextTab = ADMIN_TAB_KEYS.includes(nextTab) ? nextTab : DEFAULT_ADMIN_TAB;
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("tab", safeNextTab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <AdminDashboardPage onTabChange={setActiveTab} />;
+        return <AdminDashboardPage onTabChange={handleTabChange} />;
       case "users":
         return <AdminUserList />;
       case "payments":
@@ -57,38 +83,38 @@ const AdminManagementPage = () => {
           </div>
         );
       default:
-        return <AdminDashboardPage />;
+        return <AdminDashboardPage onTabChange={handleTabChange} />;
     }
   };
 
   return (
     <div className="admin-management-container">
       <div className="admin-tabs-nav" style={{ flexWrap: "wrap" }}>
-        <button className={`admin-tab-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+        <button className={`admin-tab-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => handleTabChange("dashboard")}>
           대시보드
         </button>
-        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => setActiveTab("users")}>
+        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => handleTabChange("users")}>
           회원 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "payments" ? "active" : ""}`} onClick={() => setActiveTab("payments")}>
+        <button className={`admin-tab-btn ${activeTab === "payments" ? "active" : ""}`} onClick={() => handleTabChange("payments")}>
           결제 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "orders" ? "active" : ""}`} onClick={() => setActiveTab("orders")}>
+        <button className={`admin-tab-btn ${activeTab === "orders" ? "active" : ""}`} onClick={() => handleTabChange("orders")}>
           주문 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "classes" ? "active" : ""}`} onClick={() => setActiveTab("classes")}>
+        <button className={`admin-tab-btn ${activeTab === "classes" ? "active" : ""}`} onClick={() => handleTabChange("classes")}>
           클래스 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => setActiveTab("market")}>
+        <button className={`admin-tab-btn ${activeTab === "market" ? "active" : ""}`} onClick={() => handleTabChange("market")}>
           상품 관리
         </button>
-         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => setActiveTab("recipe")}>
+         <button className={`admin-tab-btn ${activeTab === "recipe" ? "active" : ""}`} onClick={() => handleTabChange("recipe")}>
            레시피 관리
          </button>
-        <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => setActiveTab("reservations")}>
+        <button className={`admin-tab-btn ${activeTab === "reservations" ? "active" : ""}`} onClick={() => handleTabChange("reservations")}>
           예약 관리
         </button>
-        <button className={`admin-tab-btn ${activeTab === "cs" ? "active" : ""}`} onClick={() => setActiveTab("cs")}>
+        <button className={`admin-tab-btn ${activeTab === "cs" ? "active" : ""}`} onClick={() => handleTabChange("cs")}>
           게시판/CS
         </button>
       </div>
@@ -99,3 +125,4 @@ const AdminManagementPage = () => {
 };
 
 export default AdminManagementPage;
+

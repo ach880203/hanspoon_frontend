@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
 import './AdminList.css';
 
 function AdminEventWrite() {
     const { id } = useParams();
+    const location = useLocation();
     const navigate = useNavigate();
     const isEdit = !!id;
+    const returnTo = location.state?.returnTo || '/admin?tab=cs';
 
     const [formData, setFormData] = useState({
         title: '',
@@ -31,7 +33,7 @@ function AdminEventWrite() {
         } catch (error) {
             console.error('이벤트 불러오기 실패:', error);
             alert('이벤트를 불러오지 못했습니다.');
-            navigate('/admin');
+            navigate(returnTo);
         }
     };
 
@@ -59,7 +61,7 @@ function AdminEventWrite() {
                 await adminApi.createEvent(formData);
                 alert('등록했습니다.');
             }
-            navigate('/admin'); // Usually returns to management page
+            navigate(returnTo); // Usually returns to management page
         } catch (error) {
             console.error('저장 실패:', error);
             alert('저장에 실패했습니다.');
@@ -130,7 +132,7 @@ function AdminEventWrite() {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button type="button" className="admin-btn-sm" onClick={() => navigate('/admin')}>취소</button>
+                            <button type="button" className="admin-btn-sm" onClick={() => navigate(returnTo)}>취소</button>
                             <button type="submit" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>{isEdit ? '수정' : '등록'}</button>
                         </div>
                     </div>

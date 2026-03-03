@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { adminApi } from '../../api';
 import './AdminList.css';
 
 function AdminFaqList() {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
     const [faqs, setFaqs] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
@@ -51,7 +53,7 @@ function AdminFaqList() {
                         <div className="admin-list-title">자주 묻는 질문 관리</div>
                         <div style={{ color: '#6B7280', marginTop: 6 }}>FAQ을 그룹별로 관리하고 빠르게 검색하세요.</div>
                     </div>
-                    <Link to="/admin/faq/write" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
+                    <Link to="/admin/faq/write" state={{ returnTo }} className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
                         새 질문 등록
                     </Link>
                 </div>
@@ -86,7 +88,7 @@ function AdminFaqList() {
                                 <td>{faq.category}</td>
                                 <td>{faq.question}</td>
                                 <td>
-                                    <Link to={`/admin/faq/edit/${faq.faqId}`} className="admin-btn-sm" style={{ marginRight: 8 }}>
+                                    <Link to={`/admin/faq/edit/${faq.faqId}`} state={{ returnTo }} className="admin-btn-sm" style={{ marginRight: 8 }}>
                                         수정
                                     </Link>
                                     <button onClick={() => handleDelete(faq.faqId)} className="admin-btn-sm admin-btn-refund">

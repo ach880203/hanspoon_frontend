@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../api';
 import './AdminList.css';
 
 function AdminFaqWrite() {
     const { id } = useParams();
+    const location = useLocation();
     const navigate = useNavigate();
     const isEdit = !!id;
+    const returnTo = location.state?.returnTo || '/admin/faq';
 
     const [formData, setFormData] = useState({
         category: '',
@@ -26,7 +28,7 @@ function AdminFaqWrite() {
         } catch (error) {
             console.error('자주 묻는 질문 불러오기 실패:', error);
             alert('자주 묻는 질문을 불러오는데 실패했습니다.');
-            navigate('/admin/faq');
+            navigate(returnTo);
         }
     };
 
@@ -54,7 +56,7 @@ function AdminFaqWrite() {
                 await adminApi.createFaq(formData);
                 alert('등록되었습니다.');
             }
-            navigate('/admin/faq');
+            navigate(returnTo);
         } catch (error) {
             console.error('저장 실패:', error);
             alert('저장에 실패했습니다.');
@@ -98,7 +100,7 @@ function AdminFaqWrite() {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button type="button" className="admin-btn-sm" onClick={() => navigate('/admin/faq')}>취소</button>
+                            <button type="button" className="admin-btn-sm" onClick={() => navigate(returnTo)}>취소</button>
                             <button type="submit" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>{isEdit ? '수정' : '등록'}</button>
                         </div>
                     </div>

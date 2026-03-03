@@ -613,32 +613,14 @@
 }
 
 .odxv-detail-date-picker {
-  display: grid;
-  gap: 6px;
   margin-bottom: 10px;
 }
 
-.odxv-detail-date-picker label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--odxv-sub);
-}
-
-.odxv-detail-date-picker select,
-.odxv-detail-date-picker input {
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid var(--odxv-line);
-  background: rgba(255, 255, 255, 0.95);
-  padding: 0 10px;
-  font-size: 13px;
-  color: var(--odxv-ink);
-  outline: none;
-}
-
-.odxv-detail-date-picker select:focus {
-  border-color: rgba(var(--odxv-primary-rgb), 0.48);
-  box-shadow: 0 0 0 3px rgba(var(--odxv-primary-rgb), 0.14);
+.odxv-session-calendar {
+  --odsc-accent: #d67a4a;
+  --odsc-accent-rgb: 214, 122, 74;
+  --odsc-surface: rgba(255, 255, 255, 0.96);
+  --odsc-line: rgba(var(--odxv-primary-rgb), 0.24);
 }
 
 .odxv-session-list {

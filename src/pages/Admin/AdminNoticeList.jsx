@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { adminApi } from '../../api';
 import './AdminList.css';
 
 function AdminNoticeList() {
+    const location = useLocation();
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
     const [notices, setNotices] = useState([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
@@ -49,7 +51,7 @@ function AdminNoticeList() {
                         <div className="admin-list-title">공지사항 관리</div>
                         <div style={{ color: '#6B7280', marginTop: 6 }}>공지사항을 확인, 등록, 수정하세요.</div>
                     </div>
-                    <Link to="/admin/notice/write" className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
+                    <Link to="/admin/notice/write" state={{ returnTo }} className="admin-btn-sm" style={{ background: '#FF7E36', color: '#fff', border: 'none' }}>
                         새 공지사항 작성
                     </Link>
                 </div>
@@ -85,7 +87,7 @@ function AdminNoticeList() {
                                 <td>{notice.title}</td>
                                 <td>{new Date(notice.createdAt).toLocaleDateString()}</td>
                                 <td>
-                                    <Link to={`/admin/notice/edit/${notice.noticeId}`} className="admin-btn-sm" style={{ marginRight: 8 }}>
+                                    <Link to={`/admin/notice/edit/${notice.noticeId}`} state={{ returnTo }} className="admin-btn-sm" style={{ marginRight: 8 }}>
                                         수정
                                     </Link>
                                     <button onClick={() => handleDelete(notice.noticeId)} className="admin-btn-sm admin-btn-refund">
