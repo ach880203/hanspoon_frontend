@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:products": "node ./scripts/seed-products.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",

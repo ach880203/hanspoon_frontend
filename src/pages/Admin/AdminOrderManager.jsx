@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
   { value: "SHIPPED", label: "배송중" },
   { value: "DELIVERED", label: "배송완료" },
   { value: "CONFIRMED", label: "구매확정" },
+  { value: "REFUND_REQUESTED", label: "환불요청" },
   { value: "REFUNDED", label: "환불완료" },
   { value: "CANCELED", label: "주문취소" },
 ];
