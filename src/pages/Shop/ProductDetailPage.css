@@ -244,6 +244,16 @@
   line-height: 1.7;
 }
 
+.pdHtmlContent {
+  line-height: 1.75;
+  color: #111827;
+}
+
+.pdHtmlContent img {
+  max-width: 100%;
+  height: auto;
+}
+
 .pdDetailImgs {
   display: grid;
   gap: 12px;
