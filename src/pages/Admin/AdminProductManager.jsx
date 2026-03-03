@@ -11,7 +11,8 @@ import {
 import "./AdminProductManager.css";
 
 const PAGE_SIZE = 20;
-const BULK_FETCH_SIZE = 200;
+const SERVER_FETCH_SIZE = 100;
+const MAX_SERVER_PAGES = 200;
 
 const CATEGORY_OPTIONS = [
   { value: "ALL", label: "전체 카테고리" },
@@ -22,10 +23,10 @@ const CATEGORY_OPTIONS = [
 
 const SORT_OPTIONS = [
   { value: "LATEST", label: "최신순" },
-  { value: "PRICE_ASC", label: "낮은가격순" },
-  { value: "PRICE_DESC", label: "높은가격순" },
-  { value: "STOCK_ASC", label: "재고적은순" },
-  { value: "STOCK_DESC", label: "재고많은순" },
+  { value: "PRICE_ASC", label: "낮은 가격순" },
+  { value: "PRICE_DESC", label: "높은 가격순" },
+  { value: "STOCK_ASC", label: "재고 적은순" },
+  { value: "STOCK_DESC", label: "재고 많은순" },
 ];
 
 const EMPTY_FORM = {
@@ -34,6 +35,7 @@ const EMPTY_FORM = {
   name: "",
   price: "0",
   stock: "0",
+  detailContent: "",
 };
 
 function toPriceText(value) {
@@ -47,6 +49,7 @@ function mapProductToForm(detail) {
     name: String(detail?.name || ""),
     price: String(detail?.price ?? 0),
     stock: String(detail?.stock ?? 0),
+    detailContent: String(detail?.detailContent || ""),
   };
 }
 
@@ -68,6 +71,49 @@ function revokePreviewUrls(images) {
   });
 }
 
+async function fetchAllAdminProductPages(baseParams, sort) {
+  const merged = [];
+  const seenIds = new Set();
+  let pageIndex = 0;
+
+  while (pageIndex < MAX_SERVER_PAGES) {
+    const res = await fetchAdminProducts({
+      ...baseParams,
+      page: pageIndex,
+      size: SERVER_FETCH_SIZE,
+      sort,
+    });
+
+    const content = Array.isArray(res?.content) ? res.content : [];
+    let addedCount = 0;
+
+    content.forEach((item, idx) => {
+      const id = Number(item?.id ?? 0);
+      const key = Number.isFinite(id) && id > 0 ? id : `page-${pageIndex}-item-${idx}`;
+      if (seenIds.has(key)) return;
+      seenIds.add(key);
+      merged.push(item);
+      addedCount += 1;
+    });
+
+    const totalPages = Number(res?.totalPages ?? 0);
+    const totalElements = Number(res?.totalElements ?? 0);
+    const isLast = typeof res?.last === "boolean" ? res.last : null;
+    const reachedLastPage = Number.isFinite(totalPages) && totalPages > 0 && pageIndex >= totalPages - 1;
+    const reachedTotalElements = Number.isFinite(totalElements) && totalElements > 0 && merged.length >= totalElements;
+    const noMoreBySize = content.length < SERVER_FETCH_SIZE;
+    const noNewData = content.length > 0 && addedCount === 0;
+
+    if (content.length === 0 || isLast === true || reachedLastPage || reachedTotalElements || noMoreBySize || noNewData) {
+      break;
+    }
+
+    pageIndex += 1;
+  }
+
+  return merged;
+}
+
 export default function AdminProductManager() {
   const [mode, setMode] = useState("list");
   const [loadingList, setLoadingList] = useState(false);
@@ -87,10 +133,17 @@ export default function AdminProductManager() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedProductId, setSelectedProductId] = useState(null);
+
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [removedImageIds, setRemovedImageIds] = useState(new Set());
   const [repImageKey, setRepImageKey] = useState("");
+
+  const [existingDetailImages, setExistingDetailImages] = useState([]);
+  const [newDetailImages, setNewDetailImages] = useState([]);
+  const [removedDetailImageIds, setRemovedDetailImageIds] = useState(new Set());
+
+  const [showDetailPreview, setShowDetailPreview] = useState(true);
 
   const loadProducts = useCallback(async () => {
     setLoadingList(true);
@@ -102,53 +155,17 @@ export default function AdminProductManager() {
         keyword: keyword || undefined,
       };
 
-      if (sortFilter === "STOCK_ASC" || sortFilter === "STOCK_DESC") {
-        const first = await fetchAdminProducts({ ...baseParams, page: 0, size: BULK_FETCH_SIZE, sort: "LATEST" });
-        const firstList = Array.isArray(first?.content) ? first.content : [];
-        const pages = Number(first?.totalPages || 1);
-        if (pages <= 1) {
-          const sorted = sortByStock(firstList, sortFilter);
-          const listTotalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-          const safePage = Math.min(page, listTotalPages - 1);
-          setProducts(sorted.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE));
-          setTotalPages(listTotalPages);
-          setTotalCount(sorted.length);
-          if (safePage !== page) setPage(safePage);
-          return;
-        }
+      const isStockSort = sortFilter === "STOCK_ASC" || sortFilter === "STOCK_DESC";
+      const serverSort = isStockSort ? "LATEST" : sortFilter;
+      const merged = await fetchAllAdminProductPages(baseParams, serverSort);
+      const arranged = isStockSort ? sortByStock(merged, sortFilter) : merged;
+      const listTotalPages = Math.max(1, Math.ceil(arranged.length / PAGE_SIZE));
+      const safePage = Math.min(page, listTotalPages - 1);
 
-        const pageIndexes = Array.from({ length: pages - 1 }, (_, idx) => idx + 1);
-        const remains = await Promise.all(
-          pageIndexes.map((idx) =>
-            fetchAdminProducts({ ...baseParams, page: idx, size: BULK_FETCH_SIZE, sort: "LATEST" })
-          )
-        );
-        const merged = [...firstList];
-        remains.forEach((chunk) => {
-          const content = Array.isArray(chunk?.content) ? chunk.content : [];
-          merged.push(...content);
-        });
-
-        const sorted = sortByStock(merged, sortFilter);
-        const listTotalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-        const safePage = Math.min(page, listTotalPages - 1);
-        setProducts(sorted.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE));
-        setTotalPages(listTotalPages);
-        setTotalCount(sorted.length);
-        if (safePage !== page) setPage(safePage);
-        return;
-      }
-
-      const res = await fetchAdminProducts({
-        ...baseParams,
-        page,
-        size: PAGE_SIZE,
-        sort: sortFilter,
-      });
-      const content = Array.isArray(res?.content) ? res.content : [];
-      setProducts(content);
-      setTotalPages(Math.max(1, Number(res?.totalPages || 1)));
-      setTotalCount(Number(res?.totalElements ?? content.length ?? 0));
+      setProducts(arranged.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE));
+      setTotalPages(listTotalPages);
+      setTotalCount(arranged.length);
+      if (safePage !== page) setPage(safePage);
     } catch (e) {
       setError(e?.message || "상품 목록을 불러오지 못했습니다.");
       setProducts([]);
@@ -168,11 +185,19 @@ export default function AdminProductManager() {
       revokePreviewUrls(prev);
       return [];
     });
+    setNewDetailImages((prev) => {
+      revokePreviewUrls(prev);
+      return [];
+    });
+
     setForm(EMPTY_FORM);
     setSelectedProductId(null);
     setExistingImages([]);
+    setExistingDetailImages([]);
     setRemovedImageIds(new Set());
+    setRemovedDetailImageIds(new Set());
     setRepImageKey("");
+    setShowDetailPreview(true);
   }, []);
 
   const openCreate = () => {
@@ -182,34 +207,50 @@ export default function AdminProductManager() {
     resetForm();
   };
 
-  const openEdit = useCallback(async (productId) => {
-    setMode("edit");
-    setLoadingDetail(true);
-    setError("");
-    setMessage("");
-    try {
-      const [detail, images] = await Promise.all([
-        fetchAdminProductDetail(productId),
-        fetchProductImages(productId),
-      ]);
-      setForm(mapProductToForm(detail));
-      setSelectedProductId(Number(productId));
-      setExistingImages(images);
-      setNewImages((prev) => {
-        revokePreviewUrls(prev);
-        return [];
-      });
-      setRemovedImageIds(new Set());
-      const rep = images.find((item) => item?.repYn);
-      setRepImageKey(rep ? `existing-${rep.id}` : images.length > 0 ? `existing-${images[0].id}` : "");
-    } catch (e) {
-      setError(e?.message || "상품 상세 정보를 불러오지 못했습니다.");
-      resetForm();
-      setMode("list");
-    } finally {
-      setLoadingDetail(false);
-    }
-  }, [resetForm]);
+  const openEdit = useCallback(
+    async (productId) => {
+      setMode("edit");
+      setLoadingDetail(true);
+      setError("");
+      setMessage("");
+
+      try {
+        const [detail, mainImages, detailImages] = await Promise.all([
+          fetchAdminProductDetail(productId),
+          fetchProductImages(productId, "MAIN"),
+          fetchProductImages(productId, "DETAIL"),
+        ]);
+
+        setForm(mapProductToForm(detail));
+        setSelectedProductId(Number(productId));
+
+        setExistingImages(mainImages);
+        setExistingDetailImages(detailImages);
+
+        setNewImages((prev) => {
+          revokePreviewUrls(prev);
+          return [];
+        });
+        setNewDetailImages((prev) => {
+          revokePreviewUrls(prev);
+          return [];
+        });
+
+        setRemovedImageIds(new Set());
+        setRemovedDetailImageIds(new Set());
+
+        const rep = mainImages.find((item) => item?.repYn);
+        setRepImageKey(rep ? `existing-${rep.id}` : mainImages.length > 0 ? `existing-${mainImages[0].id}` : "");
+      } catch (e) {
+        setError(e?.message || "상품 상세 정보를 불러오지 못했습니다.");
+        resetForm();
+        setMode("list");
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [resetForm]
+  );
 
   const visibleImageItems = useMemo(() => {
     const existing = existingImages
@@ -221,6 +262,7 @@ export default function AdminProductManager() {
         src: item.imgUrl,
         name: item.originalName || `기존 이미지 #${item.id}`,
       }));
+
     const newly = newImages.map((item, index) => ({
       key: `new-${index}`,
       type: "new",
@@ -228,8 +270,31 @@ export default function AdminProductManager() {
       src: item.previewUrl,
       name: item.file.name || `새 이미지 ${index + 1}`,
     }));
+
     return [...existing, ...newly];
   }, [existingImages, newImages, removedImageIds]);
+
+  const visibleDetailImageItems = useMemo(() => {
+    const existing = existingDetailImages
+      .filter((item) => !removedDetailImageIds.has(item.id))
+      .map((item) => ({
+        key: `existing-detail-${item.id}`,
+        type: "existing",
+        id: item.id,
+        src: item.imgUrl,
+        name: item.originalName || `기존 상세 이미지 #${item.id}`,
+      }));
+
+    const newly = newDetailImages.map((item, index) => ({
+      key: `new-detail-${index}`,
+      type: "new",
+      index,
+      src: item.previewUrl,
+      name: item.file.name || `새 상세 이미지 ${index + 1}`,
+    }));
+
+    return [...existing, ...newly];
+  }, [existingDetailImages, newDetailImages, removedDetailImageIds]);
 
   useEffect(() => {
     if (visibleImageItems.length === 0) {
@@ -247,10 +312,24 @@ export default function AdminProductManager() {
   const onChangeImageFiles = (event) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
+
     const next = files
       .filter((file) => String(file.type || "").startsWith("image/"))
       .map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+
     setNewImages((prev) => [...prev, ...next]);
+    event.target.value = "";
+  };
+
+  const onChangeDetailImageFiles = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    const next = files
+      .filter((file) => String(file.type || "").startsWith("image/"))
+      .map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+
+    setNewDetailImages((prev) => [...prev, ...next]);
     event.target.value = "";
   };
 
@@ -263,7 +342,27 @@ export default function AdminProductManager() {
       });
       return;
     }
+
     setNewImages((prev) => {
+      const target = prev[item.index];
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((_, idx) => idx !== item.index);
+    });
+  };
+
+  const removeDetailImage = (item) => {
+    if (item.type === "existing") {
+      setRemovedDetailImageIds((prev) => {
+        const copied = new Set(prev);
+        copied.add(item.id);
+        return copied;
+      });
+      return;
+    }
+
+    setNewDetailImages((prev) => {
       const target = prev[item.index];
       if (target?.previewUrl) {
         URL.revokeObjectURL(target.previewUrl);
@@ -276,36 +375,53 @@ export default function AdminProductManager() {
     const trimmedName = String(form.name || "").trim();
     const price = Number(form.price);
     const stock = Number(form.stock);
-    if (!trimmedName) return "상품명을 입력해 주세요.";
-    if (!Number.isFinite(price) || price < 0) return "가격은 0 이상으로 입력해 주세요.";
-    if (!Number.isFinite(stock) || stock < 0) return "재고는 0 이상으로 입력해 주세요.";
-    if (mode === "create" && visibleImageItems.length === 0) return "상품 이미지를 최소 1개 등록해 주세요.";
+
+    if (!trimmedName) return "상품명을 입력해주세요.";
+    if (!Number.isFinite(price) || price < 0) return "가격은 0 이상으로 입력해주세요.";
+    if (!Number.isFinite(stock) || stock < 0) return "재고는 0 이상으로 입력해주세요.";
+    if (mode === "create" && visibleImageItems.length === 0) return "상품 이미지를 최소 1개 이상 등록해주세요.";
+
     return "";
   };
 
   const syncImageChanges = async (productId) => {
-    const idsToDelete = Array.from(removedImageIds);
-    for (const imageId of idsToDelete) {
+    for (const imageId of Array.from(removedImageIds)) {
       await deleteProductImage(productId, imageId);
     }
 
-    if (newImages.length === 0) return;
-
-    let repIndex = 0;
-    if (repImageKey.startsWith("new-")) {
-      repIndex = Number(repImageKey.replace("new-", "")) || 0;
+    for (const imageId of Array.from(removedDetailImageIds)) {
+      await deleteProductImage(productId, imageId);
     }
-    await uploadProductImages(
-      productId,
-      newImages.map((item) => item.file),
-      repIndex
-    );
+
+    if (newImages.length > 0) {
+      let repIndex = 0;
+      if (repImageKey.startsWith("new-")) {
+        repIndex = Number(repImageKey.replace("new-", "")) || 0;
+      }
+
+      await uploadProductImages(
+        productId,
+        newImages.map((item) => item.file),
+        repIndex,
+        "MAIN"
+      );
+    }
+
+    if (newDetailImages.length > 0) {
+      await uploadProductImages(
+        productId,
+        newDetailImages.map((item) => item.file),
+        0,
+        "DETAIL"
+      );
+    }
   };
 
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     setMessage("");
+
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -317,6 +433,7 @@ export default function AdminProductManager() {
       name: String(form.name).trim(),
       price: Number(form.price),
       stock: Number(form.stock),
+      detailContent: String(form.detailContent || ""),
     };
 
     setSubmitting(true);
@@ -327,25 +444,40 @@ export default function AdminProductManager() {
         if (!createdId) {
           throw new Error("상품 생성 후 ID를 확인하지 못했습니다.");
         }
+
         await uploadProductImages(
           createdId,
           newImages.map((item) => item.file),
-          repImageKey.startsWith("new-") ? Number(repImageKey.replace("new-", "")) || 0 : 0
+          repImageKey.startsWith("new-") ? Number(repImageKey.replace("new-", "")) || 0 : 0,
+          "MAIN"
         );
-        setMessage("상품이 등록되었습니다.");
+
+        if (newDetailImages.length > 0) {
+          await uploadProductImages(
+            createdId,
+            newDetailImages.map((item) => item.file),
+            0,
+            "DETAIL"
+          );
+        }
+
+        setMessage("상품을 등록했습니다.");
         setMode("edit");
         await openEdit(createdId);
       } else {
         const targetId = Number(form.id || selectedProductId || 0);
         if (!targetId) throw new Error("수정할 상품 ID가 없습니다.");
+
         await updateAdminProduct(targetId, payload);
         await syncImageChanges(targetId);
-        setMessage("상품이 수정되었습니다.");
+
+        setMessage("상품을 수정했습니다.");
         await openEdit(targetId);
       }
+
       await loadProducts();
     } catch (e) {
-      setError(e?.message || "상품 저장에 실패했습니다.");
+      setError(e?.message || "상품 처리에 실패했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -353,7 +485,7 @@ export default function AdminProductManager() {
 
   const listTitle = useMemo(() => {
     const categoryLabel = CATEGORY_OPTIONS.find((item) => item.value === categoryFilter)?.label || "전체 카테고리";
-    return `${categoryLabel} · ${totalCount}건`;
+    return `${categoryLabel} · 총 ${totalCount}건`;
   }, [categoryFilter, totalCount]);
 
   return (
@@ -361,7 +493,7 @@ export default function AdminProductManager() {
       <div className="admin-oneday-head">
         <div>
           <h2>상품 관리</h2>
-          <p>좌측 목록에서 상품을 선택해 우측에서 전체 항목을 수정할 수 있습니다.</p>
+          <p>상품 등록/수정 및 이미지, 상품 상세 HTML과 상세 이미지를 관리합니다.</p>
         </div>
         <div className="admin-oneday-head-actions">
           <button type="button" className="btn-primary" onClick={openCreate}>
@@ -388,6 +520,7 @@ export default function AdminProductManager() {
       <div className="admin-oneday-grid">
         <section className="admin-oneday-panel">
           <h3>상품 목록</h3>
+
           <div className="admin-product-filter-row">
             <select
               className="admin-select"
@@ -403,6 +536,7 @@ export default function AdminProductManager() {
                 </option>
               ))}
             </select>
+
             <select
               className="admin-select"
               value={sortFilter}
@@ -417,6 +551,7 @@ export default function AdminProductManager() {
                 </option>
               ))}
             </select>
+
             <input
               className="admin-input"
               placeholder="상품명 검색"
@@ -429,6 +564,7 @@ export default function AdminProductManager() {
                 }
               }}
             />
+
             <button
               type="button"
               className="admin-btn-search"
@@ -451,6 +587,7 @@ export default function AdminProductManager() {
               products.map((item) => {
                 const id = Number(item?.id || 0);
                 const isActive = Number(form?.id || selectedProductId || 0) === id;
+
                 return (
                   <article
                     key={`product-${id}`}
@@ -487,9 +624,11 @@ export default function AdminProductManager() {
             >
               이전
             </button>
+
             <span>
               {page + 1} / {Math.max(1, totalPages)} 페이지
             </span>
+
             <button
               type="button"
               className="btn-ghost"
@@ -503,8 +642,9 @@ export default function AdminProductManager() {
 
         <section className="admin-oneday-panel">
           <h3>{mode === "create" ? "상품 등록" : mode === "edit" ? `상품 수정 #${form.id}` : "입력 대기"}</h3>
+
           {mode === "list" ? (
-            <div className="muted">좌측 목록에서 상품을 선택하거나 "상품 등록" 버튼을 눌러주세요.</div>
+            <div className="muted">좌측 목록에서 상품을 선택하거나, 상단의 상품 등록 버튼을 눌러주세요.</div>
           ) : loadingDetail ? (
             <div className="muted">상품 상세 정보를 불러오는 중입니다...</div>
           ) : (
@@ -520,29 +660,22 @@ export default function AdminProductManager() {
                     ))}
                   </select>
                 </label>
+
                 <label>
                   <span>상품명</span>
                   <input maxLength={100} value={form.name} onChange={(e) => setField("name", e.target.value)} />
                 </label>
               </div>
+
               <div className="class-form-grid">
                 <label>
                   <span>가격</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.price}
-                    onChange={(e) => setField("price", e.target.value)}
-                  />
+                  <input type="number" min="0" value={form.price} onChange={(e) => setField("price", e.target.value)} />
                 </label>
+
                 <label>
                   <span>재고</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.stock}
-                    onChange={(e) => setField("stock", e.target.value)}
-                  />
+                  <input type="number" min="0" value={form.stock} onChange={(e) => setField("stock", e.target.value)} />
                 </label>
               </div>
 
@@ -550,18 +683,16 @@ export default function AdminProductManager() {
                 <span>상품 이미지</span>
                 <input type="file" accept="image/*" multiple onChange={onChangeImageFiles} />
               </label>
-              <div className="muted">이미지를 클릭해 대표 이미지를 지정할 수 있습니다.</div>
+              <div className="muted">이미지를 클릭하면 대표 이미지를 지정할 수 있습니다.</div>
 
               {visibleImageItems.length === 0 ? (
-                <div className="admin-product-empty">등록된 이미지가 없습니다.</div>
+                <div className="admin-product-empty">등록된 상품 이미지가 없습니다.</div>
               ) : (
                 <div className="preview-grid">
                   {visibleImageItems.map((item) => (
                     <div
                       key={item.key}
-                      className={`preview-item admin-product-image-item ${
-                        repImageKey === item.key ? "is-rep" : ""
-                      }`}
+                      className={`preview-item admin-product-image-item ${repImageKey === item.key ? "is-rep" : ""}`}
                     >
                       <button
                         type="button"
@@ -574,6 +705,74 @@ export default function AdminProductManager() {
                       <div className="admin-product-image-meta">
                         <span className="admin-product-image-name">{item.name}</span>
                         <button type="button" className="btn-danger" onClick={() => removeImage(item)}>
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label>
+                    <span>상품 상세 (HTML)</span>
+                  </label>
+                  <button
+                    type="button"
+                    className="admin-btn-sm"
+                    onClick={() => setShowDetailPreview((prev) => !prev)}
+                  >
+                    {showDetailPreview ? "미리보기 숨기기" : "미리보기 보기"}
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                  <textarea
+                    className="admin-input"
+                    rows={10}
+                    value={form.detailContent}
+                    onChange={(e) => setField("detailContent", e.target.value)}
+                    placeholder="<h3>상품 설명</h3><p>상품 상세 내용을 입력하세요.</p>"
+                    style={{ flex: showDetailPreview ? 1 : "1 1 100%", minHeight: 220 }}
+                  />
+
+                  {showDetailPreview ? (
+                    <div
+                      style={{
+                        flex: 1,
+                        border: "1px solid #F3F4F6",
+                        borderRadius: 8,
+                        padding: 12,
+                        background: "#fff",
+                        minHeight: 220,
+                        overflowY: "auto",
+                      }}
+                    >
+                      <div style={{ color: "#6B7280", marginBottom: 8, fontSize: 13 }}>미리보기</div>
+                      <div dangerouslySetInnerHTML={{ __html: form.detailContent || "" }} />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <label>
+                <span>상품 상세 이미지</span>
+                <input type="file" accept="image/*" multiple onChange={onChangeDetailImageFiles} />
+              </label>
+
+              {visibleDetailImageItems.length === 0 ? (
+                <div className="admin-product-empty">등록된 상품 상세 이미지가 없습니다.</div>
+              ) : (
+                <div className="preview-grid">
+                  {visibleDetailImageItems.map((item) => (
+                    <div key={item.key} className="preview-item admin-product-image-item">
+                      <div className="admin-product-image-pick">
+                        <img src={item.src} alt={item.name} />
+                      </div>
+                      <div className="admin-product-image-meta">
+                        <span className="admin-product-image-name">{item.name}</span>
+                        <button type="button" className="btn-danger" onClick={() => removeDetailImage(item)}>
                           삭제
                         </button>
                       </div>

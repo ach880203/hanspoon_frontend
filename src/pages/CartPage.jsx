@@ -575,7 +575,7 @@ export default function CartPage() {
               <div className="shipHeader">
                 <div className="shipTitleRow">
                   <div className="shipTitle">배송지</div>
-                  <span className="shipBadge">샛별배송</span>
+                  <span className="shipBadge">{currentAddress?.label || "배송지"}</span>
                 </div>
                 <button className="shipChangeBtn" onClick={openManageAddress}>
                   변경

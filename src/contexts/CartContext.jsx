@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { fetchMyCartCount } from "../api/carts";
 import { toErrorMessage } from "../api/http";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
+  const { user, loading: authLoading } = useAuth();
   const [count, setCount] = useState(0);
   const [toast, setToast] = useState(null); // { title, message, imgUrl }
 
@@ -27,6 +29,15 @@ export function CartProvider({ children }) {
   useEffect(() => {
     refreshCount();
   }, [refreshCount]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      refreshCount();
+      return;
+    }
+    setCount(0);
+  }, [user, authLoading, refreshCount]);
 
   const value = useMemo(
     () => ({ count, setCount, refreshCount, toast, showToast }),

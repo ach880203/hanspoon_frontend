@@ -69,8 +69,56 @@
   white-space: nowrap;
 }
 
+.admin-product-col {
+  min-width: 220px;
+}
+
+.admin-inquiry-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-btn-sm-danger {
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.admin-review-actions {
+  width: 100%;
+}
+
+.admin-review-actions .admin-select {
+  width: 170px;
+  flex: 0 0 170px;
+}
+
+.admin-review-actions .admin-input {
+  width: 260px;
+  min-width: 260px;
+  flex: 0 0 260px;
+}
+
+.admin-review-product-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-review-product-select {
+  width: min(420px, 100%);
+}
+
 @media (max-width: 900px) {
   .admin-product-filter-row .admin-input {
     min-width: 100%;
+  }
+
+  .admin-review-actions .admin-select,
+  .admin-review-actions .admin-input {
+    width: 100%;
+    min-width: 100%;
+    flex: 1 1 100%;
   }
 }

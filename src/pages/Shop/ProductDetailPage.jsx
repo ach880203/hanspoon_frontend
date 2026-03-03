@@ -264,15 +264,19 @@ export default function ProductDetailPage() {
         >
           <h2 className="pdSectionTitle">상품상세</h2>
 
-          {/* 백엔드 필드에 맞춰서 골라 쓰기 */}
-          {data.description && <p className="pdText">{data.description}</p>}
+          {data.detailContent ? (
+            <div className="pdHtmlContent" dangerouslySetInnerHTML={{ __html: data.detailContent }} />
+          ) : null}
 
-          {/* 상세 이미지(있으면 아래로 길게) */}
           <div className="pdDetailImgs">
-            {(data.detailImages || data.images || []).map((img) => (
+            {(data.detailImages || []).map((img) => (
               <img key={`detail-${img.id}`} src={img.imgUrl} alt={img.originalName || data.name} />
             ))}
           </div>
+
+          {!data.detailContent && (!data.detailImages || data.detailImages.length === 0) ? (
+            <p className="pdText">등록된 상품 상세 정보가 없습니다.</p>
+          ) : null}
         </section>
 
         <section

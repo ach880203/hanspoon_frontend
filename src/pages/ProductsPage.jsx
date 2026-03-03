@@ -14,7 +14,7 @@ const CATEGORIES = [
 ];
 
 const SORTS = [
-  { value: "LATEST", label: "추천순" },
+  { value: "LATEST", label: "최신순" },
   { value: "PRICE_ASC", label: "낮은 가격순" },
   { value: "PRICE_DESC", label: "높은 가격순" },
 ];

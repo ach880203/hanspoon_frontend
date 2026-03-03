@@ -20,18 +20,18 @@ export async function updateAdminProduct(productId, payload) {
   return res.data;
 }
 
-export async function fetchProductImages(productId) {
-  const res = await http.get(`/api/products/${Number(productId)}/images`);
+export async function fetchProductImages(productId, type = "MAIN") {
+  const res = await http.get(`/api/products/${Number(productId)}/images`, { params: { type } });
   return Array.isArray(res.data) ? res.data : [];
 }
 
-export async function uploadProductImages(productId, files, repIndex) {
+export async function uploadProductImages(productId, files, repIndex, type = "MAIN") {
   const fd = new FormData();
   (files || []).forEach((file) => fd.append("files", file));
   if (repIndex !== undefined && repIndex !== null) {
     fd.append("repIndex", String(repIndex));
   }
-  const res = await http.post(`/api/products/${Number(productId)}/images`, fd);
+  const res = await http.post(`/api/products/${Number(productId)}/images?type=${encodeURIComponent(type)}`, fd);
   return Array.isArray(res.data) ? res.data : [];
 }
 
@@ -49,6 +49,10 @@ export async function answerAdminProductInquiry(inqId, answer) {
   return res.data;
 }
 
+export async function deleteAdminProductInquiry(inqId) {
+  await http.del(`/api/admin/inquiries/${Number(inqId)}`);
+}
+
 export async function fetchProductReviewsByProduct(productId, page = 0, size = 20, opt = {}) {
   const params = {
     page,
@@ -59,4 +63,8 @@ export async function fetchProductReviewsByProduct(productId, page = 0, size = 2
   };
   const res = await http.get(`/api/products/${Number(productId)}/reviews`, { params });
   return res.data;
+}
+
+export async function deleteAdminProductReview(revId) {
+  await http.del(`/api/admin/reviews/${Number(revId)}`);
 }

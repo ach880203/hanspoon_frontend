@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   answerAdminProductInquiry,
+  deleteAdminProductInquiry,
   fetchAdminProductInquiries,
 } from "../../api/adminProductApi";
 
@@ -14,6 +15,7 @@ function toDateText(value) {
 export default function AdminProductInquiryManager() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [items, setItems] = useState([]);
@@ -58,6 +60,7 @@ export default function AdminProductInquiryManager() {
       const text = [
         item?.inqId,
         item?.productId,
+        item?.productName,
         item?.userId,
         item?.content,
         item?.answer,
@@ -89,11 +92,33 @@ export default function AdminProductInquiryManager() {
     }
   };
 
+  const removeInquiry = async (inqId) => {
+    if (!window.confirm("이 문의를 삭제하시겠습니까?")) return;
+    setDeletingId(inqId);
+    setError("");
+    setMessage("");
+    try {
+      await deleteAdminProductInquiry(inqId);
+      setMessage("문의가 삭제되었습니다.");
+      if (openInquiryId === inqId) setOpenInquiryId(null);
+      await load(page);
+    } catch (e) {
+      setError(e?.message || "문의 삭제에 실패했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <section className="admin-class-panel">
       <div className="admin-class-panel-head">
         <h3>상품 문의 관리</h3>
         <div className="admin-class-panel-actions">
+          <select className="admin-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="ALL">전체 상태</option>
+            <option value="WAIT">답변 대기</option>
+            <option value="DONE">답변 완료</option>
+          </select>
           <input
             className="admin-input"
             value={keywordInput}
@@ -103,11 +128,6 @@ export default function AdminProductInquiryManager() {
             }}
             placeholder="작성자/내용/ID 검색"
           />
-          <select className="admin-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="ALL">전체 상태</option>
-            <option value="WAIT">답변 대기</option>
-            <option value="DONE">답변 완료</option>
-          </select>
           <button type="button" className="admin-btn-search" onClick={() => setKeyword(keywordInput.trim())}>
             검색
           </button>
@@ -126,7 +146,7 @@ export default function AdminProductInquiryManager() {
             <tr>
               <th>상태</th>
               <th>문의 ID</th>
-              <th>상품 ID</th>
+              <th className="admin-product-col">상품</th>
               <th>작성자</th>
               <th>내용</th>
               <th>등록일</th>
@@ -153,26 +173,38 @@ export default function AdminProductInquiryManager() {
                         </span>
                       </td>
                       <td>{inqId || "-"}</td>
-                      <td>{item?.productId ?? "-"}</td>
+                      <td className="admin-product-col">
+                        {(item?.productName || `상품 #${item?.productId ?? "-"}`) + ` (ID:${item?.productId ?? "-"})`}
+                      </td>
                       <td>{item?.userId ?? "-"}</td>
                       <td className="admin-class-ellipsis" title={item?.content || ""}>
                         {item?.content || "-"}
                       </td>
                       <td>{toDateText(item?.createdAt)}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="admin-btn-sm"
-                          onClick={() => {
-                            setOpenInquiryId((prev) => (prev === inqId ? null : inqId));
-                            setAnswerDraftById((prev) => {
-                              if (typeof prev[inqId] === "string") return prev;
-                              return { ...prev, [inqId]: String(item?.answer || "") };
-                            });
-                          }}
-                        >
-                          {answered ? "답변 수정" : "답변 등록"}
-                        </button>
+                        <div className="admin-inquiry-actions">
+                          <button
+                            type="button"
+                            className="admin-btn-sm"
+                            onClick={() => {
+                              setOpenInquiryId((prev) => (prev === inqId ? null : inqId));
+                              setAnswerDraftById((prev) => {
+                                if (typeof prev[inqId] === "string") return prev;
+                                return { ...prev, [inqId]: String(item?.answer || "") };
+                              });
+                            }}
+                          >
+                            {answered ? "답변 수정" : "답변 등록"}
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-btn-sm admin-btn-sm-danger"
+                            onClick={() => removeInquiry(inqId)}
+                            disabled={deletingId === inqId}
+                          >
+                            {deletingId === inqId ? "삭제 중..." : "삭제"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {openInquiryId === inqId ? (

@@ -695,6 +695,9 @@
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.10);
   background: #fff;
+  padding: 0;
+  display: grid;
+  place-items: center;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
