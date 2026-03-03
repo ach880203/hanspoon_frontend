@@ -42,10 +42,8 @@ export const deleteRecipe = (id) => {
 };
 
 //6. 삭제리스트
-export const deletelist = (category) => {
-    return api.get(`/api/recipe/deleted`, {
-        params: {category: category}
-    });
+export const deletelist = (params) => {
+    return api.get(`/api/recipe/deleted`, { params });
 };
 
 //7. 복원
