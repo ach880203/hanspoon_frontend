@@ -162,6 +162,10 @@
     color: #2563eb;
 }
 
+.status-REFUND_REQUESTED {
+    color: #b45309;
+}
+
 .status-CANCELED,
 .status-REFUNDED {
     color: #94a3b8;

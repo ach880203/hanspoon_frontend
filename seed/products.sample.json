@@ -1,0 +1,176 @@
+[
+  {
+    "category": "INGREDIENT",
+    "name": "국산 양파 2kg",
+    "price": 6900,
+    "stock": 120,
+    "repIndex": 0,
+    "detailContent": "<h3>달큰한 풍미의 국산 양파</h3><p>볶음, 찌개, 국물요리에 활용하기 좋은 기본 채소입니다.</p><ul><li>중량: 2kg</li><li>보관: 서늘한 실온</li><li>원산지: 국내산</li></ul>",
+    "mainImages": [
+      { "label": "국산 양파 2kg", "subtitle": "아삭하고 단단한 선별 상품" },
+      { "label": "손질 전 상태", "subtitle": "흙 제거 후 바로 조리 가능" }
+    ],
+    "detailImages": [
+      { "label": "양파 단면", "subtitle": "수분감과 조직감 확인" },
+      { "label": "추천 활용", "subtitle": "카레, 볶음, 찌개" }
+    ]
+  },
+  {
+    "category": "INGREDIENT",
+    "name": "친환경 애호박 2입",
+    "price": 4200,
+    "stock": 95,
+    "repIndex": 0,
+    "detailContent": "<h3>부드럽고 담백한 애호박</h3><p>볶음 반찬과 전 요리에 잘 어울립니다.</p><ul><li>구성: 2입</li><li>보관: 냉장</li><li>인증: 친환경 인증</li></ul>",
+    "mainImages": [
+      { "label": "친환경 애호박", "subtitle": "2입 구성" }
+    ],
+    "detailImages": [
+      { "label": "조리 예시", "subtitle": "애호박전/볶음" }
+    ]
+  },
+  {
+    "category": "INGREDIENT",
+    "name": "한우 국거리 300g",
+    "price": 15900,
+    "stock": 70,
+    "repIndex": 0,
+    "detailContent": "<h3>깊은 육향의 한우 국거리</h3><p>무국, 육개장, 미역국에 활용하기 좋은 부위로 선별했습니다.</p><ul><li>중량: 300g</li><li>보관: 냉장(개봉 후 즉시 섭취)</li></ul>",
+    "mainImages": [
+      { "label": "한우 국거리", "subtitle": "300g 소포장" },
+      { "label": "신선 포장", "subtitle": "냉장 배송" }
+    ],
+    "detailImages": [
+      { "label": "국물 요리 추천", "subtitle": "무국/된장국" }
+    ]
+  },
+  {
+    "category": "MEAL_KIT",
+    "name": "소고기 미역국 밀키트 2인분",
+    "price": 12900,
+    "stock": 80,
+    "repIndex": 0,
+    "detailContent": "<h3>10분 완성 집밥 밀키트</h3><p>손질된 재료와 양념이 동봉되어 간편하게 조리할 수 있습니다.</p><ol><li>냄비에 물 700ml를 넣습니다.</li><li>재료와 소스를 넣고 10분 끓입니다.</li><li>기호에 맞게 간을 조절합니다.</li></ol>",
+    "mainImages": [
+      { "label": "미역국 밀키트", "subtitle": "2인분" }
+    ],
+    "detailImages": [
+      { "label": "구성품", "subtitle": "재료 + 소스" },
+      { "label": "조리 단계", "subtitle": "3-step 레시피" }
+    ]
+  },
+  {
+    "category": "MEAL_KIT",
+    "name": "차돌 된장찌개 밀키트 2~3인",
+    "price": 14900,
+    "stock": 66,
+    "repIndex": 0,
+    "detailContent": "<h3>구수한 된장과 차돌의 조합</h3><p>야채, 육수, 양념이 모두 포함되어 누구나 쉽게 완성할 수 있습니다.</p><ul><li>조리시간: 약 12분</li><li>권장 인원: 2~3인</li></ul>",
+    "mainImages": [
+      { "label": "차돌 된장찌개", "subtitle": "2~3인분" }
+    ],
+    "detailImages": [
+      { "label": "풍부한 건더기", "subtitle": "차돌+채소" }
+    ]
+  },
+  {
+    "category": "MEAL_KIT",
+    "name": "해물 파스타 밀키트 2인분",
+    "price": 17900,
+    "stock": 54,
+    "repIndex": 0,
+    "detailContent": "<h3>집에서 즐기는 레스토랑 파스타</h3><p>면, 소스, 해물 토핑이 포함되어 완성도가 높은 한 끼를 만들 수 있습니다.</p><ul><li>조리시간: 15분</li><li>구성: 생면/소스/해물/허브</li></ul>",
+    "mainImages": [
+      { "label": "해물 파스타", "subtitle": "2인분 키트" }
+    ],
+    "detailImages": [
+      { "label": "플레이팅 예시", "subtitle": "완성 이미지" }
+    ]
+  },
+  {
+    "category": "KITCHEN_SUPPLY",
+    "name": "논스틱 프라이팬 28cm",
+    "price": 28900,
+    "stock": 45,
+    "repIndex": 0,
+    "detailContent": "<h3>데일리 조리에 최적화된 프라이팬</h3><p>코팅 내구성을 높여 눌어붙음을 줄였습니다.</p><ul><li>지름: 28cm</li><li>호환: 가스/하이라이트/인덕션(겸용)</li></ul>",
+    "mainImages": [
+      { "label": "논스틱 프라이팬", "subtitle": "28cm" }
+    ],
+    "detailImages": [
+      { "label": "표면 코팅", "subtitle": "세척 용이" },
+      { "label": "손잡이 그립", "subtitle": "미끄럼 방지" }
+    ]
+  },
+  {
+    "category": "KITCHEN_SUPPLY",
+    "name": "스테인리스 냄비 20cm",
+    "price": 31900,
+    "stock": 39,
+    "repIndex": 0,
+    "detailContent": "<h3>깔끔한 디자인의 스테인리스 냄비</h3><p>열전도 효율이 좋아 국/탕/면 요리에 두루 쓰기 좋습니다.</p><ul><li>용량: 2.7L</li><li>재질: 스테인리스 스틸</li></ul>",
+    "mainImages": [
+      { "label": "스테인리스 냄비", "subtitle": "20cm" }
+    ],
+    "detailImages": [
+      { "label": "바닥 구조", "subtitle": "균일한 열 전달" }
+    ]
+  },
+  {
+    "category": "KITCHEN_SUPPLY",
+    "name": "내열 유리 밀폐용기 6종",
+    "price": 21900,
+    "stock": 58,
+    "repIndex": 0,
+    "detailContent": "<h3>전자레인지/냉장 보관 모두 OK</h3><p>용량별로 구성되어 반찬 및 재료 보관에 적합합니다.</p><ul><li>구성: 370ml~1050ml</li><li>내열유리 + 실리콘 패킹</li></ul>",
+    "mainImages": [
+      { "label": "유리 밀폐용기", "subtitle": "6종 세트" }
+    ],
+    "detailImages": [
+      { "label": "용량 구성", "subtitle": "다양한 사이즈" }
+    ]
+  },
+  {
+    "category": "INGREDIENT",
+    "name": "유기농 우유 900ml",
+    "price": 3500,
+    "stock": 140,
+    "repIndex": 0,
+    "detailContent": "<h3>매일 마시는 신선 우유</h3><p>아침 식사, 라떼, 베이킹까지 다용도로 활용 가능합니다.</p><ul><li>용량: 900ml</li><li>보관: 냉장</li></ul>",
+    "mainImages": [
+      { "label": "유기농 우유", "subtitle": "900ml" }
+    ],
+    "detailImages": [
+      { "label": "신선 보관", "subtitle": "콜드체인 배송" }
+    ]
+  },
+  {
+    "category": "INGREDIENT",
+    "name": "동물복지 유정란 10구",
+    "price": 6200,
+    "stock": 132,
+    "repIndex": 0,
+    "detailContent": "<h3>노른자 선명한 신선 달걀</h3><p>프라이, 삶은 달걀, 베이킹에 활용하기 좋습니다.</p><ul><li>구성: 10구</li><li>보관: 냉장</li></ul>",
+    "mainImages": [
+      { "label": "동물복지 유정란", "subtitle": "10구" }
+    ],
+    "detailImages": [
+      { "label": "원재료 정보", "subtitle": "생산일자 표기" }
+    ]
+  },
+  {
+    "category": "MEAL_KIT",
+    "name": "새우 감바스 밀키트 2인분",
+    "price": 16500,
+    "stock": 72,
+    "repIndex": 0,
+    "detailContent": "<h3>간단하지만 분위기 있는 한 접시</h3><p>올리브오일, 마늘, 새우, 바게트로 구성된 감바스 키트입니다.</p><ul><li>조리시간: 10~12분</li><li>권장 인원: 2인</li></ul>",
+    "mainImages": [
+      { "label": "새우 감바스", "subtitle": "2인분" }
+    ],
+    "detailImages": [
+      { "label": "구성품 안내", "subtitle": "새우/오일/바게트" },
+      { "label": "조리 예시", "subtitle": "홈파티 메뉴" }
+    ]
+  }
+]

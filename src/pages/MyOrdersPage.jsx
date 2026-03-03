@@ -105,7 +105,8 @@ export default function MyOrdersPage() {
             <option value="DELIVERED">배송완료</option>
             <option value="CONFIRMED">구매확정</option>
             <option value="CANCELED">취소</option>
-            <option value="REFUNDED">환불</option>
+            <option value="REFUND_REQUESTED">환불요청</option>
+            <option value="REFUNDED">환불완료</option>
           </select>
         </div>
       </div>
@@ -250,6 +251,17 @@ function OrderDetailModal({ orderId, onClose, onUpdated }) {
     });
   };
 
+  const requestRefund = async () => {
+    const input = window.prompt("환불 요청 사유를 입력해 주세요.", "");
+    if (!input || !input.trim()) return;
+
+    await runAction(async () => {
+      const updated = await cancelOrder(order.orderId, input.trim());
+      setMessage("환불 요청이 접수되었습니다.");
+      return updated;
+    });
+  };
+
   if (!order) {
     return (
       <div className="order-modal-backdrop" onClick={onClose}>
@@ -355,10 +367,7 @@ function OrderDetailModal({ orderId, onClose, onUpdated }) {
 
             {isDelivered ? (
               <>
-                <button type="button" className="action" disabled={busy} onClick={() => submitOrderInquiry("교환 요청")}>
-                  교환 요청
-                </button>
-                <button type="button" className="action" disabled={busy} onClick={() => submitOrderInquiry("환불 요청")}>
+                <button type="button" className="action" disabled={busy} onClick={requestRefund}>
                   환불 요청
                 </button>
                 <button type="button" className="action" disabled={busy} onClick={() => submitOrderInquiry("주문 문의")}>

@@ -37,6 +37,7 @@ function AdminPaymentList() {
     const getStatusBadgeClass = (status) => {
         switch (status) {
             case 'PAID': return 'badge-paid';
+            case 'REFUND_REQUESTED': return 'badge-ready';
             case 'CANCELLED': return 'badge-cancelled';
             case 'READY': return 'badge-ready';
             case 'FAILED': return 'badge-failed';
@@ -47,11 +48,17 @@ function AdminPaymentList() {
     const getStatusText = (status) => {
         switch (status) {
             case 'PAID': return '결제완료';
+            case 'REFUND_REQUESTED': return '환불요청';
             case 'CANCELLED': return '취소됨';
             case 'READY': return '결제대기';
             case 'FAILED': return '결제실패';
             default: return status;
         }
+    };
+
+    const resolveDisplayStatus = (payment) => {
+        if (payment?.orderStatus === 'REFUND_REQUESTED') return 'REFUND_REQUESTED';
+        return payment?.status;
     };
 
     return (
@@ -105,8 +112,8 @@ function AdminPaymentList() {
                                 </td>
                                 <td>{payment.totalPrice?.toLocaleString()}원</td>
                                 <td>
-                                    <span className={`admin-badge ${getStatusBadgeClass(payment.status)}`}>
-                                        {getStatusText(payment.status)}
+                                    <span className={`admin-badge ${getStatusBadgeClass(resolveDisplayStatus(payment))}`}>
+                                        {getStatusText(resolveDisplayStatus(payment))}
                                     </span>
                                 </td>
                                 <td>{new Date(payment.payDate).toLocaleDateString()}</td>
