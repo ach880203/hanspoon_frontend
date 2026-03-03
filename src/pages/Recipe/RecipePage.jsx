@@ -286,6 +286,9 @@ const RecipePage = () => {
         { label: "포기 ", value: "포기" },
         { label: "꼬집", value: "꼬집" },
         { label: "근 ", value: "근" },
+        { label: "대", value: "대" },
+        { label: "공기", value: "공기" },
+        { label: "장", value: "장" },
         { label: "적당량", value: "적당량" },
     ];
 
