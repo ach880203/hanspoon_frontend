@@ -93,3 +93,47 @@ export function toIsoDateKey(value) {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * 클래스 노출/오픈예정 상태 계산:
+ * - 첫 세션 시작 5일 전부터 목록에 노출
+ * - 첫 세션 시작 전(노출 기간 안)이면 "오픈 예정"으로 표시
+ */
+export function toClassExposureStatus(sessions, exposureDays = 5) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  const safeExposureDays = Number.isFinite(Number(exposureDays)) ? Math.max(Number(exposureDays), 0) : 0;
+  const exposureMs = safeExposureDays * 24 * 60 * 60 * 1000;
+
+  let firstStartAtMs = Infinity;
+  list.forEach((session) => {
+    const time = new Date(session?.startAt ?? "").getTime();
+    if (!Number.isNaN(time) && time < firstStartAtMs) {
+      firstStartAtMs = time;
+    }
+  });
+
+  if (!Number.isFinite(firstStartAtMs)) {
+    // 세션이 없거나 시작일시를 해석할 수 없으면 기존처럼 노출합니다.
+    return {
+      shouldExpose: true,
+      beforeStart: false,
+      openScheduled: false,
+      firstStartAt: null,
+      exposeFrom: null,
+    };
+  }
+
+  const now = Date.now();
+  const exposeFromMs = firstStartAtMs - exposureMs;
+  const beforeStart = now < firstStartAtMs;
+  const shouldExpose = now >= exposeFromMs;
+  const openScheduled = shouldExpose && beforeStart;
+
+  return {
+    shouldExpose,
+    beforeStart,
+    openScheduled,
+    firstStartAt: new Date(firstStartAtMs).toISOString(),
+    exposeFrom: new Date(exposeFromMs).toISOString(),
+  };
+}

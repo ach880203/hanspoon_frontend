@@ -8,6 +8,7 @@ import {
 } from "../../api/onedayApi";
 import {
   toClassId,
+  toClassExposureStatus,
   toClassSlotStatus,
   toDateMillis,
   toIsoDateKey,
@@ -25,11 +26,14 @@ import OneDaySessionCalendar from "./OneDaySessionCalendar";
 import "./OneDayExplorePage.css";
 
 const CLASS_PAGE_SIZE = 6;
+const CLASS_FETCH_PAGE_SIZE = 120;
 const SESSION_VISIBLE_SIZE = 8;
 const LATEST_BANNER_SIZE = 8;
 const LATEST_BANNER_ROTATE_MS = 3500;
+const CLASS_EXPOSURE_DAYS = 30;
 const LIST_RUN_TYPE_TABS = [
   { value: "ALL", label: "전체" },
+  { value: "OPEN_SCHEDULED", label: "오픈 예정" },
   { value: "ALWAYS", label: "상시 운영" },
   { value: "EVENT", label: "이벤트" },
   { value: "ENDED", label: "종료 클래스" },
@@ -99,12 +103,6 @@ export function OneDayExplorePage() {
   const [filters, setFilters] = useState(committed);
 
   const [classItems, setClassItems] = useState([]);
-  const [classPageInfo, setClassPageInfo] = useState({
-    totalPages: 0,
-    totalElements: 0,
-    number: 0,
-    size: CLASS_PAGE_SIZE,
-  });
 
   const [selectedClassDetail, setSelectedClassDetail] = useState(null);
   const [selectedClassSessions, setSelectedClassSessions] = useState([]);
@@ -198,8 +196,6 @@ export function OneDayExplorePage() {
 
       try {
         const classParams = {
-          page: source.classPage,
-          size: CLASS_PAGE_SIZE,
           sort: "createdAt,desc",
         };
 
@@ -209,39 +205,59 @@ export function OneDayExplorePage() {
         if (source.runType) classParams.runType = source.runType;
         if (source.instructorName) classParams.instructorName = source.instructorName;
 
-        const classResponse = await getOneDayClasses(classParams);
-        const normalizedClassItems = Array.isArray(classResponse?.content)
-          ? classResponse.content
-          : Array.isArray(classResponse)
-          ? classResponse
-          : [];
+        // 탭 필터/오픈예정 노출 규칙을 프론트에서 정확히 적용하려면
+        // 서버 페이지 1개만 가져오지 말고 조건에 맞는 클래스를 전부 모아야 합니다.
+        const firstResponse = await getOneDayClasses({
+          ...classParams,
+          page: 0,
+          size: CLASS_FETCH_PAGE_SIZE,
+        });
 
-        const normalizedServerPage = Number(classResponse?.number ?? source.classPage);
-        if (normalizedServerPage !== source.classPage) {
-          syncQuery({ ...source, classPage: normalizedServerPage }, { replace: true });
+        const normalizeContent = (response) =>
+          Array.isArray(response?.content)
+            ? response.content
+            : Array.isArray(response)
+            ? response
+            : [];
+
+        const firstItems = normalizeContent(firstResponse);
+
+        if (Array.isArray(firstResponse)) {
+          setClassItems(firstItems);
+          return;
         }
 
-        setClassItems(normalizedClassItems);
-        setClassPageInfo({
-          totalPages: Number(classResponse?.totalPages ?? 0),
-          totalElements: Number(classResponse?.totalElements ?? normalizedClassItems.length),
-          number: normalizedServerPage,
-          size: Number(classResponse?.size ?? CLASS_PAGE_SIZE),
+        const totalPages = Math.max(Number(firstResponse?.totalPages ?? 1), 1);
+        if (totalPages <= 1) {
+          setClassItems(firstItems);
+          return;
+        }
+
+        const remainPageIndexes = Array.from({ length: totalPages - 1 }, (_, index) => index + 1);
+        const remainResponses = await Promise.all(
+          remainPageIndexes.map((pageIndex) =>
+            getOneDayClasses({
+              ...classParams,
+              page: pageIndex,
+              size: CLASS_FETCH_PAGE_SIZE,
+            })
+          )
+        );
+
+        const mergedItems = [...firstItems];
+        remainResponses.forEach((response) => {
+          mergedItems.push(...normalizeContent(response));
         });
+
+        setClassItems(mergedItems);
       } catch (error) {
         setErrorMessage(error?.message ?? "클래스 목록을 불러오는 중 오류가 발생했습니다.");
         setClassItems([]);
-        setClassPageInfo({
-          totalPages: 0,
-          totalElements: 0,
-          number: 0,
-          size: CLASS_PAGE_SIZE,
-        });
       } finally {
         setClassesLoading(false);
       }
     },
-    [syncQuery]
+    []
   );
 
   useEffect(() => {
@@ -265,13 +281,19 @@ export function OneDayExplorePage() {
           try {
             const sessionsResponse = await getOneDayClassSessions(classId);
             const status = toClassSlotStatus(sessionsResponse);
-            return { classId, ...status };
+            const exposure = toClassExposureStatus(sessionsResponse, CLASS_EXPOSURE_DAYS);
+            return { classId, ...status, ...exposure };
           } catch {
             return {
               classId,
               hasSessions: false,
               classEnded: false,
               hasReservableSession: false,
+              shouldExpose: true,
+              beforeStart: false,
+              openScheduled: false,
+              firstStartAt: null,
+              exposeFrom: null,
               amCompleted: false,
               pmCompleted: false,
               amFull: false,
@@ -370,23 +392,45 @@ export function OneDayExplorePage() {
     return groupedCount;
   }, [selectedClassSessions]);
 
-  const classRunTypeCounts = useMemo(
-    () => ({
-      ALWAYS: classItems.filter((item) => {
+  const classRunTypeCounts = useMemo(() => {
+    const baseVisibleByExposure = classItems.filter((item) => {
+      const status = classStatusByClassId[toClassId(item)];
+      if (!(status?.shouldExpose ?? true)) return false;
+      if (committed.onlyAvailable) return Boolean(status?.hasReservableSession);
+      return true;
+    });
+
+    const openScheduledVisible = classItems.filter((item) => {
+      const status = classStatusByClassId[toClassId(item)];
+      if (!(status?.shouldExpose ?? true)) return false;
+      if (!(status?.beforeStart ?? false)) return false;
+      if (committed.onlyAvailable) return Boolean(status?.hasReservableSession);
+      return true;
+    });
+
+    return {
+      ALL: baseVisibleByExposure.length,
+      OPEN_SCHEDULED: openScheduledVisible.length,
+      ALWAYS: baseVisibleByExposure.filter((item) => {
         const status = classStatusByClassId[toClassId(item)];
         return item?.runType === "ALWAYS" && !status?.classEnded;
       }).length,
-      EVENT: classItems.filter((item) => {
+      EVENT: baseVisibleByExposure.filter((item) => {
         const status = classStatusByClassId[toClassId(item)];
         return item?.runType === "EVENT" && !status?.classEnded;
       }).length,
-      ENDED: classItems.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded).length,
-    }),
-    [classItems, classStatusByClassId]
-  );
+      ENDED: baseVisibleByExposure.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded).length,
+    };
+  }, [classItems, classStatusByClassId, committed.onlyAvailable]);
 
   const visibleClassItems = useMemo(() => {
-    let filtered = classItems;
+    let filtered =
+      listRunTypeTab === "OPEN_SCHEDULED"
+        ? classItems.filter((item) => {
+            const status = classStatusByClassId[toClassId(item)];
+            return (status?.shouldExpose ?? true) && (status?.beforeStart ?? false);
+          })
+        : classItems.filter((item) => classStatusByClassId[toClassId(item)]?.shouldExpose ?? true);
 
     // "예약 가능한 세션만 보기"를 체크하면
     // 클래스 리스트에서도 실제로 예약 가능한 세션이 1개 이상 있는 클래스만 노출합니다.
@@ -397,7 +441,12 @@ export function OneDayExplorePage() {
       });
     }
 
-    if (listRunTypeTab === "ENDED") {
+    if (listRunTypeTab === "OPEN_SCHEDULED") {
+      filtered = filtered.filter((item) => {
+        const status = classStatusByClassId[toClassId(item)];
+        return (status?.shouldExpose ?? true) && (status?.beforeStart ?? false);
+      });
+    } else if (listRunTypeTab === "ENDED") {
       filtered = filtered.filter((item) => classStatusByClassId[toClassId(item)]?.classEnded);
     } else if (listRunTypeTab !== "ALL") {
       filtered = filtered.filter((item) => {
@@ -413,9 +462,21 @@ export function OneDayExplorePage() {
 
   const visibleSessions = filteredSelectedSessions.slice(0, visibleSessionCount);
   const canShowMoreSessions = visibleSessionCount < filteredSelectedSessions.length;
-  const classTotalPages = Math.max(classPageInfo.totalPages, 1);
-  const canGoPreviousPage = committed.classPage > 0;
-  const canGoNextPage = committed.classPage + 1 < classTotalPages;
+  const classTotalPages = Math.max(Math.ceil(visibleClassItems.length / CLASS_PAGE_SIZE), 1);
+  const currentClassPage = Math.min(committed.classPage, classTotalPages - 1);
+  const canGoPreviousPage = currentClassPage > 0;
+  const canGoNextPage = currentClassPage + 1 < classTotalPages;
+
+  const pagedClassItems = useMemo(() => {
+    const startIndex = currentClassPage * CLASS_PAGE_SIZE;
+    return visibleClassItems.slice(startIndex, startIndex + CLASS_PAGE_SIZE);
+  }, [visibleClassItems, currentClassPage]);
+
+  useEffect(() => {
+    const maxPage = Math.max(classTotalPages - 1, 0);
+    if (committed.classPage <= maxPage) return;
+    syncQuery({ ...committed, classPage: maxPage }, { replace: true });
+  }, [classTotalPages, committed, syncQuery]);
 
   const onFilterChange = (key, value) => {
     setFilters((previous) => ({ ...previous, [key]: value }));
@@ -663,8 +724,8 @@ export function OneDayExplorePage() {
           <div className="odxv-panel-head">
             <h2>클래스 리스트</h2>
             <p>
-              총 {classPageInfo.totalElements.toLocaleString("ko-KR")}개 ·{" "}
-              {committed.classPage + 1}/{classTotalPages}페이지
+              총 {visibleClassItems.length.toLocaleString("ko-KR")}개 ·{" "}
+              {currentClassPage + 1}/{classTotalPages}페이지
             </p>
           </div>
 
@@ -672,20 +733,27 @@ export function OneDayExplorePage() {
             {LIST_RUN_TYPE_TABS.map((tab) => {
               const active = listRunTypeTab === tab.value;
               const countText =
-                tab.value === "ALWAYS"
+                tab.value === "OPEN_SCHEDULED"
+                  ? classRunTypeCounts.OPEN_SCHEDULED
+                  : tab.value === "ALWAYS"
                   ? classRunTypeCounts.ALWAYS
                   : tab.value === "EVENT"
                   ? classRunTypeCounts.EVENT
                   : tab.value === "ENDED"
                   ? classRunTypeCounts.ENDED
-                  : classItems.length;
+                  : classRunTypeCounts.ALL;
 
               return (
                 <button
                   key={`run-tab-${tab.value}`}
                   type="button"
                   className={active ? "odxv-run-tab is-active" : "odxv-run-tab"}
-                  onClick={() => setListRunTypeTab(tab.value)}
+                  onClick={() => {
+                    setListRunTypeTab(tab.value);
+                    if (committed.classPage !== 0) {
+                      syncQuery({ ...committed, classPage: 0 }, { replace: false });
+                    }
+                  }}
                 >
                   {tab.label} ({countText})
                 </button>
@@ -700,7 +768,7 @@ export function OneDayExplorePage() {
               <p className="odxv-empty">조건에 맞는 클래스가 없습니다.</p>
             ) : (
               <div className="odxv-class-line-list">
-                {visibleClassItems.map((item, index) => {
+                {pagedClassItems.map((item, index) => {
                   const classId = toClassId(item);
                   const active = classId === selectedClassId;
                   const classStatus = classStatusByClassId[classId];
@@ -744,6 +812,8 @@ export function OneDayExplorePage() {
                           ) : null}
                           {classStatus?.classEnded ? (
                             <span className="odxv-chip odxv-chip-ended">종료 클래스</span>
+                          ) : classStatus?.beforeStart ? (
+                            <span className="odxv-chip odxv-chip-coming">오픈 예정</span>
                           ) : classStatus?.hasSessions ? (
                             <span className="odxv-chip odxv-chip-open">운영 중</span>
                           ) : (
@@ -766,7 +836,7 @@ export function OneDayExplorePage() {
               className="odxv-btn odxv-btn-ghost"
               disabled={!canGoPreviousPage || classesLoading}
               onClick={() =>
-                syncQuery({ ...committed, classPage: Math.max(committed.classPage - 1, 0) })
+                syncQuery({ ...committed, classPage: Math.max(currentClassPage - 1, 0) })
               }
             >
               이전
@@ -775,7 +845,7 @@ export function OneDayExplorePage() {
               type="button"
               className="odxv-btn odxv-btn-ghost"
               disabled={!canGoNextPage || classesLoading}
-              onClick={() => syncQuery({ ...committed, classPage: committed.classPage + 1 })}
+              onClick={() => syncQuery({ ...committed, classPage: currentClassPage + 1 })}
             >
               다음
             </button>

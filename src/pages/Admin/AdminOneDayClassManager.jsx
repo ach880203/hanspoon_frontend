@@ -330,12 +330,39 @@ export default function AdminOneDayClassManager() {
     }));
   };
 
-  const setAlwaysSessionField = (slot, name, value) => {
+  const setAlwaysSessionField = (index, name, value) => {
     setForm((prev) => {
-      const templateRows = buildAlwaysTemplateRows(prev.sessions).map((row) =>
-        row.slot === slot ? { ...row, [name]: value } : row
+      const templateRows = buildAlwaysTemplateRows(prev.sessions).map((row, rowIndex) =>
+        rowIndex === index ? { ...row, [name]: value } : row
       );
       return { ...prev, sessions: templateRows };
+    });
+  };
+
+  const addAlwaysSessionTemplate = () => {
+    setForm((prev) => {
+      const templateRows = buildAlwaysTemplateRows(prev.sessions);
+      const lastSlot = templateRows[templateRows.length - 1]?.slot;
+      const nextSlot = lastSlot === "AM" ? "PM" : "AM";
+      const nextTime = nextSlot === "AM" ? "10:00" : "15:00";
+      return {
+        ...prev,
+        sessions: [
+          ...templateRows,
+          { startAt: nextTime, slot: nextSlot, capacity: "10", price: "80000" },
+        ],
+      };
+    });
+  };
+
+  const removeAlwaysSessionTemplate = (index) => {
+    setForm((prev) => {
+      const templateRows = buildAlwaysTemplateRows(prev.sessions);
+      if (templateRows.length <= 1) return prev;
+      return {
+        ...prev,
+        sessions: templateRows.filter((_, rowIndex) => rowIndex !== index),
+      };
     });
   };
 
@@ -440,7 +467,7 @@ export default function AdminOneDayClassManager() {
       // 상시 템플릿은 시간(HH:MM)만 입력받기 때문에 datetime-local 검증 대신 시간 문자열 검증을 사용합니다.
       const alwaysRows = buildAlwaysTemplateRows(form.sessions);
       if (!alwaysRows.every((row) => isTimeString(row.startAt))) {
-        return "상시 클래스의 오전/오후 시간은 HH:MM 형식으로 입력해 주세요.";
+        return "상시 클래스 세션 시간은 HH:MM 형식으로 입력해 주세요.";
       }
     }
     if (!Array.isArray(payload.sessions) || payload.sessions.length === 0) return "세션은 최소 1개가 필요합니다.";
@@ -896,17 +923,31 @@ export default function AdminOneDayClassManager() {
                       );
                     })}
                   </div>
-                  <p className="muted">시작일~종료일 사이에서 선택한 요일의 오전/오후 세션을 자동 생성합니다.</p>
+                  <p className="muted">시작일~종료일 사이에서 선택한 요일에 템플릿 세션 목록을 자동 생성합니다.</p>
                 </div>
               ) : null}
 
               {mode === "create" && form.runType === "ALWAYS" ? (
                 <>
+                  <div className="session-head">
+                    <strong>세션 템플릿 목록</strong>
+                    <button type="button" className="btn-ghost" onClick={addAlwaysSessionTemplate}>
+                      템플릿 세션 추가
+                    </button>
+                  </div>
                   <div className="session-list">
-                    {buildAlwaysTemplateRows(form.sessions).map((session) => (
-                      <article key={`always-session-${session.slot}`} className="session-row">
+                    {buildAlwaysTemplateRows(form.sessions).map((session, index) => (
+                      <article key={`always-session-${index}`} className="session-row">
                         <div className="session-row-head">
-                          <strong>{session.slot === "AM" ? "오전 세션 템플릿" : "오후 세션 템플릿"}</strong>
+                          <strong>템플릿 세션 {index + 1}</strong>
+                          <button
+                            type="button"
+                            className="btn-danger"
+                            onClick={() => removeAlwaysSessionTemplate(index)}
+                            disabled={buildAlwaysTemplateRows(form.sessions).length <= 1}
+                          >
+                            삭제
+                          </button>
                         </div>
                         <div className="session-grid">
                           <label>
@@ -914,8 +955,15 @@ export default function AdminOneDayClassManager() {
                             <input
                               type="time"
                               value={session.startAt}
-                              onChange={(e) => setAlwaysSessionField(session.slot, "startAt", e.target.value)}
+                              onChange={(e) => setAlwaysSessionField(index, "startAt", e.target.value)}
                             />
+                          </label>
+                          <label>
+                            <span>시간대</span>
+                            <select value={session.slot} onChange={(e) => setAlwaysSessionField(index, "slot", e.target.value)}>
+                              <option value="AM">오전</option>
+                              <option value="PM">오후</option>
+                            </select>
                           </label>
                           <label>
                             <span>정원</span>
@@ -923,7 +971,7 @@ export default function AdminOneDayClassManager() {
                               type="number"
                               min="1"
                               value={session.capacity}
-                              onChange={(e) => setAlwaysSessionField(session.slot, "capacity", e.target.value)}
+                              onChange={(e) => setAlwaysSessionField(index, "capacity", e.target.value)}
                             />
                           </label>
                           <label>
@@ -933,7 +981,7 @@ export default function AdminOneDayClassManager() {
                               min="0"
                               step="1000"
                               value={session.price}
-                              onChange={(e) => setAlwaysSessionField(session.slot, "price", e.target.value)}
+                              onChange={(e) => setAlwaysSessionField(index, "price", e.target.value)}
                             />
                           </label>
                         </div>
@@ -1109,8 +1157,8 @@ function buildEmptyForm() {
     alwaysEndDate: alwaysDefaults.endDate,
     alwaysWeekdays: [...DEFAULT_ALWAYS_WEEKDAYS],
     sessions: [
-      { startAt: "10:00", slot: "AM", capacity: "10", price: "50000" },
-      { startAt: "15:00", slot: "PM", capacity: "10", price: "50000" },
+      { startAt: "10:00", slot: "AM", capacity: "8", price: "80000" },
+      { startAt: "15:00", slot: "PM", capacity: "8", price: "80000" },
     ],
   };
 }
@@ -1226,21 +1274,23 @@ function buildAlwaysSessions(templateRows, startDate, endDate, weekdays) {
 
 function buildAlwaysTemplateRows(sourceRows) {
   const rows = Array.isArray(sourceRows) ? sourceRows : [];
-  const amSource = rows.find((row) => row?.slot === "AM");
-  const pmSource = rows.find((row) => row?.slot === "PM");
+  const normalizedRows = rows.map((row) => {
+    const slot = row?.slot === "PM" ? "PM" : "AM";
+    const fallbackTime = slot === "AM" ? "10:00" : "15:00";
+    return {
+      slot,
+      startAt: extractTimeOrFallback(row?.startAt, fallbackTime),
+      capacity: String(row?.capacity ?? "10"),
+      price: String(row?.price ?? "80000"),
+    };
+  });
+
+  // 상시 자동 생성 템플릿은 최소 1개가 필요합니다.
+  if (normalizedRows.length > 0) return normalizedRows;
+
   return [
-    {
-      slot: "AM",
-      startAt: extractTimeOrFallback(amSource?.startAt, "10:00"),
-      capacity: String(amSource?.capacity ?? "10"),
-      price: String(amSource?.price ?? "50000"),
-    },
-    {
-      slot: "PM",
-      startAt: extractTimeOrFallback(pmSource?.startAt, "15:00"),
-      capacity: String(pmSource?.capacity ?? "10"),
-      price: String(pmSource?.price ?? "50000"),
-    },
+    { startAt: "10:00", slot: "AM", capacity: "10", price: "80000" },
+    { startAt: "15:00", slot: "PM", capacity: "10", price: "80000" },
   ];
 }
 
@@ -1309,5 +1359,3 @@ function readFileAsDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
-
-

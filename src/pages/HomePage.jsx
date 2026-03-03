@@ -3,17 +3,19 @@ import "./Home.css";
 import BannerSection, { marketBannerSlides } from "../components/BannerSection";
 import { useEffect, useState } from "react";
 import RollingGridSection from "../components/RollingGridSection";
-import { getOneDayClasses } from "../api/onedayApi";
+import { getOneDayClasses, getOneDayClassSessions } from "../api/onedayApi";
 import { fetchProducts } from "../api/products";
 import { getRecipeList } from "../api/recipeApi";
 import { bannerApi } from "../api/commonApi";
 import EventPopup from "../components/EventPopup/EventPopup";
 import { toBackendUrl } from "../utils/backendUrl";
+import { toClassExposureStatus } from "../utils/onedayClassUtils";
 
 
 const FALLBACK_RECIPE_IMG = "/img/banner-chicken.png";
 const FALLBACK_CLASS_IMG = "/img/banner-duck.png";
 const FALLBACK_PRODUCT_IMG = "/img/banner-salmon.png";
+const CLASS_EXPOSURE_DAYS = 30;
 
 function toCardPrice(n) {
   const num = Number(n);
@@ -94,19 +96,43 @@ export default function HomePage() {
       setLoading((s) => ({ ...s, classes: true }));
       setError((s) => ({ ...s, classes: "" }));
       try {
-        const data = await getOneDayClasses({ page: 0, size: 8, sort: "createdAt,desc" });
+        // 홈에서는 노출 규칙(시작 5일 전부터 노출)을 적용한 뒤 최신 순으로 8개만 보여줍니다.
+        const data = await getOneDayClasses({ page: 0, size: 24, sort: "createdAt,desc" });
         const list = Array.isArray(data) ? data : Array.isArray(data?.content) ? data.content : [];
-        const mapped = list.map((c, idx) => {
+
+        const exposureByClassId = new Map();
+        await Promise.all(
+          list.map(async (item) => {
+            const id = Number(item?.id ?? item?.classId ?? 0);
+            if (!id) return;
+            try {
+              const sessions = await getOneDayClassSessions(id);
+              exposureByClassId.set(id, toClassExposureStatus(sessions, CLASS_EXPOSURE_DAYS));
+            } catch {
+              exposureByClassId.set(id, { shouldExpose: true, openScheduled: false });
+            }
+          })
+        );
+
+        const visibleList = list
+          .filter((item) => {
+            const id = Number(item?.id ?? item?.classId ?? 0);
+            return exposureByClassId.get(id)?.shouldExpose ?? true;
+          })
+          .slice(0, 8);
+
+        const mapped = visibleList.map((c, idx) => {
           const id = c?.id ?? c?.classId ?? `c-${idx}`;
           const title = c?.title ?? c?.classTitle ?? "원데이 클래스";
           const category = c?.categoryLabel ?? c?.category ?? "";
           const level = c?.levelLabel ?? c?.level ?? "";
           const runType = c?.runType ?? ""; // ALWAYS / EVENT 등
+          const openScheduled = exposureByClassId.get(Number(id))?.openScheduled ?? false;
           return {
             id,
             title,
             sub: [category, level].filter(Boolean).join(" · "),
-            chip: runType,
+            chip: openScheduled ? "오픈예정" : runType,
             imageSrc: c?.mainImageData || c?.thumbnailUrl || c?.imageUrl || c?.detailImageData || FALLBACK_CLASS_IMG,
             imageAlt: title,
             to: `/classes/oneday/classes/${id}`,
