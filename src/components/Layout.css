@@ -490,3 +490,60 @@
   /* 헤더와 동일 */
   text-align: left;
 }
+/* Footer scroll-top button (site-themed) */
+.layout-footer-inner {
+  position: relative;
+}
+
+.layout-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.scroll-top-btn {
+  height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text, #111);
+  padding: 0 14px 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.scroll-top-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.scroll-top-btn-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .layout-footer-actions {
+    margin-bottom: 12px;
+  }
+
+  .scroll-top-btn {
+    height: 38px;
+    padding: 0 12px 0 10px;
+    font-size: 12px;
+  }
+}

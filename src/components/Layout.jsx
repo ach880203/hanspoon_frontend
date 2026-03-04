@@ -280,6 +280,9 @@ export default function Layout() {
 
       <footer className="layout-footer">
         <div className="layout-footer-inner">
+          <div className="layout-footer-actions">
+            <ScrollTopButton />
+          </div>
           <div
             style={{
               fontWeight: 900,
@@ -296,8 +299,6 @@ export default function Layout() {
           </p>
         </div>
       </footer>
-
-      <ScrollTopButton />
     </div>
   );
 }
@@ -319,7 +320,8 @@ function ScrollTopButton() {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="맨 위로 이동"
     >
-      ↑
+      <span className="scroll-top-btn-icon" aria-hidden="true">↑</span>
+      <span>위로가기</span>
     </button>
   );
 }
