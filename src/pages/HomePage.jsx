@@ -207,6 +207,7 @@ export default function HomePage() {
         title="RECIPES"
         moreTo="/recipes/list"
         perPage={3}
+        variant="market"
         items={recipeItems}
         loading={loading.recipes}
         error={error.recipes}
@@ -216,6 +217,7 @@ export default function HomePage() {
         title="CLASSES"
         moreTo="/classes/oneday"
         perPage={4}
+        variant="market"
         items={classItems}
         loading={loading.classes}
         error={error.classes}
