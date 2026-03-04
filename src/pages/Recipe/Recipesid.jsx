@@ -73,7 +73,6 @@ const Recipesid = () => {
     const [loading, setLoading] = useState(true);
     const [currentServings, setCurrentServings] = useState(1);
     const [flavor, setFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
-    const [baseFlavor, setBaseFlavor] = useState({ spiciness: 3, sweetness: 3, saltiness: 3 });
     const [editingIng, setEditingIng] = useState({ id: null, value: "" });
     const [isFavorite, setIsFavorite] = useState(false);
     const [recommendCount, setRecommendCount] = useState(0);
@@ -104,7 +103,6 @@ const Recipesid = () => {
                     saltiness: data.saltiness ?? 3,
                 };
                 setFlavor(initialFlavor);
-                setBaseFlavor(initialFlavor);
             } catch (error) {
                 console.error("로드 실패:", error);
                 navigate(-1);
