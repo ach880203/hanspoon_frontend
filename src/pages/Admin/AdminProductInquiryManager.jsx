@@ -4,6 +4,7 @@ import {
   deleteAdminProductInquiry,
   fetchAdminProductInquiries,
 } from "../../api/adminProductApi";
+import { normalizePagePayload } from "../../utils/pagePayload";
 
 function toDateText(value) {
   if (!value) return "-";
@@ -27,11 +28,11 @@ export default function AdminProductInquiryManager() {
   const [openInquiryId, setOpenInquiryId] = useState(null);
   const [answerDraftById, setAnswerDraftById] = useState({});
 
-  const load = useCallback(async (targetPage = page) => {
+  const load = useCallback(async (targetPage = 0) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetchAdminProductInquiries(targetPage, 20);
+      const res = normalizePagePayload(await fetchAdminProductInquiries(targetPage, 20));
       const content = Array.isArray(res?.content) ? res.content : [];
       setItems(content);
       setPage(Number(res?.number || 0));
@@ -43,7 +44,7 @@ export default function AdminProductInquiryManager() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => {
     load(0);

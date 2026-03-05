@@ -17,6 +17,27 @@ const EMPTY_FORM = {
   badges: [],
 };
 
+const BANNER_BG_PRESETS = [
+  "#efe7da",
+  "#f5f3ff",
+  "#ffe4e6",
+  "#ecfeff",
+  "#fef3c7",
+  "#e8f5e9",
+  "#f3f4f6",
+  "#111827",
+];
+
+function normalizeHexColor(value) {
+  const raw = String(value || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
+    const [, r, g, b] = raw;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return "";
+}
+
 function normalizeBadges(value) {
   if (!Array.isArray(value)) return [];
   return value
@@ -54,6 +75,7 @@ export default function AdminBannerManager() {
   const [mode, setMode] = useState("list");
   const [form, setForm] = useState(EMPTY_FORM);
   const [keyword, setKeyword] = useState("");
+  const bgColorValue = normalizeHexColor(form.bg) || "#efe7da";
 
   const loadBanners = async () => {
     setLoading(true);
@@ -235,6 +257,22 @@ export default function AdminBannerManager() {
     }
   };
 
+  const pickBgFromScreen = async () => {
+    setError("");
+    if (!("EyeDropper" in window)) {
+      setError("현재 브라우저는 스포이드 기능(EyeDropper)을 지원하지 않습니다.");
+      return;
+    }
+    try {
+      const eyeDropper = new window.EyeDropper();
+      const result = await eyeDropper.open();
+      if (result?.sRGBHex) setField("bg", result.sRGBHex);
+    } catch (e) {
+      if (e?.name === "AbortError") return;
+      setError("스포이드로 색상 추출에 실패했습니다.");
+    }
+  };
+
   return (
     <div className="admin-banner-wrap">
       <div className="admin-oneday-head">
@@ -342,9 +380,37 @@ export default function AdminBannerManager() {
                   <span>기간 문구</span>
                   <input value={form.period} onChange={(e) => setField("period", e.target.value)} />
                 </label>
-                <label>
+                <label className="admin-banner-color-field">
                   <span>배경색</span>
-                  <input value={form.bg} onChange={(e) => setField("bg", e.target.value)} placeholder="#efe7da" />
+                  <div className="admin-banner-color-tools">
+                    <input
+                      type="color"
+                      value={bgColorValue}
+                      onChange={(e) => setField("bg", e.target.value)}
+                      aria-label="배경색 팔레트"
+                    />
+                    <input
+                      value={form.bg}
+                      onChange={(e) => setField("bg", e.target.value)}
+                      placeholder="#efe7da"
+                    />
+                    <button type="button" className="btn-ghost" onClick={pickBgFromScreen}>
+                      스포이드
+                    </button>
+                  </div>
+                  <div className="admin-banner-color-presets">
+                    {BANNER_BG_PRESETS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`admin-banner-color-chip ${bgColorValue === color ? "active" : ""}`}
+                        style={{ background: color }}
+                        onClick={() => setField("bg", color)}
+                        aria-label={`색상 ${color}`}
+                        title={color}
+                      />
+                    ))}
+                  </div>
                 </label>
               </div>
 
