@@ -78,7 +78,7 @@ export default function AdminRecipeListManager() {
                             setPage(0); // 검색어 입력 시 첫 페이지로 리셋
                         }}
                     />
-                    <button className="admin-btn-main" onClick={() => navigate("/recipe/new")}>
+                    <button className="admin-btn-main" onClick={() => navigate("/recipes")}>
                         신규 레시피 등록
                     </button>
                 </div>
