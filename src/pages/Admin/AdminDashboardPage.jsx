@@ -87,7 +87,7 @@ const AdminDashboardPage = ({ onTabChange }) => {
                     title="배송 준비"
                     value={`${orders.paymentCompleted}건`}
                     meta={`배송중 ${orders.shipping}건`}
-                    tabKey="market"
+                    tabKey="orders"
                     onTabChange={onTabChange}
                 />
                 <DashboardCard
