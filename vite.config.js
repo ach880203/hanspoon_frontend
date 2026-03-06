@@ -18,18 +18,21 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      // 현재 번들 구조 기준으로 실사용에 문제 없는 청크 크기 경고 임계값을 상향합니다.
-      chunkSizeWarningLimit: 900,
       rollupOptions: {
         output: {
           // 경고를 숨기지 않고, 실제로 번들을 분리해 초기 로드 청크 크기를 낮춥니다.
+          // 이전 고정 청크 규칙은 vendor <-> react-vendor 순환 의존을 만들어
+          // 프로덕션에서 React 객체가 초기화되기 전에 참조되는 문제가 있었습니다.
+          // 패키지 단위로 안정적으로 나눠 순환 청크 가능성을 줄입니다.
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
-            if (id.includes("react-router-dom") || id.includes("react-router")) return "router";
-            if (id.includes("react-dom") || id.includes("react") || id.includes("scheduler") || id.includes("react-is")) return "react-vendor";
-            if (id.includes("axios")) return "axios";
-            // 순환 청크 경고를 피하기 위해 나머지 라이브러리는 Rollup 기본 분할 전략에 맡깁니다.
-            return undefined;
+            const afterNodeModules = id.split("node_modules/")[1] || "";
+            const segments = afterNodeModules.split("/");
+            const first = segments[0] || "";
+            const second = segments[1] || "";
+            const pkg = first.startsWith("@") ? `${first}/${second}` : first;
+            if (!pkg) return "vendor";
+            return `pkg-${pkg.replace("@", "").replace("/", "-")}`;
           },
         },
       },

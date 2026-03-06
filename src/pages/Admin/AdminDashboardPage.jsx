@@ -13,17 +13,6 @@ function buildTodayCacheKey() {
     return `${DASHBOARD_CACHE_KEY_PREFIX}:${year}-${month}-${day}`;
 }
 
-function readDashboardCache() {
-    try {
-        const raw = window.localStorage.getItem(buildTodayCacheKey());
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === 'object' ? parsed : null;
-    } catch {
-        return null;
-    }
-}
-
 function writeDashboardCache(summary) {
     try {
         window.localStorage.setItem(buildTodayCacheKey(), JSON.stringify(summary));

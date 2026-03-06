@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../api';
-import { getBackendBaseUrl } from '../../utils/backendUrl';
+import { toBackendUrl } from '../../utils/backendUrl';
 import './Auth.css';
 
 function Register() {
@@ -61,8 +61,7 @@ function Register() {
     };
 
     const handleOAuthRegister = (provider) => {
-        const backendUrl = getBackendBaseUrl('http://3.36.180.241:8080');
-        window.location.href = `${backendUrl}/oauth2/authorization/${provider}`;
+        window.location.href = toBackendUrl(`/oauth2/authorization/${provider}`, 'http://3.36.180.241:8080');
     };
 
     return (
