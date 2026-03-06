@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createProductInquiry, fetchProductInquiries } from "../api/productInquiries";
 import { toErrorMessage } from "../api/http";
+import { normalizePagePayload } from "../utils/pagePayload";
 import "./InquirySection.css";
 
 function formatDate(v) {
@@ -68,7 +69,7 @@ export default function InquirySection({ productId }) {
     setLoading(true);
     try {
       const d = await fetchProductInquiries(productId, p, 10);
-      setData(d);
+      setData(normalizePagePayload(d));
     } catch (e) {
       if (e?.status === 401) return goLogin();
       setErr(toErrorMessage(e));
@@ -262,11 +263,11 @@ export default function InquirySection({ productId }) {
         </div>
 
         {/* 페이지네이션 */}
-        {data && totalPages > 1 && (
+        {data && (totalPages > 1 || data?.hasPrevious || data?.hasNext) && (
           <div className="iqPager">
             <button
               className="iqGhost"
-              disabled={busy || page <= 0}
+              disabled={busy || !data?.hasPrevious}
               onClick={() => load(page - 1)}
               type="button"
             >
@@ -277,7 +278,7 @@ export default function InquirySection({ productId }) {
             </div>
             <button
               className="iqGhost"
-              disabled={busy || page + 1 >= totalPages}
+              disabled={busy || !data?.hasNext}
               onClick={() => load(page + 1)}
               type="button"
             >

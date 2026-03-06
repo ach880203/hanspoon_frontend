@@ -4,6 +4,7 @@ import {
   fetchAdminProducts,
   fetchProductReviewsByProduct,
 } from "../../api/adminProductApi";
+import { normalizePagePayload } from "../../utils/pagePayload";
 
 const CATEGORY_OPTIONS = [
   { value: "ALL", label: "전체 카테고리" },
@@ -17,6 +18,7 @@ const PRODUCT_SORT_OPTIONS = [
   { value: "PRICE_ASC", label: "낮은 가격순" },
   { value: "PRICE_DESC", label: "높은 가격순" },
 ];
+const REVIEW_PAGE_SIZE = 20;
 
 function toDateText(value) {
   if (!value) return "-";
@@ -54,6 +56,7 @@ export default function AdminProductReviewManager() {
   const [products, setProducts] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [reviews, setReviews] = useState([]);
+  const [reviewPage, setReviewPage] = useState(0);
 
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [productSortFilter, setProductSortFilter] = useState("LATEST");
@@ -108,7 +111,7 @@ export default function AdminProductReviewManager() {
     setLoading(true);
     setError("");
     try {
-      const page = await fetchProductReviewsByProduct(idNum, 0, 100, { sort: "LATEST" });
+      const page = normalizePagePayload(await fetchProductReviewsByProduct(idNum, 0, 100, { sort: "LATEST" }));
       const list = Array.isArray(page?.content) ? page.content : [];
       const productInfo = products.find((item) => Number(item?.id) === idNum);
       const productName = productInfo?.name || `상품 #${idNum}`;
@@ -118,6 +121,7 @@ export default function AdminProductReviewManager() {
           productName,
         }))
       );
+      setReviewPage(0);
     } catch (e) {
       setError(e?.message || "상품 리뷰를 불러오지 못했습니다.");
       setReviews([]);
@@ -139,11 +143,11 @@ export default function AdminProductReviewManager() {
         products.map(async (product) => {
           const id = Number(product?.id || 0);
           if (!id) return [];
-          const page = await fetchProductReviewsByProduct(id, 0, 100, {
+          const page = normalizePagePayload(await fetchProductReviewsByProduct(id, 0, 100, {
             sort: "LATEST",
             keyword: keyword || undefined,
             rating: ratingFilter ? Number(ratingFilter) : undefined,
-          });
+          }));
           const list = Array.isArray(page?.content) ? page.content : [];
           return list.map((item) => ({
             ...item,
@@ -162,6 +166,7 @@ export default function AdminProductReviewManager() {
         return bTime - aTime;
       });
       setReviews(merged);
+      setReviewPage(0);
     } catch (e) {
       setError(e?.message || "전체 리뷰를 불러오지 못했습니다.");
       setReviews([]);
@@ -214,6 +219,20 @@ export default function AdminProductReviewManager() {
     if (viewMode !== "all") return;
     loadAll();
   }, [loadAll, searchNonce, viewMode]);
+
+  const reviewTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(reviews.length / REVIEW_PAGE_SIZE)),
+    [reviews]
+  );
+
+  useEffect(() => {
+    setReviewPage((prev) => Math.min(prev, reviewTotalPages - 1));
+  }, [reviewTotalPages]);
+
+  const pagedReviews = useMemo(() => {
+    const start = reviewPage * REVIEW_PAGE_SIZE;
+    return reviews.slice(start, start + REVIEW_PAGE_SIZE);
+  }, [reviewPage, reviews]);
 
   const filteredProducts = useMemo(() => {
     const kw = (productKeyword || "").toLowerCase();
@@ -377,14 +396,14 @@ export default function AdminProductReviewManager() {
             </tr>
           </thead>
           <tbody>
-            {reviews.length === 0 ? (
+            {pagedReviews.length === 0 ? (
               <tr>
                 <td colSpan="7" className="admin-class-empty-row">
                   리뷰 내역이 없습니다.
                 </td>
               </tr>
             ) : (
-              reviews.map((item) => {
+              pagedReviews.map((item) => {
                 const revId = Number(item?.revId || 0);
                 return (
                   <tr key={`product-review-${item?.revId}-${item?.productId}`}>
@@ -416,6 +435,28 @@ export default function AdminProductReviewManager() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="class-list-pagination">
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled={reviewPage <= 0 || loading}
+          onClick={() => setReviewPage((prev) => Math.max(prev - 1, 0))}
+        >
+          이전
+        </button>
+        <span>
+          {reviewPage + 1} / {reviewTotalPages} 페이지
+        </span>
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled={reviewPage >= reviewTotalPages - 1 || loading}
+          onClick={() => setReviewPage((prev) => Math.min(prev + 1, reviewTotalPages - 1))}
+        >
+          다음
+        </button>
       </div>
     </section>
   );

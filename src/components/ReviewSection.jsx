@@ -6,6 +6,7 @@ import {
   fetchProductReviewSummary,
 } from "../api/productReviews";
 import { toErrorMessage } from "../api/http";
+import { normalizePagePayload } from "../utils/pagePayload";
 import "./ReviewSection.css";
 
 function formatDate(v) {
@@ -137,7 +138,7 @@ export default function ReviewSection({ productId }) {
         rating: ratingFilter === "ALL" ? undefined : Number(ratingFilter),
         keyword: keyword.trim() ? keyword.trim() : undefined,
       });
-      setData(d);
+      setData(normalizePagePayload(d));
     } catch (e) {
       if (e?.status === 401) return goLogin();
       setErr(toErrorMessage(e));
@@ -328,11 +329,11 @@ export default function ReviewSection({ productId }) {
         </div>
 
         {/* 페이지네이션 */}
-        {data && totalPages > 1 && (
+        {data && (totalPages > 1 || data?.hasPrevious || data?.hasNext) && (
           <div className="rvPager2">
             <button
               className="rvGhost2"
-              disabled={busy || page <= 0}
+              disabled={busy || !data?.hasPrevious}
               onClick={() => load(page - 1)}
               type="button"
             >
@@ -343,7 +344,7 @@ export default function ReviewSection({ productId }) {
             </div>
             <button
               className="rvGhost2"
-              disabled={busy || page + 1 >= totalPages}
+              disabled={busy || !data?.hasNext}
               onClick={() => load(page + 1)}
               type="button"
             >

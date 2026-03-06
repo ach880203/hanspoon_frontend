@@ -8,7 +8,6 @@ import AdminFaqList from "./AdminFaqList";
 import AdminEventList from "./AdminEventList";
 import { AdminReservationList } from "./AdminReservationList";
 import AdminOneDayClassHub from "./AdminOneDayClassHub";
-import AdminInquiryList from "./AdminInquiryList";
 import AdminBannerManager from "./AdminBannerManager.jsx";
 import AdminOrderManager from "./AdminOrderManager.jsx";
 import "./AdminList.css";
@@ -112,7 +111,7 @@ const AdminManagementPage = () => {
           예약 관리
         </button>
         <button className={`admin-tab-btn ${activeTab === "cs" ? "active" : ""}`} onClick={() => handleTabChange("cs")}>
-          대시보드/배너
+          게시판/배너 관리
         </button>
       </div>
 
@@ -122,4 +121,3 @@ const AdminManagementPage = () => {
 };
 
 export default AdminManagementPage;
-
