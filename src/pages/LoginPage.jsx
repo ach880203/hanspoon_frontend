@@ -7,7 +7,7 @@ import "./Auth/Auth.css";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const oauthBaseUrl = getBackendBaseUrl("http://localhost:8080");
+  const oauthBaseUrl = getBackendBaseUrl("http://3.36.180.241:8080");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

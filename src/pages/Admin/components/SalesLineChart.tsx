@@ -35,7 +35,7 @@ const SalesLineChart: React.FC<SalesLineChartProps> = ({ data }) => {
     };
 
     return (
-        <div style={{ width: '100%', height: 300, marginTop: '20px' }}>
+        <div style={{ width: '100%', height: 300, minHeight: 300, marginTop: '20px' }}>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                     data={data}

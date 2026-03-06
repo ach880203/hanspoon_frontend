@@ -140,7 +140,7 @@ export default function MyPageDropdown() {
                 </svg>
               </div>
               <div className="stat-label">
-                <span className="label-text">포인트</span>
+                <span className="label-text">스푼포인트</span>
                 <span className="stat-value">
                   {statsLoading && user?.spoonBalance === undefined ? "..." : (user?.spoonBalance ?? 0).toLocaleString()}
                 </span>
@@ -177,9 +177,9 @@ export default function MyPageDropdown() {
               </Link>
             </li>
             <li>
-                <Link to="/mypage/recipesuser" onClick={() => setIsOpen(false)}>
-                    내 레시피 목록
-                </Link>
+              <Link to="/mypage/recipesuser" onClick={() => setIsOpen(false)}>
+                내 레시피 목록
+              </Link>
             </li>
             <li>
               <Link to="/mypage/wishlist" onClick={() => setIsOpen(false)}>

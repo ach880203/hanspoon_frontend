@@ -1,35 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { eventApi } from '../../api';
 import './EventPopup.css';
 
 const EventPopup = () => {
-    const [event, setEvent] = useState(null);
-    const [isVisible, setIsVisible] = useState(false);
+    const { user } = useAuth();
     const navigate = useNavigate();
+    const [isVisible, setIsVisible] = useState(false);
+    const [event, setEvent] = useState(null);
 
     useEffect(() => {
         const checkEventAndShowPopup = async () => {
-            // "오늘 하루 보지 않기" 체크
+            // 1. "오늘 하루 보지 않기" 체크 (로컬 스토리지)
             const hideUntil = localStorage.getItem('hideEventPopupUntil');
             if (hideUntil) {
                 const now = new Date();
                 const hideDate = new Date(hideUntil);
-                if (now < hideDate) {
-                    return; // 아직 오늘 하루가 지나지 않음
-                } else {
-                    localStorage.removeItem('hideEventPopupUntil'); // 기한이 지났으면 삭제
-                }
+                if (now < hideDate) return;
+                localStorage.removeItem('hideEventPopupUntil');
+            }
+
+            // 2. 현재 세션에서 닫았는지 체크 (세션 스토리지 - 반복 노출 방지)
+            if (sessionStorage.getItem('hideEventPopupForSession')) {
+                return;
             }
 
             try {
-                // 진행 중인 이벤트 최신 1개 가져오기
                 const response = await eventApi.getEvents({ page: 0, size: 1, activeOnly: true });
-
                 const contentData = response.data?.content || response.data?.data?.content;
 
                 if (response.success && contentData && contentData.length > 0) {
-                    setEvent(contentData[0]);
+                    const latestEvent = contentData[0];
+
+                    // 3. 필터링: 제목에 '가입', '신규'가 포함된 '가입 유도' 이벤트는 로그인한 사용자에게 숨김
+                    const isSignupEvent = latestEvent.title.includes('가입') || latestEvent.title.includes('신규');
+                    if (user && isSignupEvent) {
+                        return;
+                    }
+
+                    setEvent(latestEvent);
                     setIsVisible(true);
                 }
             } catch (error) {
@@ -38,17 +48,18 @@ const EventPopup = () => {
         };
 
         checkEventAndShowPopup();
-    }, []);
+    }, [user]); // user 상태 변화 시 재체크
 
     const handleHideToday = () => {
         const now = new Date();
-        // 내일 자정으로 설정
         const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
         localStorage.setItem('hideEventPopupUntil', tomorrow.toISOString());
         setIsVisible(false);
     };
 
     const handleClose = () => {
+        // 단순 닫기 시 세션 동안만 숨김 처리
+        sessionStorage.setItem('hideEventPopupForSession', 'true');
         setIsVisible(false);
     };
 

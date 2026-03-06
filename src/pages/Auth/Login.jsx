@@ -43,7 +43,7 @@ function Login() {
     };
 
     const handleOAuthLogin = (provider) => {
-        const backendUrl = getBackendBaseUrl('http://localhost:8080');
+        const backendUrl = getBackendBaseUrl('http://3.36.180.241:8080');
         window.location.href = `${backendUrl}/oauth2/authorization/${provider}`;
     };
 
