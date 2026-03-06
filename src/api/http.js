@@ -2,10 +2,17 @@
 import { getAccessToken, clearAuth } from "../utils/authStorage";
 
 function buildUrl(path, params) {
-  if (!params) return path;
+  if (!params) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    // baseUrl이 있고 path가 /로 시작하면 결합, 아니면 그냥 path 반환
+    if (baseUrl && path.startsWith('/')) {
+      return baseUrl + path;
+    }
+    return path;
+  }
 
-  // path가 "/api/products" 같은 상대경로라고 가정 (브라우저 환경)
-  const url = new URL(path, window.location.origin);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+  const url = new URL(path, baseUrl);
 
   Object.entries(params).forEach(([k, v]) => {
     if (v === undefined || v === null || v === "") return;
@@ -22,7 +29,7 @@ function buildUrl(path, params) {
     url.searchParams.set(k, String(v));
   });
 
-  return url.pathname + url.search + url.hash;
+  return url.href;
 }
 
 async function request(path, { method = "GET", params, body, headers } = {}) {

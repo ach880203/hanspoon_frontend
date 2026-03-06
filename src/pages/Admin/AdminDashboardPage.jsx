@@ -33,8 +33,9 @@ function writeDashboardCache(summary) {
 }
 
 const AdminDashboardPage = ({ onTabChange }) => {
-    const [summary, setSummary] = useState(() => readDashboardCache());
-    const [loading, setLoading] = useState(() => !readDashboardCache());
+    // 임시로 캐시를 무시하고 항상 새로 데이터를 가져오도록 설정
+    const [summary, setSummary] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchSummary();
@@ -58,7 +59,7 @@ const AdminDashboardPage = ({ onTabChange }) => {
     if (loading) return <div className="p-5">불러오는 중...</div>;
     if (!summary) return <div className="p-5">데이터를 불러올 수 없습니다.</div>;
 
-    const { sales, orders, reservations, cs } = summary;
+    const { sales = {}, orders = {}, reservations = {}, cs = {} } = summary || {};
 
     return (
         <div className="admin-dashboard-container">
@@ -71,29 +72,29 @@ const AdminDashboardPage = ({ onTabChange }) => {
             <div className="dashboard-grid">
                 <DashboardCard
                     title="오늘 매출"
-                    value={`${sales.todaySales.toLocaleString()}원`}
-                    meta={`어제 ${sales.yesterdaySales.toLocaleString()}원`}
+                    value={`${(sales?.todaySales || 0).toLocaleString()}원`}
+                    meta={`어제 ${(sales?.yesterdaySales || 0).toLocaleString()}원`}
                     onTabChange={onTabChange}
                 />
                 <DashboardCard
                     title="미처리 환불"
-                    value={`${orders.refundRequested}건`}
-                    isAlert={orders.refundRequested > 0}
+                    value={`${orders?.refundRequested || 0}건`}
+                    isAlert={(orders?.refundRequested || 0) > 0}
                     meta="즉시 처리가 필요합니다"
                     tabKey="payments"
                     onTabChange={onTabChange}
                 />
                 <DashboardCard
                     title="배송 준비"
-                    value={`${orders.paymentCompleted}건`}
-                    meta={`배송중 ${orders.shipping}건`}
-                    tabKey="market"
+                    value={`${orders?.preparing || 0}건`}
+                    meta={`배송중 ${orders?.shipping || 0}건`}
+                    tabKey="orders"
                     onTabChange={onTabChange}
                 />
                 <DashboardCard
-                    title="오늘 클래스 예약"
-                    value={`${reservations.todayCount}건`}
-                    meta={`취소/환불 대기 ${reservations.pendingCancel}건 / 전체 취소 ${reservations.totalCanceled}건`}
+                    title="클래스 예약"
+                    value={`${reservations?.activeCount || 0}건`}
+                    meta={`오늘 신규 예약 ${reservations?.todayCount || 0}건`}
                     tabKey="reservations"
                     onTabChange={onTabChange}
                 />
@@ -105,12 +106,13 @@ const AdminDashboardPage = ({ onTabChange }) => {
             <div className="status-grid">
                 {/* 주문 처리 현황 */}
                 <div className="status-section">
-                    <h3 className="section-title">주문 관리</h3>
+                    <h3 className="section-title">주문 및 예약 관리</h3>
                     <div className="status-list">
-                        <StatusItem label="결제 완료 (배송준비)" count={orders.paymentCompleted} isWarn={orders.paymentCompleted > 5} />
-                        <StatusItem label="상품 준비중" count={orders.preparing} isActive />
-                        <StatusItem label="배송중" count={orders.shipping} />
-                        <StatusItem label="환불 요청" count={orders.refundRequested} isWarn={orders.refundRequested > 0} />
+                        <StatusItem label="결제 완료 (상점)" count={orders?.paymentCompleted || 0} isWarn={(orders?.paymentCompleted || 0) > 5} />
+                        <StatusItem label="배송 대기중" count={orders?.preparing || 0} isActive />
+                        <StatusItem label="실제 배송중" count={orders?.shipping || 0} />
+                        <StatusItem label="주문 환불 요청" count={orders?.refundRequested || 0} isWarn={(orders?.refundRequested || 0) > 0} />
+                        <StatusItem label="클래스 확정 예약" count={reservations?.activeCount || 0} isActive={(reservations?.activeCount || 0) > 0} />
                     </div>
                 </div>
 
@@ -118,8 +120,8 @@ const AdminDashboardPage = ({ onTabChange }) => {
                 <div className="status-section">
                     <h3 className="section-title">고객 지원 및 회원</h3>
                     <div className="status-list">
-                        <StatusItem label="미답변 문의" count={cs.unreadInquiries} isWarn={cs.unreadInquiries > 0} />
-                        <StatusItem label="오늘 신규 가입" count={cs.newUsersToday} isActive />
+                        <StatusItem label="미답변 문의" count={cs?.unreadInquiries || 0} isWarn={(cs?.unreadInquiries || 0) > 0} />
+                        <StatusItem label="오늘 신규 가입" count={cs?.newUsersToday || 0} isActive />
                     </div>
                 </div>
             </div>

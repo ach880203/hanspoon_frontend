@@ -13,7 +13,7 @@ function unwrap(resBody) {
 
 // 에러 메시지 뽑기(백엔드 ApiResponse.error("...")도 잡기)
 function extractError(err) {
-  const body = err?.response?.data;
+  const body = err?.payload;
   return body?.message || body?.error || err?.message || "요청 실패";
 }
 
