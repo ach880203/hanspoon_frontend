@@ -1,20 +1,9 @@
 import axios from 'axios';
 import { getAccessToken, clearAuth } from '../utils/authStorage';
 
+// [수정] 비어있던 함수에 실제 백엔드 접속 주소를 할당했습니다.
 function resolveApiBaseUrl() {
-  const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
-  if (!rawBaseUrl) return '/';
-
-  // 배포 도메인에서 localhost 값이 남아있으면 same-origin으로 강제 전환합니다.
-  const isLocalBaseUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(rawBaseUrl);
-  const isBrowserLocal =
-    typeof window !== 'undefined' &&
-    /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
-
-  if (isLocalBaseUrl && !isBrowserLocal) {
-    return '/';
-  }
-  return rawBaseUrl;
+  return "http://16.184.21.196:8080"; 
 }
 
 const axiosInstance = axios.create({
@@ -53,8 +42,6 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 401) {
       clearAuth();
-
-      // If a stale token caused 401 on a public endpoint, retry once without auth.
       if (originalRequest && !originalRequest._retryNoAuth) {
         originalRequest._retryNoAuth = true;
         if (originalRequest.headers) {
