@@ -7,6 +7,8 @@ import { toBackendUrl } from "../utils/backendUrl";
 import ProductCard from "../components/ProductCard";
 import "./SearchPage.css";
 
+const FALLBACK_CLASS_IMG = "/img/banner-duck.png";
+
 // 간단한 카드 컴포넌트
 const SearchResultCard = ({ item, type }) => {
     if (type === "product") return <ProductCard p={item} />;
@@ -15,9 +17,11 @@ const SearchResultCard = ({ item, type }) => {
     const title = item.title || item.classTitle || "제목 없음";
 
     // 레시피 이미지 경로 처리
+    // 클래스 응답 필드명이 mainImage가 아니라 mainImageData라서, 이 우선순위를 맞추지 않으면 검색 결과에서만 썸네일이 빠집니다.
+    const classImage = item.mainImageData || item.thumbnailUrl || item.thumbnail || item.imageUrl || item.detailImageData || FALLBACK_CLASS_IMG;
     const image = type === "recipe"
         ? (item.recipeImg ? toBackendUrl(`/images/recipe/${item.recipeImg}`) : "/images/recipe/default.jpg")
-        : (item.mainImage || item.thumbnail || item.imageUrl || "https://via.placeholder.com/300");
+        : classImage;
 
     return (
         <Link to={link} className="search-result-card">
